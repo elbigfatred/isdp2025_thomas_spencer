@@ -41,6 +41,7 @@ public class Employee {
     private String username;
 
     @Column(name = "notes")
+    @JsonProperty("notes")
     private String notes;
 
     @ColumnDefault("0")
@@ -49,13 +50,20 @@ public class Employee {
     private Byte locked;
 
     @ColumnDefault("1")
+    @JsonProperty("active")
     @Column(name = "active", nullable = false)
     private Byte active;
 
 //    Override tostring
     @Override
     public String toString() {
-        return "Employee{" + "id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + ", username=" + username + '}';
+        return "Employee{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\n' +
+                ", lastName='" + lastName + '\n' +
+                ", email='" + email + '\n' +
+                ", username='" + username + '\n' +
+                '}';
     }
 
 }
