@@ -27,4 +27,11 @@ public class Province {
     @Column(name = "active", nullable = false)
     private Byte active;
 
+    public String getProvinceID() {
+        return provinceID;
+    }
+    public void setProvinceID(String provinceID) {
+        this.provinceID = provinceID;
+    }
+
 }

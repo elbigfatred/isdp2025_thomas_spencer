@@ -23,4 +23,16 @@ public class EmployeeService {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found!"));
     }
+
+    public Employee validateLogin(String username, String password) {
+        // Find employee by username
+        Employee employee = employeeRepository.findByUsername(username);
+
+        if (employee != null && employee.getPassword().equals(password)) {
+            // Check if the password matches (you should use hashed passwords in production)
+            return employee;
+        }
+
+        return null; // Invalid credentials
+    }
 }
