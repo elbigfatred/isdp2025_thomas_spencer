@@ -1,4 +1,4 @@
-package main.java.com.frontend_desktop.swingapp.utils;
+package utils;
 
 public class SessionManager {
 

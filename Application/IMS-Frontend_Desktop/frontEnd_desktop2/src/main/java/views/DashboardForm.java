@@ -1,6 +1,7 @@
 package views;
 
-import main.java.com.frontend_desktop.swingapp.utils.SessionManager;
+
+import utils.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -60,6 +61,8 @@ public class DashboardForm {
         });
 
         BtnLogout.addActionListener(e -> {
+            stopIdleTimer();
+            stopCountdownTimer();
             SwingUtilities.invokeLater(()-> new LoginForm().showLoginForm());
             frame.dispose();
         });

@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import tom.ims.backend.model.Employee;
 
+import java.util.Optional;
+
 public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
-    Employee findByUsername(String username);
+    Optional<Employee> findByUsername(String username);
 }

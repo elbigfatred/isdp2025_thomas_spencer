@@ -4,10 +4,14 @@ package views;
 
 
 
+import models.Employee;
+import org.json.JSONObject;
 import utils.LoginRequest;
 import utils.ReadEmployeesRequest;
+import utils.SessionManager;
 
 import javax.swing.*;
+import java.util.List;
 
 public class LoginForm {
     private JTextField txtUsername;
@@ -39,49 +43,31 @@ public class LoginForm {
 
         // action listeners for buttons
         btnLogin.addActionListener(e -> {
-
-
-            // Get text inputs
-            String usernameInput = txtUsername.getText();
-            String passwordInput = new String(txtPassword.getPassword()); // Safely retrieve password input
-
-            // Send login request to backend
-            String response = LoginRequest.login(usernameInput, passwordInput);
-
-            // Log the response for debugging purposes
-            System.out.println("Backend Response: " + response);
-
             try {
-                // Parse the JSON response using org.json.JSONObject
-                org.json.JSONObject jsonResponse = new org.json.JSONObject(response);
+                String usernameInput = txtUsername.getText();
+                String passwordInput = new String(txtPassword.getPassword());
 
-                // Example: Extract specific fields from the JSON response
-                String username = jsonResponse.optString("username", "Unknown");
-                String location = jsonResponse.optString("location", "Unknown");
-                String rolesString = jsonResponse.optString("roles", ""); // Comma-separated roles
+                // Attempt login
+                JSONObject response = LoginRequest.login(usernameInput, passwordInput);
+
+                // If successful, proceed to the dashboard
+                String username = response.optString("username", "Unknown");
+                String location = response.optString("location", "Unknown");
+                String rolesString = response.optString("roles", "");
                 String[] roles = rolesString.isEmpty() ? new String[]{} : rolesString.split(",");
 
-                // Print extracted fields to the console for debugging
-                System.out.println("Parsed Username: " + username);
-                System.out.println("Parsed Location: " + location);
-                System.out.println("Parsed Roles: " + java.util.Arrays.toString(roles));
-
-                // Use the extracted data (e.g., initialize the session)
-                main.java.com.frontend_desktop.swingapp.utils.SessionManager.getInstance().login(username, location, roles);
-
-                // Proceed to the dashboard
+                SessionManager.getInstance().login(username, location, roles);
                 SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard());
                 frame.dispose();
 
-            } catch (org.json.JSONException ex) {
-                // Handle JSON parsing errors
+            } catch (Exception ex) {
+                // Display error message from the exception
                 JOptionPane.showMessageDialog(
                         frame,
-                        "Error parsing response: " + ex.getMessage(),
-                        "Error",
+                        ex.getMessage(),
+                        "Login Error",
                         JOptionPane.ERROR_MESSAGE
                 );
-                ex.printStackTrace();
             }
         });
 
@@ -91,8 +77,22 @@ public class LoginForm {
 
         btnForgotPassword.addActionListener(e -> {
             JOptionPane.showMessageDialog(null, "Getting all employee data", "Info", JOptionPane.INFORMATION_MESSAGE);
-            String response = ReadEmployeesRequest.fetchEmployeesRaw();
-            JOptionPane.showMessageDialog(null, response);
+
+            // Fetch employees and parse the response
+            List<Employee> employees = ReadEmployeesRequest.fetchEmployees();
+
+            // Format the employee data into a readable string
+            StringBuilder employeeData = new StringBuilder("Employee Data:\n");
+            for (Employee employee : employees) {
+                employeeData.append("ID: ").append(employee.getId())
+                        .append(", Name: ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                        .append(", Email: ").append(employee.getEmail())
+                        .append(", Username: ").append(employee.getUsername())
+                        .append("\n");
+            }
+
+            // Display the data in a dialog box
+            JOptionPane.showMessageDialog(null, employeeData.toString());
         });
 
         return ContentPane;
