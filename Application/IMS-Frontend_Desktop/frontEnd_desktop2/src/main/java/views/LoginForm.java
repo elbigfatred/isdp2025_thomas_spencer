@@ -76,23 +76,49 @@ public class LoginForm {
         });
 
         btnForgotPassword.addActionListener(e -> {
-            JOptionPane.showMessageDialog(null, "Getting all employee data", "Info", JOptionPane.INFORMATION_MESSAGE);
+            // Prompt the user for a username
+            String username = JOptionPane.showInputDialog(
+                    frame,
+                    "Enter the username to fetch employee details:",
+                    "Forgot Password",
+                    JOptionPane.QUESTION_MESSAGE
+            );
 
-            // Fetch employees and parse the response
-            List<Employee> employees = ReadEmployeesRequest.fetchEmployees();
-
-            // Format the employee data into a readable string
-            StringBuilder employeeData = new StringBuilder("Employee Data:\n");
-            for (Employee employee : employees) {
-                employeeData.append("ID: ").append(employee.getId())
-                        .append(", Name: ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
-                        .append(", Email: ").append(employee.getEmail())
-                        .append(", Username: ").append(employee.getUsername())
-                        .append("\n");
+            if (username == null || username.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
-            // Display the data in a dialog box
-            JOptionPane.showMessageDialog(null, employeeData.toString());
+            // Fetch employee data for the entered username
+            Employee employee = ReadEmployeesRequest.fetchEmployeeByUsername(username);
+
+            if (employee == null) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "No employee found with username: " + username,
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            } else {
+                // Format the employee data into a readable string
+                String employeeData = String.format(
+                        "Employee Details:\n\nID: %d\nName: %s %s\nEmail: %s\nUsername: %s",
+                        employee.getId(),
+                        employee.getFirstName(),
+                        employee.getLastName(),
+                        employee.getEmail(),
+                        employee.getUsername()
+                );
+
+                // Display the data in a dialog box
+                JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
+
+                // Redirect to password reset form
+                SwingUtilities.invokeLater(() -> {
+                    new PasswordResetForm(employee.getUsername()).showPasswordResetForm();
+                    frame.dispose();
+                });
+            }
         });
 
         return ContentPane;

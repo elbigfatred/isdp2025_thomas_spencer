@@ -69,4 +69,38 @@ public class LoginRequest {
         // Handle unexpected responses
         throw new Exception("Unexpected error occurred: HTTP " + responseCode);
     }
+
+    public static JSONObject resetPassword(String username, String newPassword) {
+        String resetEndpoint = "http://localhost:8080/api/employees/reset-password";
+
+        try {
+            URL url = new URL(resetEndpoint);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+
+            // Create JSON payload
+            String payload = String.format("{\"username\":\"%s\",\"newPassword\":\"%s\"}", username, newPassword);
+
+            // Send the payload
+            try (OutputStream os = connection.getOutputStream()) {
+                os.write(payload.getBytes(StandardCharsets.UTF_8));
+            }
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (java.util.Scanner scanner = new java.util.Scanner(connection.getInputStream(), StandardCharsets.UTF_8)) {
+                    scanner.useDelimiter("\\A");
+                    return new JSONObject(scanner.hasNext() ? scanner.next() : "");
+                }
+            } else {
+                throw new Exception("Failed to reset password. HTTP Code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

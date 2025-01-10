@@ -30,6 +30,11 @@ public class EmployeeController {
         return employeeService.getAllEmployees();
     }
 
+    @GetMapping("/username/{username}")
+    public Employee getEmployeeByUsername(@PathVariable String username) {
+        return employeeService.findByUsername(username);
+    }
+
     @GetMapping("/{id}")
     public Employee getEmployeeById(@PathVariable int id) {
         return employeeService.getEmployeeById(id);
@@ -57,7 +62,7 @@ public class EmployeeController {
                 System.out.println("Account is locked for user: " + loginRequest.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("You account has been locked because of too many incorrect login attempts. " +
-                                "Please contact your Administrator at admin@bullseye.ca for assistance");
+                                "Please contact your Administrator at admin@bullseye.ca for assistance.");
             }
 
             // Validate the password
@@ -73,7 +78,7 @@ public class EmployeeController {
                     employeeService.saveEmployee(employee); // Save the locked status to DB
                     System.out.println("Account locked due to too many failed attempts: " + loginRequest.getUsername());
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("You account has been locked because of too many incorrect login attempts. Please contact your Administrator at admin@bullseye.ca for assistance");
+                            .body("You account has been locked because of too many incorrect login attempts. Please contact your Administrator at admin@bullseye.ca for assistance.");
                 }
 
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
