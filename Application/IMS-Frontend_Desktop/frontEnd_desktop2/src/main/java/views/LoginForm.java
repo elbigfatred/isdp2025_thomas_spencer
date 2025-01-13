@@ -11,7 +11,8 @@ import utils.ReadEmployeesRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
-import java.util.List;
+import java.awt.*;
+import java.net.URL;
 
 public class LoginForm {
     private JTextField txtUsername;
@@ -26,6 +27,7 @@ public class LoginForm {
     private JLabel SPACER4;
     private JLabel LblLogin;
     private JPanel ContentPane;
+    private JLabel logoLabel;
 
     private JFrame frame;
 
@@ -37,6 +39,18 @@ public class LoginForm {
         frame.setSize(400, 300);                   // Set frame size
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
+
+
+        String logoPath = "/bullseye.jpg"; // Classpath-relative path
+        URL logoURL = getClass().getResource(logoPath);
+        ImageIcon icon = new ImageIcon(logoURL); // Load the image
+        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+
+
+        logoLabel.setIcon(resizedIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        logoLabel.setText("");
     }
 
     public JPanel getMainPanel() {
@@ -90,6 +104,9 @@ public class LoginForm {
             }
 
             // Fetch employee data for the entered username
+
+//            TODO: HANDLE LACK OF CONNECTION
+
             Employee employee = ReadEmployeesRequest.fetchEmployeeByUsername(username);
 
             if (employee == null) {

@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 
 public class DashboardForm {
     private JPanel ContentPane;
@@ -25,6 +26,7 @@ public class DashboardForm {
     private JButton someButtonButton;
     private JLabel LblWelcome;
     private JLabel LblLocation;
+    private JLabel logoLabel;
 
     private JFrame frame;
     private Timer idleTimer;
@@ -42,6 +44,17 @@ public class DashboardForm {
 
         setupIdleTimer(); //initialize timeout logic
         setupCountdownTimer();
+
+        String logoPath = "/bullseye.jpg"; // Classpath-relative path
+        URL logoURL = getClass().getResource(logoPath);
+        ImageIcon icon = new ImageIcon(logoURL); // Load the image
+        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+
+
+        logoLabel.setIcon(resizedIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        logoLabel.setText("");
     }
 
     public JPanel getMainPanel() {

@@ -7,6 +7,8 @@ import utils.ReadEmployeesRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
+import java.awt.*;
+import java.net.URL;
 import java.util.List;
 
 public class PasswordResetForm {
@@ -21,6 +23,7 @@ public class PasswordResetForm {
     private JLabel SPACER2;
     private JLabel SPACER3;
     private JLabel SPACER4;
+    private JLabel logoLabel;
 
     private JFrame frame;
     private String username; // To store the username for this form
@@ -47,6 +50,17 @@ public class PasswordResetForm {
         frame.setSize(400, 300);                   // Set frame size
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
+
+        String logoPath = "/bullseye.jpg"; // Classpath-relative path
+        URL logoURL = getClass().getResource(logoPath);
+        ImageIcon icon = new ImageIcon(logoURL); // Load the image
+        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+
+
+        logoLabel.setIcon(resizedIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        logoLabel.setText("");
     }
 
     public JPanel getMainPanel() {
