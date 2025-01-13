@@ -65,7 +65,12 @@ public class EmployeeController {
                                 "Please contact your Administrator at admin@bullseye.ca for assistance.");
             }
 
+
+
             // Validate the password
+            //
+            // NEEDS TO CHANGE: check if employee's password in the DB is the default. If it is; prompt change.
+
             if (!employeeService.validatePassword(employee, loginRequest.getPassword())) {
                 System.out.println("Invalid password for username: " + loginRequest.getUsername());
 
