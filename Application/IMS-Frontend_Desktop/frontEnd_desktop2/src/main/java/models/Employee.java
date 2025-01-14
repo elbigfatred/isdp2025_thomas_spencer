@@ -6,6 +6,8 @@ public class Employee {
     private String lastName;
     private String email;
     private String username;
+    private String permissionLevel; // New field for the employee's position
+    private boolean active;         // New field for active status
 
     // Getters and Setters
     public Integer getId() {
@@ -48,6 +50,22 @@ public class Employee {
         this.username = username;
     }
 
+    public String getPermissionLevel() {
+        return permissionLevel;
+    }
+
+    public void setPermissionLevel(String permissionLevel) {
+        this.permissionLevel = permissionLevel;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     public String toString() {
         return "Employee{" +
@@ -56,6 +74,8 @@ public class Employee {
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
+                ", permissionLevel='" + permissionLevel + '\'' +
+                ", active=" + active +
                 '}';
     }
 }

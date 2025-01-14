@@ -156,13 +156,18 @@ public class LoginForm {
             // Attempt login
             JSONObject response = LoginRequest.login(usernameInput, passwordInput);
 
-            // If successful, proceed to the dashboard
+            // Parse response to extract session details
             String username = response.optString("username", "Unknown");
-            String location = response.optString("location", "Unknown");
-            String rolesString = response.optString("roles", "");
-            String[] roles = rolesString.isEmpty() ? new String[]{} : rolesString.split(",");
+            String firstname = response.optString("firstname", "Unknown");
+            String lastname = response.optString("lastname", "Unknown");
+            String email = response.optString("email", "Unknown");
+            String permissionLevel = response.getJSONObject("posn").optString("permissionLevel", "Unknown");
+            String siteName = response.getJSONObject("site").optString("siteName", "Unknown");
 
-            SessionManager.getInstance().login(username, location, roles);
+            // Initialize session
+            SessionManager.getInstance().login(username, firstname, lastname, email, permissionLevel, siteName);
+
+            // Proceed to the dashboard
             SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard());
             frame.dispose();
 

@@ -1,13 +1,18 @@
 package views;
 
 
+import models.Employee;
+import utils.ReadEmployeesRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DashboardForm {
     private JPanel ContentPane;
@@ -27,6 +32,8 @@ public class DashboardForm {
     private JLabel LblWelcome;
     private JLabel LblLocation;
     private JLabel logoLabel;
+    private JPanel EmployeesTab;
+    private JTable EmployeeTabTable;
 
     private JFrame frame;
     private Timer idleTimer;
@@ -45,6 +52,40 @@ public class DashboardForm {
         setupIdleTimer(); //initialize timeout logic
         setupCountdownTimer();
 
+        SetupBullseyeLogo();
+        ConfigureTabsBasedOnPosition();
+    }
+
+    private void ConfigureTabsBasedOnPosition() {
+        hideAllTabs();
+
+        String position = SessionManager.getInstance().getPermissionLevel();
+
+        if("Administrator".equalsIgnoreCase(position)) {
+            DashboardTabPane.add("Employees", EmployeesTab);
+            DashboardTabPane.add("Admin", AdminTab);
+            populateEmployeeTable();
+        }
+        // more else ifs for other roles
+        else {
+            // If not an admin, you can show a message or logout as needed
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Access denied: You do not have permission to access this area.",
+                    "Access Denied",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            Logout();
+        }
+    }
+
+    public void hideAllTabs(){
+        while (DashboardTabPane.getTabCount() > 0) {
+            DashboardTabPane.remove(0); // Always remove the first tab
+        }
+    }
+
+    private void SetupBullseyeLogo() {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image
@@ -58,29 +99,50 @@ public class DashboardForm {
     }
 
     public JPanel getMainPanel() {
-        // setup initial components
-        LblWelcome.setText("Welcome, cpatstone");
-        LblLocation.setText("Location: Warehouse");
+        // Check if a user is logged in
+        SessionManager session = SessionManager.getInstance();
+        if (!session.isLoggedIn()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "No user is currently logged in. Returning to login screen.",
+                    "Session Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            Logout(); // Log out and redirect to the login screen
+            return null; // Return null to avoid further execution
+        }
+
+        // Set up initial components
+        LblWelcome.setText("User: " + session.getUsername());
+        LblLocation.setText("Location: " + session.getSiteName());
 
         // action listeners for buttons
         BtnRefresh.addActionListener(e -> {
-            idleTimer.stop();
-            countdownTimer.stop();
-            JOptionPane.showMessageDialog(
-                    null, "Refreshing data...", "Info", JOptionPane.INFORMATION_MESSAGE);
-            SessionManager.getInfo();
-            idleTimer.restart();
-            countdownTimer.restart();
+            RefreshButtonEvent();
         });
 
         BtnLogout.addActionListener(e -> {
-            stopIdleTimer();
-            stopCountdownTimer();
-            SwingUtilities.invokeLater(()-> new LoginForm().showLoginForm());
-            frame.dispose();
+            Logout();
         });
 
         return ContentPane;
+    }
+
+    private void Logout() {
+        stopIdleTimer();
+        stopCountdownTimer();
+        SwingUtilities.invokeLater(()-> new LoginForm().showLoginForm());
+        frame.dispose();
+    }
+
+    private void RefreshButtonEvent() {
+        idleTimer.stop();
+        countdownTimer.stop();
+        JOptionPane.showMessageDialog(
+                null, "Refreshing data...", "Info", JOptionPane.INFORMATION_MESSAGE);
+        SessionManager.getInfo();
+        idleTimer.restart();
+        countdownTimer.restart();
     }
 
     private void setupIdleTimer() {
@@ -131,6 +193,10 @@ public class DashboardForm {
     }
 
     private void setupCountdownTimer() {
+        // Retrieve user information from the SessionManager
+        SessionManager session = SessionManager.getInstance();
+        String uname = session.getUsername();
+
         // Update the remaining idle time every second
         countdownTimer = new Timer(1000, e -> {
             long remainingTime = SessionManager.getMaxSessionTime() -
@@ -139,7 +205,7 @@ public class DashboardForm {
 
             // Convert milliseconds to seconds
             long seconds = remainingTime / 1000;
-            LblWelcome.setText("Welcome, cpatstone | Idle time left: " + seconds + " seconds");
+            LblWelcome.setText("User: " + uname + " | Idle time left: " + seconds + " seconds");
         });
 
         countdownTimer.start(); // Start the countdown timer
@@ -149,5 +215,33 @@ public class DashboardForm {
         if (countdownTimer != null && countdownTimer.isRunning()) {
             countdownTimer.stop(); // Stop the countdown timer
         }
+    }
+
+    private void populateEmployeeTable() {
+        // Column names for the table
+        String[] columnNames = {"ID", "First Name", "Last Name", "Email", "Username", "Permission Level", "Active"};
+
+        // Fetch employees from the backend
+        List<Employee> employees = ReadEmployeesRequest.fetchEmployees();
+
+        // Create a table model and add columns
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+
+        // Populate the table model with employee data
+        for (Employee employee : employees) {
+            Object[] rowData = {
+                    employee.getId(),
+                    employee.getFirstName(),
+                    employee.getLastName(),
+                    employee.getEmail(),
+                    employee.getUsername(),
+                    employee.getPermissionLevel(), // Assuming Employee has a 'Posn' object with 'PermissionLevel'
+                    employee.isActive() ? "Yes" : "No" // Convert active status to Yes/No
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set the table model to the JTable
+        EmployeeTabTable.setModel(tableModel);
     }
 }

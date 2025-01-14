@@ -81,7 +81,8 @@ public class PasswordResetForm {
     public JPanel getMainPanel() {
         // action listeners for buttons
         BtnExit.addActionListener(e -> {
-            System.exit(0); // Exit the application
+            frame.dispose(); // Close the password reset form
+            new LoginForm().showLoginForm(); // Redirect to login form
         });
 
         BtnReset.addActionListener(e -> {
@@ -127,17 +128,17 @@ public class PasswordResetForm {
         txtNewPassword.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                evaluatePasswordStrength(txtNewPassword.getText());
+                advisePasswordStrength(txtNewPassword.getText());
             }
 
             @Override
             public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                evaluatePasswordStrength(txtNewPassword.getText());
+                advisePasswordStrength(txtNewPassword.getText());
             }
 
             @Override
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                evaluatePasswordStrength(txtNewPassword.getText());
+                advisePasswordStrength(txtNewPassword.getText());
             }
         });
 
@@ -184,7 +185,6 @@ public class PasswordResetForm {
         }
     }
 
-    // Helper method to validate password strength
     private boolean isStrongPassword(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Z].*") &&
@@ -264,7 +264,7 @@ public class PasswordResetForm {
         confirmPasswordRevealed = !confirmPasswordRevealed;
     }
 
-    private void evaluatePasswordStrength(String password) {
+    private void advisePasswordStrength(String password) {
 
         if(password.length() < 4){
             lblStrengthAdvisor.setText("");
@@ -277,7 +277,7 @@ public class PasswordResetForm {
         // Minimum rules for a password
         boolean hasMinimumLength = password.length() >= 8;
         boolean hasCapitalLetter = password.matches(".*[A-Z].*");
-        boolean hasSpecialCharacter = password.matches(".*[-!@#$%^&*+(),.?\":{}|<>)-_=;'/].*");
+        boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*()_+=\\-{}|:;\"'<>,.?/].*");
         boolean hasNumber = password.matches(".*\\d.*");
 
         if (!hasMinimumLength || !hasCapitalLetter || !hasSpecialCharacter) {

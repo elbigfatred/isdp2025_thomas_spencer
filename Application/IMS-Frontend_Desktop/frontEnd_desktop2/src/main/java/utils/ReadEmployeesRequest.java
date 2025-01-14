@@ -35,6 +35,8 @@ public class ReadEmployeesRequest {
                 employee.setLastName(jsonObject.getString("lastname"));
                 employee.setEmail(jsonObject.getString("email"));
                 employee.setUsername(jsonObject.getString("username"));
+                employee.setPermissionLevel(jsonObject.getJSONObject("posn").getString("permissionLevel"));
+                employee.setActive(jsonObject.getInt("active") == 1);
 
                 employees.add(employee);
             }
@@ -61,6 +63,8 @@ public class ReadEmployeesRequest {
             employee.setLastName(jsonObject.getString("lastname"));
             employee.setEmail(jsonObject.getString("email"));
             employee.setUsername(jsonObject.getString("username"));
+            employee.setPermissionLevel(jsonObject.getJSONObject("posn").getString("permissionLevel"));
+            employee.setActive(jsonObject.getInt("active") == 1);
 
             return employee;
         } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
