@@ -22,4 +22,8 @@ public class HashUtil {
     public static String hashPassword(String password) {
         return encoder.encode(password);
     }
+
+    public static boolean matchesPassword(String password, String hashedPassword) {
+        return encoder.matches(password, hashedPassword);
+    }
 }

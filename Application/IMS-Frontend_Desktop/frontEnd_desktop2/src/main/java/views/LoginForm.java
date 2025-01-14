@@ -12,6 +12,8 @@ import utils.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URL;
 
 public class LoginForm {
@@ -28,18 +30,22 @@ public class LoginForm {
     private JLabel LblLogin;
     private JPanel ContentPane;
     private JLabel logoLabel;
+    private JLabel lblPasswordEyeball;
 
     private JFrame frame;
+    private boolean passwordRevealed = true; // will be toggled on display to run functionality
 
     // Method to set up and display the dashboard frame
     public void showLoginForm() {
         frame = new JFrame("Bullseye Inventory Management System - Login"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(400, 300);                   // Set frame size
+        frame.setSize(500, 350);                   // Set frame size
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
 
+
+        togglePasswordRevealed();
 
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
@@ -57,32 +63,7 @@ public class LoginForm {
 
         // action listeners for buttons
         btnLogin.addActionListener(e -> {
-            try {
-                String usernameInput = txtUsername.getText();
-                String passwordInput = new String(txtPassword.getPassword());
-
-                // Attempt login
-                JSONObject response = LoginRequest.login(usernameInput, passwordInput);
-
-                // If successful, proceed to the dashboard
-                String username = response.optString("username", "Unknown");
-                String location = response.optString("location", "Unknown");
-                String rolesString = response.optString("roles", "");
-                String[] roles = rolesString.isEmpty() ? new String[]{} : rolesString.split(",");
-
-                SessionManager.getInstance().login(username, location, roles);
-                SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard());
-                frame.dispose();
-
-            } catch (Exception ex) {
-                // Display error message from the exception
-                JOptionPane.showMessageDialog(
-                        frame,
-                        ex.getMessage(),
-                        "Login Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
+            LoginButtonEvent();
         });
 
         btnExit.addActionListener(e -> {
@@ -90,23 +71,44 @@ public class LoginForm {
         });
 
         btnForgotPassword.addActionListener(e -> {
-            // Prompt the user for a username
-            String username = JOptionPane.showInputDialog(
-                    frame,
-                    "Enter the username to fetch employee details:",
-                    "Forgot Password",
-                    JOptionPane.QUESTION_MESSAGE
-            );
+            ForgotPasswordButtonEvent();
+        });
 
-            if (username == null || username.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+        lblPasswordEyeball.addMouseListener(new MouseAdapter() {
+           @Override
+           public void mouseClicked(MouseEvent e) {
+               togglePasswordRevealed();
+           }
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // Change cursor to hand
             }
 
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getDefaultCursor()); // Revert cursor to default
+            }
+        });
+
+        return ContentPane;
+    }
+
+    private void ForgotPasswordButtonEvent() {
+        // Prompt the user for a username
+        String username = JOptionPane.showInputDialog(
+                frame,
+                "Enter the username to fetch employee details:",
+                "Forgot Password",
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (username == null || username.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
             // Fetch employee data for the entered username
-
-//            TODO: HANDLE LACK OF CONNECTION
-
             Employee employee = ReadEmployeesRequest.fetchEmployeeByUsername(username);
 
             if (employee == null) {
@@ -117,7 +119,7 @@ public class LoginForm {
                         JOptionPane.ERROR_MESSAGE
                 );
             } else {
-                // Format the employee data into a readable string
+                // Format and display the employee data
                 String employeeData = String.format(
                         "Employee Details:\n\nID: %d\nName: %s %s\nEmail: %s\nUsername: %s",
                         employee.getId(),
@@ -127,7 +129,6 @@ public class LoginForm {
                         employee.getUsername()
                 );
 
-                // Display the data in a dialog box
                 JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
 
                 // Redirect to password reset form
@@ -136,8 +137,78 @@ public class LoginForm {
                     frame.dispose();
                 });
             }
-        });
+        } catch (RuntimeException ex) {
+            // Handle backend connectivity issues
+            JOptionPane.showMessageDialog(
+                    frame,
+                    ex.getMessage(),
+                    "Backend Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
 
-        return ContentPane;
+    private void LoginButtonEvent() {
+        try {
+            String usernameInput = txtUsername.getText();
+            String passwordInput = new String(txtPassword.getPassword());
+
+            // Attempt login
+            JSONObject response = LoginRequest.login(usernameInput, passwordInput);
+
+            // If successful, proceed to the dashboard
+            String username = response.optString("username", "Unknown");
+            String location = response.optString("location", "Unknown");
+            String rolesString = response.optString("roles", "");
+            String[] roles = rolesString.isEmpty() ? new String[]{} : rolesString.split(",");
+
+            SessionManager.getInstance().login(username, location, roles);
+            SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard());
+            frame.dispose();
+
+        } catch (Exception ex) {
+            // Check for the precondition-required response (password change required)
+            if (ex.getMessage().contains("Password change required")) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Your password needs to be changed. Redirecting to password reset form...",
+                        "Password Reset Required",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+                // Redirect to password reset form
+                String username = txtUsername.getText();
+                SwingUtilities.invokeLater(() -> {
+                    new PasswordResetForm(username).showPasswordResetForm();
+                    frame.dispose();
+                });
+            } else {
+                // Display other errors
+                JOptionPane.showMessageDialog(
+                        frame,
+                        ex.getMessage(),
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+    }
+
+    public void togglePasswordRevealed() {
+
+        txtPassword.setEchoChar(passwordRevealed? '•' : ((char) 0));
+
+        String logoPath = passwordRevealed ? "/hide.png" : "/view.png";
+        URL logoURL = getClass().getResource(logoPath);
+        ImageIcon icon = new ImageIcon(logoURL); // Load the image
+        Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH); // Resize
+        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+
+
+        lblPasswordEyeball.setIcon(resizedIcon);
+        lblPasswordEyeball.setHorizontalAlignment(SwingConstants.CENTER);
+        lblPasswordEyeball.setText("");
+
+        passwordRevealed = !passwordRevealed;
     }
 }

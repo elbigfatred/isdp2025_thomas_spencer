@@ -70,37 +70,36 @@ public class LoginRequest {
         throw new Exception("Unexpected error occurred: HTTP " + responseCode);
     }
 
-    public static JSONObject resetPassword(String username, String newPassword) {
+    public static JSONObject resetPassword(String username, String newPassword) throws Exception {
         String resetEndpoint = "http://localhost:8080/api/employees/reset-password";
 
-        try {
-            URL url = new URL(resetEndpoint);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        URL url = new URL(resetEndpoint);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
 
-            // Create JSON payload
-            String payload = String.format("{\"username\":\"%s\",\"newPassword\":\"%s\"}", username, newPassword);
+        // Create JSON payload
+        String payload = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, newPassword);
 
-            // Send the payload
-            try (OutputStream os = connection.getOutputStream()) {
-                os.write(payload.getBytes(StandardCharsets.UTF_8));
+        // Send payload
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(payload.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int responseCode = connection.getResponseCode();
+
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            try (java.util.Scanner scanner = new java.util.Scanner(connection.getInputStream(), StandardCharsets.UTF_8)) {
+                scanner.useDelimiter("\\A");
+                return new JSONObject(scanner.hasNext() ? scanner.next() : "");
             }
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                try (java.util.Scanner scanner = new java.util.Scanner(connection.getInputStream(), StandardCharsets.UTF_8)) {
-                    scanner.useDelimiter("\\A");
-                    return new JSONObject(scanner.hasNext() ? scanner.next() : "");
-                }
-            } else {
-                throw new Exception("Failed to reset password. HTTP Code: " + responseCode);
+        } else {
+            try (java.util.Scanner scanner = new java.util.Scanner(connection.getErrorStream(), StandardCharsets.UTF_8)) {
+                scanner.useDelimiter("\\A");
+                throw new Exception(scanner.hasNext() ? scanner.next() : "Failed to reset password");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

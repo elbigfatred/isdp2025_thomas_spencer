@@ -26,10 +26,10 @@ public class EmployeeService {
 
     public Employee findByUsername(String username) {
         // Attempt to find the employee by username
-        return employeeRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Employee not found!"));
+        return employeeRepository.findByUsername(username).orElse(null);
     }
 
+//    TODO: get encryption going
     public Employee validateLogin(String username, String password) {
         try {
             // Find employee by username

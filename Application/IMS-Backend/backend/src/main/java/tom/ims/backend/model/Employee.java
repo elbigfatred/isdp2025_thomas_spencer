@@ -16,7 +16,7 @@ public class Employee {
     @JsonProperty("id")
     private Integer id;
 
-    @Column(name = "Password", nullable = false, length = 32)
+    @Column(name = "Password", nullable = false, length = 255)
     @JsonProperty("password")
     private String password;
 
