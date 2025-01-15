@@ -39,6 +39,7 @@ public class DashboardForm {
     private Timer idleTimer;
     private Timer countdownTimer;
     private boolean sessionActive = true;
+    private int employeeTableSelectedId;
 
     // Method to set up and display the dashboard frame
     public void showDashboard() {
@@ -68,6 +69,8 @@ public class DashboardForm {
         }
         // more else ifs for other roles
         else {
+            stopCountdownTimer();
+            stopIdleTimer();
             // If not an admin, you can show a message or logout as needed
             JOptionPane.showMessageDialog(
                     frame,
@@ -225,7 +228,12 @@ public class DashboardForm {
         List<Employee> employees = ReadEmployeesRequest.fetchEmployees();
 
         // Create a table model and add columns
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         // Populate the table model with employee data
         for (Employee employee : employees) {
@@ -243,5 +251,22 @@ public class DashboardForm {
 
         // Set the table model to the JTable
         EmployeeTabTable.setModel(tableModel);
+
+        // Allow selection of entire rows only
+        EmployeeTabTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener to handle row selection
+        EmployeeTabTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = EmployeeTabTable.getSelectedRow();
+                if (selectedRow != -1) {
+                    employeeTableSelectedId = (Integer) EmployeeTabTable.getValueAt(selectedRow, 0); // Assuming column 4 is 'id'
+                    System.out.println("Selected Username: " + employeeTableSelectedId);
+                }
+                else{
+                    employeeTableSelectedId = 0;
+                }
+            }
+        });
     }
 }

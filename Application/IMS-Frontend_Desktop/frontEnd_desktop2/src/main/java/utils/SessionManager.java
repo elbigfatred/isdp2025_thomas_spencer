@@ -5,7 +5,7 @@ public class SessionManager {
     private static SessionManager instance; // Singleton instance
 
     //Constants
-    private static final long MAX_SESSION_TIME = 30000; //10 sec in milliseconds
+    private static final long MAX_SESSION_TIME = 5000; //10 sec in milliseconds
 
     private String username; // Store the current username
     private String location; // Example: user's current location
