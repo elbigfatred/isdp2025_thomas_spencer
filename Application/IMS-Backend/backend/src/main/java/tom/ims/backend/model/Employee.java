@@ -11,7 +11,6 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "employee")
 public class Employee {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "employeeID", nullable = false)
     @JsonProperty("id")
     private Integer id;

@@ -36,11 +36,14 @@ public class LoginForm {
     private boolean passwordRevealed = true; // will be toggled on display to run functionality
 
     // Method to set up and display the dashboard frame
-    public void showLoginForm() {
+    public void showLoginForm(Point currentLocation) {
         frame = new JFrame("Bullseye Inventory Management System - Login"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
         frame.setSize(500, 350);                   // Set frame size
+        if(currentLocation != null) {
+            frame.setLocation(currentLocation);
+        }
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
 
@@ -133,7 +136,7 @@ public class LoginForm {
 
                 // Redirect to password reset form
                 SwingUtilities.invokeLater(() -> {
-                    new PasswordResetForm(employee.getUsername()).showPasswordResetForm();
+                    new PasswordResetForm(employee.getUsername()).showPasswordResetForm(frame.getLocation());
                     frame.dispose();
                 });
             }
@@ -168,7 +171,7 @@ public class LoginForm {
             SessionManager.getInstance().login(username, firstname, lastname, email, permissionLevel, siteName);
 
             // Proceed to the dashboard
-            SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard());
+            SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard(frame.getLocation()));
             frame.dispose();
 
         } catch (Exception ex) {
@@ -184,7 +187,7 @@ public class LoginForm {
                 // Redirect to password reset form
                 String username = txtUsername.getText();
                 SwingUtilities.invokeLater(() -> {
-                    new PasswordResetForm(username).showPasswordResetForm();
+                    new PasswordResetForm(username).showPasswordResetForm(frame.getLocation());
                     frame.dispose();
                 });
             } else {

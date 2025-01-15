@@ -29,7 +29,6 @@ public class EmployeeService {
         return employeeRepository.findByUsername(username).orElse(null);
     }
 
-//    TODO: get encryption going
     public Employee validateLogin(String username, String password) {
         try {
             // Find employee by username
@@ -68,4 +67,5 @@ public class EmployeeService {
             throw new RuntimeException("Failed to save employee: " + e.getMessage(), e);
         }
     }
+
 }

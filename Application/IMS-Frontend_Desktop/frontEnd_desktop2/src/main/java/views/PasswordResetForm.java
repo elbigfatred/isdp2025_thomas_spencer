@@ -52,11 +52,14 @@ public class PasswordResetForm {
         }
     }
 
-    public void showPasswordResetForm() {
+    public void showPasswordResetForm(Point currentLocation) {
         frame = new JFrame("Bullseye Inventory Management System - Password Reset"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
         frame.setSize(500, 350);                   // Set frame size
+        if(currentLocation != null) {
+            frame.setLocation(currentLocation);
+        }
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
 
@@ -82,7 +85,7 @@ public class PasswordResetForm {
         // action listeners for buttons
         BtnExit.addActionListener(e -> {
             frame.dispose(); // Close the password reset form
-            new LoginForm().showLoginForm(); // Redirect to login form
+            new LoginForm().showLoginForm(frame.getLocation()); // Redirect to login form
         });
 
         BtnReset.addActionListener(e -> {
@@ -174,7 +177,7 @@ public class PasswordResetForm {
             if (response != null && response.optString("status", "failure").equals("success")) {
                 JOptionPane.showMessageDialog(frame, "Password successfully reset.", "Success", JOptionPane.INFORMATION_MESSAGE);
                 frame.dispose(); // Close the password reset form
-                new LoginForm().showLoginForm(); // Redirect to login form
+                new LoginForm().showLoginForm(frame.getLocation()); // Redirect to login form
             } else {
                 String errorMessage = response != null ? response.optString("message", "Unknown error occurred.") : "Failed to reset password.";
                 JOptionPane.showMessageDialog(frame, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);

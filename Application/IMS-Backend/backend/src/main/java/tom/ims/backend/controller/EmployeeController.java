@@ -5,15 +5,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import tom.ims.backend.model.Employee;
-import tom.ims.backend.model.LoginRequest;
-import tom.ims.backend.model.ResetPasswordRequest;
+import tom.ims.backend.model.*;
 import tom.ims.backend.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tom.ims.backend.service.PosnService;
+import tom.ims.backend.service.SiteService;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
@@ -25,6 +26,12 @@ public class EmployeeController {
 
     @Autowired
     private EmployeeService employeeService;
+
+    @Autowired
+    private SiteService siteService;
+
+    @Autowired
+    private PosnService posnService;
 
     @GetMapping
     public List<Employee> getAllEmployees() throws JsonProcessingException {
@@ -150,6 +157,66 @@ public class EmployeeController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset password");
+        }
+    }
+
+    @PutMapping("/deactivate/{id}")
+    public ResponseEntity<String> deactivateEmployee(@PathVariable int id) {
+        try {
+            Employee employee = employeeService.getEmployeeById(id);
+
+            // Check if the employee is already inactive
+            if (employee.getActive() == 0) {
+                System.out.println("Account is not active for user: " + employee.getUsername());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Employee is already inactive.");
+            }
+
+            // Deactivate the employee
+            employee.setActive((byte) 0);
+            employeeService.saveEmployee(employee); // Save the updated employee status to the database
+
+            System.out.println("Employee deactivated: " + employee.getUsername());
+            return ResponseEntity.ok("Employee deactivated successfully.");
+        } catch (RuntimeException e) {
+            System.err.println("Error deactivating employee: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to deactivate employee.");
+        } catch (Exception e) {
+            System.err.println("Unexpected error occurred while deactivating employee:");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public void addEmployee(@RequestBody Map<String, Object> employeeData) {
+        try {
+
+            System.out.println(employeeData);
+            Employee employee = new Employee();
+            employee.setId((Integer) employeeData.get("id"));
+            employee.setUsername((String) employeeData.get("username"));
+            employee.setPassword((String) employeeData.get("password"));
+            employee.setFirstName((String) employeeData.get("firstname"));
+            employee.setLastName((String) employeeData.get("lastname"));
+            employee.setEmail((String) employeeData.get("email"));
+            employee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
+            employee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
+
+            // Fetch the Site using the provided site ID
+            Integer siteId = (Integer) employeeData.get("site");
+            Site site = siteService.getSiteById(siteId);
+            employee.setSite(site);
+
+            // Fetch the Posn using the provided position ID
+            Integer posnId = (Integer) employeeData.get("permissionLevel");
+            Posn posn = posnService.getPositionById(posnId);
+            employee.setPosn(posn);
+
+            // Save the employee
+            employeeService.saveEmployee(employee);
+        } catch (Exception e) {
+            throw new RuntimeException("Error saving employee: " + e.getMessage());
         }
     }
 

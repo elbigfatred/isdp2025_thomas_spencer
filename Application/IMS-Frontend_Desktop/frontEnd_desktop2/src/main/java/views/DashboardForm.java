@@ -10,8 +10,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardForm {
@@ -34,19 +34,26 @@ public class DashboardForm {
     private JLabel logoLabel;
     private JPanel EmployeesTab;
     private JTable EmployeeTabTable;
+    private JButton btnAddEmployee;
+    private JButton btnEditEmployee;
+    private JButton btnDeleteEmployee;
+    private JPanel adminCRUDpane;
 
     private JFrame frame;
     private Timer idleTimer;
     private Timer countdownTimer;
     private boolean sessionActive = true;
-    private int employeeTableSelectedId;
+    private int employeeTableSelectedId = -1;
 
     // Method to set up and display the dashboard frame
-    public void showDashboard() {
+    public void showDashboard(Point currentLocation) {
         frame = new JFrame("Bullseye IMS"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(800, 600);                   // Set frame size
+        frame.setSize(1600, 600);                   // Set frame size
+        if(currentLocation != null) {
+            frame.setLocation(currentLocation);
+        }
         frame.setLocationRelativeTo(null);         // Center the frame
         frame.setVisible(true);                    // Make it visible
 
@@ -65,6 +72,14 @@ public class DashboardForm {
         if("Administrator".equalsIgnoreCase(position)) {
             DashboardTabPane.add("Employees", EmployeesTab);
             DashboardTabPane.add("Admin", AdminTab);
+            adminCRUDpane.setVisible(true);
+
+            populateEmployeeTable();
+        }
+        else if("Financial Manager".equalsIgnoreCase(position)) {
+            DashboardTabPane.add("Employees", EmployeesTab);
+            DashboardTabPane.add("Admin", AdminTab);
+
             populateEmployeeTable();
         }
         // more else ifs for other roles
@@ -128,13 +143,78 @@ public class DashboardForm {
             Logout();
         });
 
+        btnDeleteEmployee.addActionListener(e -> {
+           deleteEmployee();
+        });
+
+        btnAddEmployee.addActionListener(e -> {
+            addEmployee();
+        });
+
         return ContentPane;
     }
 
+    private void addEmployee() {
+        sessionActive = false;
+        idleTimer.stop();
+        countdownTimer.stop();
+
+        SwingUtilities.invokeLater(()-> new AddEditEmployeeForm().showAddEditEmployeeForm(frame, frame.getLocation(), "ADD", null,() ->{
+            // Resume session when the dialog is closed
+            idleTimer.restart();
+            countdownTimer.restart();
+            sessionActive = true;
+        }));
+
+    }
+
+    private void deleteEmployee() {
+        if (employeeTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an employee to deactivate.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirmation = JOptionPane.showConfirmDialog(
+                frame,
+                "Are you sure you want to deactivate this employee?",
+                "Confirm Deactivation",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirmation == JOptionPane.YES_OPTION) {
+            String result = ReadEmployeesRequest.deactivateEmployee(employeeTableSelectedId);
+
+            switch (result) {
+                case "success":
+                    JOptionPane.showMessageDialog(frame, "Employee deactivated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    populateEmployeeTable(); // Refresh the table after the operation
+                    break;
+
+                case "failure":
+                    JOptionPane.showMessageDialog(frame, "Failed to deactivate employee. Employee is already inactive.", "Error", JOptionPane.ERROR_MESSAGE);
+                    break;
+
+                case "unexpected":
+                    JOptionPane.showMessageDialog(frame, "Unexpected error occurred. Please contact support.", "Error", JOptionPane.ERROR_MESSAGE);
+                    break;
+
+                case "network_error":
+                    JOptionPane.showMessageDialog(frame, "Network error. Please check your connection.", "Error", JOptionPane.ERROR_MESSAGE);
+                    break;
+
+                default:
+                    JOptionPane.showMessageDialog(frame, "Unknown error occurred.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void Logout() {
+        sessionActive = false;
         stopIdleTimer();
         stopCountdownTimer();
-        SwingUtilities.invokeLater(()-> new LoginForm().showLoginForm());
+        SessionManager.getInstance().resetSession();
+
+        SwingUtilities.invokeLater(()-> new LoginForm().showLoginForm(frame.getLocation()));
         frame.dispose();
     }
 
@@ -157,7 +237,7 @@ public class DashboardForm {
                 sessionActive = false;
                 JOptionPane.showMessageDialog(frame, "Session timed out due to inactivity. Logging out.");
                 SessionManager.getInstance().resetSession();
-                SwingUtilities.invokeLater(() -> new LoginForm().showLoginForm());
+                SwingUtilities.invokeLater(() -> new LoginForm().showLoginForm(frame.getLocation()));
                 frame.dispose();
             }
         });
@@ -264,7 +344,7 @@ public class DashboardForm {
                     System.out.println("Selected Username: " + employeeTableSelectedId);
                 }
                 else{
-                    employeeTableSelectedId = 0;
+                    employeeTableSelectedId = -1;
                 }
             }
         });

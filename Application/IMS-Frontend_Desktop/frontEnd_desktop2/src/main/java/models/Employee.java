@@ -6,8 +6,12 @@ public class Employee {
     private String lastName;
     private String email;
     private String username;
-    private String permissionLevel; // New field for the employee's position
+    private Posn permissionLevel; // New field for the employee's position
+    private int permissionID;
     private boolean active;         // New field for active status
+    private Site site;
+    private String password;
+    private boolean locked;
 
     // Getters and Setters
     public Integer getId() {
@@ -50,11 +54,11 @@ public class Employee {
         this.username = username;
     }
 
-    public String getPermissionLevel() {
+    public Posn getPermissionLevel() {
         return permissionLevel;
     }
 
-    public void setPermissionLevel(String permissionLevel) {
+    public void setPermissionLevel(Posn permissionLevel) {
         this.permissionLevel = permissionLevel;
     }
 
@@ -77,5 +81,36 @@ public class Employee {
                 ", permissionLevel='" + permissionLevel + '\'' +
                 ", active=" + active +
                 '}';
+    }
+
+    public void setSite(Site site) {
+        this.site = site;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setLocked(int i) {
+        this.locked = i != 0;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public boolean getLocked() {
+        return locked;
+    }
+
+    public Site getSite() {
+        return site;
+    }
+
+    public int getPermissionID() {
+        return permissionID;
+    }
+    public void setPermissionID(int permissionID) {
+        this.permissionID = permissionID;
     }
 }
