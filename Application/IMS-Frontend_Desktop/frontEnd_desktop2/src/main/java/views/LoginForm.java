@@ -50,6 +50,10 @@ public class LoginForm {
 
         togglePasswordRevealed();
 
+        SetupBullseyeLogo();
+    }
+
+    private void SetupBullseyeLogo() {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image

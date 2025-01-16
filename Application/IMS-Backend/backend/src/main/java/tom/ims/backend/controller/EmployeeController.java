@@ -220,6 +220,56 @@ public class EmployeeController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateEmployee(@PathVariable int id, @RequestBody Map<String, Object> employeeData) {
+        try {
+            // Fetch the employee to update
+            Employee existingEmployee = employeeService.getEmployeeById(id);
+
+            if (existingEmployee == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found.");
+            }
+
+            // Update employee fields
+            existingEmployee.setFirstName((String) employeeData.get("firstname"));
+            existingEmployee.setLastName((String) employeeData.get("lastname"));
+            existingEmployee.setEmail((String) employeeData.get("email"));
+            existingEmployee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
+            existingEmployee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
+
+            // If password is provided, hash it and update
+            if (employeeData.containsKey("password")) {
+                String newPassword = (String) employeeData.get("password");
+                if (!newPassword.isEmpty()) {
+                    String hashedPassword = HashUtil.hashPassword(newPassword);
+                    existingEmployee.setPassword(hashedPassword);
+                }
+            }
+
+            // Fetch and update the Site
+            Integer siteId = (Integer) employeeData.get("site");
+            Site site = siteService.getSiteById(siteId);
+            existingEmployee.setSite(site);
+
+            // Fetch and update the Position
+            Integer posnId = (Integer) employeeData.get("permissionLevel");
+            Posn posn = posnService.getPositionById(posnId);
+            existingEmployee.setPosn(posn);
+
+            // Save the updated employee
+            employeeService.saveEmployee(existingEmployee);
+
+            return ResponseEntity.ok("Employee updated successfully.");
+        } catch (RuntimeException e) {
+            System.err.println("Error updating employee: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to update employee.");
+        } catch (Exception e) {
+            System.err.println("Unexpected error occurred while updating employee:");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
     // Increment failed login attempts
     private void incrementFailedAttempts(String username) {
         failedLoginAttempts.put(username, failedLoginAttempts.getOrDefault(username, 0) + 1);

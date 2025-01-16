@@ -75,6 +75,7 @@ public class Employee {
         return "Employee{" +
                 "id=" + id +
                 ", firstName='" + firstName + '\'' +
+                ", password='" + password + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +

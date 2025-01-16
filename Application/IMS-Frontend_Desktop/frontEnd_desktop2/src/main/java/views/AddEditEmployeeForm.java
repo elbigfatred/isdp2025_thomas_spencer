@@ -3,13 +3,13 @@ package views;
 import models.Employee;
 import models.Posn;
 import models.Site;
-import utils.ReadEmployeesRequest;
-import utils.ReadPositionsRequest;
-import utils.ReadSitesRequest;
-import utils.SessionManager;
+import utils.*;
 
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -43,8 +43,14 @@ public class AddEditEmployeeForm {
     private JComboBox cmbPosition;
     private JComboBox cmbLocation;
     private JLabel lblLogo;
+    private JLabel lblPasswordEyeball;
+    private JButton btnGenerateStrongPassword;
+    private JLabel lblStrengthAdvisor;
 
     private JDialog frame;
+    private List<Employee> allEmployees;
+    private boolean passwordRevealed = true; // will be toggled on display to run functionality
+    private Employee selectedEmployee;
 
     public void showAddEditEmployeeForm(Frame parentFrame, Point currentLocation, String usage, Employee employeeToModify, Runnable onCloseCallback) {
         frame = new JDialog(parentFrame, true);
@@ -54,9 +60,12 @@ public class AddEditEmployeeForm {
         else if (Objects.equals(usage, "EDIT")){
             frame.setTitle("Bullseye Inventory Management System - Modify Employee"); // Create the frame
         }
+        if (employeeToModify != null) {
+            selectedEmployee = employeeToModify;
+        }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(500, 400);                   // Set frame size
+        frame.setSize(700, 475);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -66,6 +75,7 @@ public class AddEditEmployeeForm {
         SwingUtilities.invokeLater(() -> {
             SetupBullseyeLogo();
             setupFields(usage);
+            togglePasswordRevealed();
         });
 
         frame.setVisible(true);                    // Make it visible
@@ -85,33 +95,171 @@ public class AddEditEmployeeForm {
         System.out.println("setting up fields...");
         populatePositionComboBox();
         populateSitesComboBox();
+        allEmployees = ReadEmployeesRequest.fetchEmployees();
         if (Objects.equals(usage, "ADD")){
             System.out.println("add mode");
             // add mode
             assignEmployeeID();
             btnSave.addActionListener(e -> {
-                // replace with actual save haha
-//                Posn cmbPositionSelectedItem = (Posn) cmbPosition.getSelectedItem();
-//                System.out.println(cmbPositionSelectedItem.getId());
-//                System.out.println(cmbPositionSelectedItem.getPermissionLevel());
-//                System.out.println(cmbPositionSelectedItem.isActive());
-//                Site cmbLocationSelectedItem = (Site) cmbLocation.getSelectedItem();
-//                System.out.println(cmbLocationSelectedItem.getId());
-//                System.out.println(cmbLocationSelectedItem.getAddress());
-//                System.out.println(cmbLocationSelectedItem.getDayOfWeek());
-//                System.out.println(cmbLocationSelectedItem.getDistanceFromWH());
                 AddNewEmployee();
             });
 
+            txtFirstname.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+            });
+
+            txtLastname.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+            });
+
+        }
+        else if (Objects.equals(usage, "EDIT") && selectedEmployee != null) {
+            //edit mode
+            System.out.println("Edit mode");
+            populateFieldsForEditing();
+            btnSave.addActionListener(e -> updateEmployee());
+        }
+    }
+
+    private void populateFieldsForEditing() {
+
+        System.out.println(selectedEmployee.getPermissionLevel());
+        System.out.println(selectedEmployee.getSite());
+        System.out.println(cmbPosition.getSelectedItem());
+        System.out.println(cmbLocation.getSelectedItem());
+        txtEmpId.setText(String.valueOf(selectedEmployee.getId()));
+        txtEmpId.setEnabled(false); // ID is not editable
+        txtFirstname.setText(selectedEmployee.getFirstName());
+        txtLastname.setText(selectedEmployee.getLastName());
+        txtUsername.setText(selectedEmployee.getUsername());
+        txtUsername.setEnabled(false); // Username is not editable
+        txtEmail.setText(selectedEmployee.getEmail());
+        chkActive.setSelected(selectedEmployee.isActive());
+        chkLocked.setSelected(selectedEmployee.getLocked());
+
+        // Select the correct position and site in combo boxes
+        for (int i = 0; i < cmbPosition.getItemCount(); i++) {
+            Posn posn = (Posn) cmbPosition.getItemAt(i);
+            if (posn.getId() == selectedEmployee.getPermissionLevel().getId()) {
+                cmbPosition.setSelectedItem(posn);
+                break;
+            }
+        }
+
+        for (int i = 0; i < cmbLocation.getItemCount(); i++) {
+            Site site = (Site) cmbLocation.getItemAt(i);
+            if (site.getId() == selectedEmployee.getSite().getId()) {
+                cmbLocation.setSelectedItem(site);
+                break;
+            }
+        }
+
+        // Leave the password field blank for security reasons
+        txtPassword.setText("");
+
+    }
+
+    private void updateEmployee() {
+        try {
+            if (!validateFields()) {
+                return; // Stop execution if validation fails
+            }
+
+
+            selectedEmployee.setFirstName(txtFirstname.getText().trim());
+            selectedEmployee.setLastName(txtLastname.getText().trim());
+            selectedEmployee.setEmail(txtEmail.getText().trim());
+            selectedEmployee.setActive(chkActive.isSelected());
+            selectedEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
+            selectedEmployee.setPermissionLevel((Posn) cmbPosition.getSelectedItem());
+            selectedEmployee.setSite((Site) cmbLocation.getSelectedItem());
+
+            // Update password if the field is not empty
+            String newPassword = new String(txtPassword.getPassword()).trim();
+            if (!newPassword.isEmpty()) {
+                selectedEmployee.setPassword(newPassword);
+            }
+
+            boolean success = ReadEmployeesRequest.updateEmployee(selectedEmployee);
+            if (success) {
+                JOptionPane.showMessageDialog(frame, "Employee updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                frame.dispose(); // Close the form after successful update
+            } else {
+                JOptionPane.showMessageDialog(frame, "Failed to update employee. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void generateUsername() {
+        String firstName = txtFirstname.getText().trim().toLowerCase();
+        String lastName = txtLastname.getText().trim().toLowerCase();
+
+        if (!firstName.isEmpty() && !lastName.isEmpty()) {
+            String baseUsername = firstName.charAt(0) + lastName;
+            String uniqueUsername = getUniqueUsername(baseUsername);
+            txtUsername.setText(uniqueUsername);
         }
         else{
-            //edit mode
+            txtUsername.setText("");
         }
+    }
+
+    private String getUniqueUsername(String baseUsername) {
+        Set<String> existingUsernames = new HashSet<>();
+        for (Employee employee : allEmployees) {
+            existingUsernames.add(employee.getUsername().toLowerCase());
+        }
+
+        if (!existingUsernames.contains(baseUsername)) {
+            return baseUsername;
+        }
+
+        // Add numbers to the base username to make it unique
+        int counter = 1;
+        String newUsername;
+        do {
+            newUsername = baseUsername + String.format("%02d", counter);
+            counter++;
+        } while (existingUsernames.contains(newUsername));
+
+        return newUsername;
     }
 
     private void AddNewEmployee() {
         // Construct the Employee object from form inputs
         try {
+            // Validate input fields
+            if (!validateFields()) {
+                return; // Stop execution if validation fails
+            }
             Employee newEmployee = new Employee();
             newEmployee.setId(Integer.parseInt(txtEmpId.getText()));
             newEmployee.setUsername(txtUsername.getText().trim());
@@ -153,6 +301,57 @@ public class AddEditEmployeeForm {
             }
     }
 
+    private boolean validateFields() {
+        // Ensure no fields are empty
+        if (txtFirstname.getText().trim().isEmpty() ||
+                txtLastname.getText().trim().isEmpty() ||
+                txtEmail.getText().trim().isEmpty() ||
+                txtPassword.getPassword().length == 0 ||
+                cmbPosition.getSelectedItem() == null ||
+                cmbLocation.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "All fields must be filled in.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return false;
+        }
+
+        // Validate email format
+        if (!txtEmail.getText().matches("^[\\w-.]+@[\\w-]+\\.[a-z]{2,3}$")) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Invalid email format.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return false;
+        }
+
+        // Validate password strength
+        String password = new String(txtPassword.getPassword());
+        if (!validatePassword(password)) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Password must be at least 8 characters long, include an uppercase letter, and a special character.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validatePassword(String password) {
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+        boolean hasMinimumLength = password.length() >= 8;
+
+        return hasUppercase && hasSpecialCharacter && hasMinimumLength;
+    }
+
     private void populateSitesComboBox() {
         List<Site> sites = ReadSitesRequest.fetchSites();
         cmbLocation.removeAllItems();
@@ -176,7 +375,6 @@ public class AddEditEmployeeForm {
     }
 
     private void assignEmployeeID() {
-        List<Employee> allEmployees = ReadEmployeesRequest.fetchEmployees();
         List<Integer> existingIds = new ArrayList<>();
         for (Employee employee : allEmployees) {
             existingIds.add(employee.getId());
@@ -214,6 +412,46 @@ public class AddEditEmployeeForm {
         lblWelcome.setText("User: " + session.getUsername());
         lblLocation.setText("Location: " + session.getSiteName());
 
+        lblPasswordEyeball.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                togglePasswordRevealed();
+            }
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // Change cursor to hand
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getDefaultCursor()); // Revert cursor to default
+            }
+        });
+
+        btnExit.addActionListener(e -> {
+            frame.dispose(); // Close the password reset form
+        });
+
+        btnGenerateStrongPassword.addActionListener(e -> {
+            generateStrongPassword();
+        });
+
+        txtPassword.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                advisePasswordStrength(txtPassword.getText());
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                advisePasswordStrength(txtPassword.getText());
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                advisePasswordStrength(txtPassword.getText());
+            }
+        });
 
         return ContentPane;
     }
@@ -230,6 +468,105 @@ public class AddEditEmployeeForm {
         lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
         lblLogo.setText("");
     }
+
+    public void togglePasswordRevealed() {
+
+        txtPassword.setEchoChar(passwordRevealed? '•' : ((char) 0));
+
+        String logoPath = passwordRevealed ? "/hide.png" : "/view.png";
+        URL logoURL = getClass().getResource(logoPath);
+        ImageIcon icon = new ImageIcon(logoURL); // Load the image
+        Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH); // Resize
+        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+
+
+        lblPasswordEyeball.setIcon(resizedIcon);
+        lblPasswordEyeball.setHorizontalAlignment(SwingConstants.CENTER);
+        lblPasswordEyeball.setText("");
+
+        passwordRevealed = !passwordRevealed;
+    }
+
+    private void generateStrongPassword() {
+        // Character pools
+        final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+        final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String DIGITS = "0123456789";
+        final String SPECIAL_CHARACTERS = "!@#$%^&*()-_=+{}[]|:;'<>,.?/";
+        final String ALL_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS + SPECIAL_CHARACTERS;
+
+        StringBuilder password = new StringBuilder();
+
+        // Add one special character, one digit, and one uppercase letter
+        password.append(SPECIAL_CHARACTERS.charAt((int) (Math.random() * SPECIAL_CHARACTERS.length())));
+        password.append(DIGITS.charAt((int) (Math.random() * DIGITS.length())));
+        password.append(UPPERCASE.charAt((int) (Math.random() * UPPERCASE.length())));
+
+        // Fill the remaining characters randomly from all character pools
+        for (int i = 3; i < 12; i++) {
+            password.append(ALL_CHARACTERS.charAt((int) (Math.random() * ALL_CHARACTERS.length())));
+        }
+
+        // Shuffle the password to ensure randomness
+        char[] passwordArray = password.toString().toCharArray();
+//        for (int i = 0; i < passwordArray.length; i++) {
+//            int randomIndex = (int) (Math.random() * passwordArray.length);
+//            char temp = passwordArray[i];
+//            passwordArray[i] = passwordArray[randomIndex];
+//            passwordArray[randomIndex] = temp;
+//        }
+
+        // Set the generated password in the new password text field
+        String generatedPassword = new String(passwordArray);
+
+        txtPassword.setText(generatedPassword);
+        //evaluatePasswordStrength(new String(passwordArray));
+    }
+
+    private void advisePasswordStrength(String password) {
+
+        if(password.length() < 4){
+            lblStrengthAdvisor.setText("");
+            return;
+        }
+
+        String strengthMessage;
+        Color strengthColor;
+
+        // Minimum rules for a password
+        boolean hasMinimumLength = password.length() >= 8;
+        boolean hasCapitalLetter = password.matches(".*[A-Z].*");
+        boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*()_+=\\-{}|:;\"'<>,.?/].*");
+        boolean hasNumber = password.matches(".*\\d.*");
+
+        if (!hasMinimumLength || !hasCapitalLetter || !hasSpecialCharacter) {
+            // Weak Password
+            strengthMessage = "<html><div style='text-align:left;'><b>Weak:</b> Password must be:<br>"
+                    + "- At least 8 characters<br>"
+                    + "- Include a capital letter<br>"
+                    + "- Include a special character</div></html>";
+            strengthColor = new Color(139, 0, 0); // Dark red
+        } else if (hasMinimumLength && hasCapitalLetter && hasSpecialCharacter) {
+            // Strong Password
+            if (hasNumber && password.length() >= 12) {
+                strengthMessage = "<html><div style='text-align:left;'><b>Strong:</b><br> Great password!</div></html>";
+                strengthColor = new Color(0, 100, 0); // Dark green
+            } else {
+                // Medium Password
+                strengthMessage = "<html><div style='text-align:left;'><b>Medium:</b><br> Consider adding numbers or extra<br>characters to strengthen it.</div></html>";
+                strengthColor = new Color(204, 153, 0); // Dark yellow
+            }
+        } else {
+            // Default fallback (shouldn't happen with current logic)
+            strengthMessage = "Invalid Password";
+            strengthColor = Color.GRAY;
+        }
+
+        // Update the UI
+        lblStrengthAdvisor.setText(strengthMessage);
+        lblStrengthAdvisor.setForeground(strengthColor);
+    }
+
 
 
 }

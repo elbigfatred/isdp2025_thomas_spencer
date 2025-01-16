@@ -15,6 +15,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpStatus;
 
 
 public class ReadEmployeesRequest {
@@ -81,6 +88,7 @@ public class ReadEmployeesRequest {
 
             Employee employee = new Employee();
             employee.setId(jsonObject.getInt("id"));
+            employee.setPassword(jsonObject.getString("password"));
             employee.setFirstName(jsonObject.getString("firstname"));
             employee.setLastName(jsonObject.getString("lastname"));
             employee.setEmail(jsonObject.getString("email"));
@@ -182,4 +190,41 @@ public class ReadEmployeesRequest {
             return false;
         }
     }
-}
+
+    public static boolean updateEmployee(Employee employee) {
+        String endpoint = "http://localhost:8080/api/employees/" + employee.getId();
+
+        try {
+            URL url = new URL(endpoint);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+
+            // Convert Employee object to JSON
+            JSONObject employeeJson = new JSONObject();
+            employeeJson.put("firstname", employee.getFirstName());
+            employeeJson.put("lastname", employee.getLastName());
+            employeeJson.put("email", employee.getEmail());
+            employeeJson.put("password", employee.getPassword()); // Include password only if changed
+            employeeJson.put("active", employee.isActive());
+            employeeJson.put("locked", employee.getLocked());
+            employeeJson.put("permissionLevel", employee.getPermissionLevel().getId());
+            employeeJson.put("site", employee.getSite().getId()); // Send only the site ID
+
+            System.out.println("Update Payload: " + employeeJson.toString());
+
+            // Send the JSON payload
+            try (OutputStream os = connection.getOutputStream()) {
+                os.write(employeeJson.toString().getBytes(StandardCharsets.UTF_8));
+            }
+
+            // Get response
+            int responseCode = connection.getResponseCode();
+            return responseCode == HttpURLConnection.HTTP_OK; // Return true if response is HTTP 200 OK
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }}

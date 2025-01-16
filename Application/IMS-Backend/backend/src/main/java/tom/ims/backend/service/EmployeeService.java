@@ -1,6 +1,7 @@
 package tom.ims.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import tom.ims.backend.controller.HashUtil;
 import tom.ims.backend.model.Employee;
 import tom.ims.backend.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,10 @@ public class EmployeeService {
     public void saveEmployee(Employee employee) {
         try {
             // Save the employee to the database using the repository
+            // Encrypt the password before saving
+            String encryptedPassword = HashUtil.hashPassword(employee.getPassword());
+            employee.setPassword(encryptedPassword);
+
             employeeRepository.save(employee);
             System.out.println("Employee saved successfully: " + employee);
         } catch (Exception e) {

@@ -151,6 +151,10 @@ public class DashboardForm {
             addEmployee();
         });
 
+        btnEditEmployee.addActionListener(e -> {
+            editEmployee();
+        });
+
         return ContentPane;
     }
 
@@ -164,6 +168,38 @@ public class DashboardForm {
             idleTimer.restart();
             countdownTimer.restart();
             sessionActive = true;
+            populateEmployeeTable();
+        }));
+
+    }
+
+    private void editEmployee() {
+        //get employee
+        Employee employeeToEdit = null;
+
+        if (employeeTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an employee to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        List<Employee> allEmployees = ReadEmployeesRequest.fetchEmployees();
+        for (Employee employee : allEmployees) {
+            if (employee.getId() == employeeTableSelectedId) {
+                employeeToEdit = employee;
+            }
+        }
+
+        sessionActive = false;
+        idleTimer.stop();
+        countdownTimer.stop();
+
+        Employee finalEmployeeToEdit = employeeToEdit;
+
+        SwingUtilities.invokeLater(()-> new AddEditEmployeeForm().showAddEditEmployeeForm(frame, frame.getLocation(), "EDIT", finalEmployeeToEdit,() ->{
+            // Resume session when the dialog is closed
+            idleTimer.restart();
+            countdownTimer.restart();
+            sessionActive = true;
+            populateEmployeeTable();
         }));
 
     }
