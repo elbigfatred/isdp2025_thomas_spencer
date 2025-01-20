@@ -196,7 +196,9 @@ public class EmployeeController {
             Employee employee = new Employee();
             employee.setId((Integer) employeeData.get("id"));
             employee.setUsername((String) employeeData.get("username"));
-            employee.setPassword((String) employeeData.get("password"));
+            String newPassword = (String) employeeData.get("password");
+            String hashedPassword = HashUtil.hashPassword(newPassword);
+            employee.setPassword(hashedPassword);
             employee.setFirstName((String) employeeData.get("firstname"));
             employee.setLastName((String) employeeData.get("lastname"));
             employee.setEmail((String) employeeData.get("email"));

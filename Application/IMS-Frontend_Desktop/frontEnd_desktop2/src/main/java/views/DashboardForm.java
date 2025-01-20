@@ -2,16 +2,19 @@ package views;
 
 
 import models.Employee;
+import models.Item;
 import utils.ReadEmployeesRequest;
+import utils.ReadItemsRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardForm {
@@ -38,12 +41,23 @@ public class DashboardForm {
     private JButton btnEditEmployee;
     private JButton btnDeleteEmployee;
     private JPanel adminCRUDpane;
+    private JTextField txtEmployeeSearch;
+    private JPanel ItemsTab;
+    private JPanel warehouseManagerCRUDpane;
+    private JButton btnDeleteItem;
+    private JButton btnEditItem;
+    private JTable ItemsTabTable;
+    private JTextField txtItemSearch;
 
     private JFrame frame;
     private Timer idleTimer;
     private Timer countdownTimer;
     private boolean sessionActive = true;
     private int employeeTableSelectedId = -1;
+    private List<Employee> allEmployees;
+    private List<Item> allItems;
+    private String accessPosition;
+    private int itemTableSelectedId = -1;
 
     // Method to set up and display the dashboard frame
     public void showDashboard(Point currentLocation) {
@@ -68,32 +82,37 @@ public class DashboardForm {
         hideAllTabs();
 
         String position = SessionManager.getInstance().getPermissionLevel();
+        accessPosition = position;
 
-        if("Administrator".equalsIgnoreCase(position)) {
+        if("Administrator".equalsIgnoreCase(accessPosition)) {
             DashboardTabPane.add("Employees", EmployeesTab);
             DashboardTabPane.add("Admin", AdminTab);
             adminCRUDpane.setVisible(true);
 
-            populateEmployeeTable();
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
         }
-        else if("Financial Manager".equalsIgnoreCase(position)) {
+        else if("Warehouse Manager".equalsIgnoreCase(accessPosition)) {
             DashboardTabPane.add("Employees", EmployeesTab);
-            DashboardTabPane.add("Admin", AdminTab);
+            DashboardTabPane.add("Items", ItemsTab);
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
+            populateItemsTable(allItems);
+        }
+        else{
+            DashboardTabPane.add("Employees", EmployeesTab);
 
-            populateEmployeeTable();
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
         }
         // more else ifs for other roles
-        else {
-            stopCountdownTimer();
-            stopIdleTimer();
-            // If not an admin, you can show a message or logout as needed
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Access denied: You do not have permission to access this area.",
-                    "Access Denied",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            Logout();
+    }
+
+    private void loadInitialData() {
+        allEmployees = ReadEmployeesRequest.fetchEmployees();
+
+        if("Warehouse Manager".equalsIgnoreCase(accessPosition)) {
+            allItems = ReadItemsRequest.fetchItems();
         }
     }
 
@@ -155,7 +174,125 @@ public class DashboardForm {
             editEmployee();
         });
 
+        txtEmployeeSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateEmployeeTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateEmployeeTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateEmployeeTableBySearch();
+            }
+        });
+
+        txtItemSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateItemTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateItemTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateItemTableBySearch();
+            }
+        });
+
         return ContentPane;
+    }
+
+    private void updateItemTableBySearch() {
+        // If the search bar is empty, populate the table with all items
+        if (txtItemSearch.getText().trim().isEmpty()) {
+            populateItemsTable(allItems); // Populate with the full list of items
+            return;
+        }
+
+        List<Item> itemsToSearch = allItems; // Use the class-level list of items
+        String search = txtItemSearch.getText().trim().toLowerCase(); // Get the search term and convert it to lowercase
+        List<Item> itemsToList = new ArrayList<>();
+
+        // Search through all items
+        for (Item item : itemsToSearch) {
+            if (item.getName().toLowerCase().contains(search) || // Match item name
+                    item.getSku().toLowerCase().contains(search) || // Match SKU
+                    String.valueOf(item.getId()).contains(search) || // Match ID
+                    (item.getDescription() != null && item.getDescription().toLowerCase().contains(search)) || // Match description
+                    item.getCategory().getCategoryName().toLowerCase().contains(search) || // Match category name
+                    String.valueOf(item.getWeight()).contains(search) || // Match weight
+                    String.valueOf(item.getCaseSize()).contains(search) || // Match case size
+                    String.valueOf(item.getCostPrice()).contains(search) || // Match cost price
+                    String.valueOf(item.getRetailPrice()).contains(search) || // Match retail price
+                    (item.getNotes() != null && item.getNotes().toLowerCase().contains(search)) || // Match notes
+                    (item.getActive() ? "yes" : "no").contains(search) || // Match active status
+                    (item.getImageLocation() != null && item.getImageLocation().toLowerCase().contains(search)) || // Match image location
+                    item.getSupplier().getName().toLowerCase().contains(search)) { // Match supplier name
+
+                itemsToList.add(item); // Add matching item to the filtered list
+            }
+        }
+
+        // Populate the table with the filtered items
+        populateItemsTable(itemsToList);
+    }
+
+    private void updateEmployeeTableBySearch() {
+
+        if(txtEmployeeSearch.getText().trim().isEmpty()) {
+            populateEmployeeTable(allEmployees);
+            return;
+        }
+
+        List<Employee> empsToSearch = allEmployees;
+        String search = txtEmployeeSearch.getText().trim().toLowerCase();
+        List<Employee> empsToList = new ArrayList<>();
+
+        if(accessPosition.equals("Administrator")) {
+            for (Employee emp : empsToSearch) {
+                if (emp.getFirstName().toLowerCase().contains(search) ||
+                        emp.getLastName().toLowerCase().contains(search) ||
+                        String.valueOf(emp.getId()).contains(search) ||
+                        emp.getEmail().toLowerCase().contains(search) ||
+                        emp.getUsername().toLowerCase().contains(search) ||
+                        emp.getPermissionLevel().getPermissionLevel().toLowerCase().contains(search) || // Assuming it's a string
+                        (emp.isActive() ? "yes" : "no").contains(search) ||
+                        (emp.getLocked() ? "yes" : "no").contains(search)) {
+
+                    empsToList.add(emp);
+                }
+            }
+        }
+        else{
+            for (Employee emp : empsToSearch) {
+                // Skip inactive employees for non-admin roles
+                if (!emp.isActive()) {
+                    continue;
+                }
+
+                // Match against non-admin-specific fields
+                if (emp.getFirstName().toLowerCase().contains(search) ||
+                        String.valueOf(emp.getId()).contains(search) ||
+                        emp.getLastName().toLowerCase().contains(search) ||
+                        emp.getEmail().toLowerCase().contains(search) ||
+                        emp.getUsername().toLowerCase().contains(search)) {
+
+                    empsToList.add(emp);
+                }
+            }
+        }
+
+        populateEmployeeTable(empsToList);
+
     }
 
     private void addEmployee() {
@@ -168,7 +305,8 @@ public class DashboardForm {
             idleTimer.restart();
             countdownTimer.restart();
             sessionActive = true;
-            populateEmployeeTable();
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
         }));
 
     }
@@ -199,7 +337,8 @@ public class DashboardForm {
             idleTimer.restart();
             countdownTimer.restart();
             sessionActive = true;
-            populateEmployeeTable();
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
         }));
 
     }
@@ -223,7 +362,8 @@ public class DashboardForm {
             switch (result) {
                 case "success":
                     JOptionPane.showMessageDialog(frame, "Employee deactivated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    populateEmployeeTable(); // Refresh the table after the operation
+                    loadInitialData();
+                    populateEmployeeTable(allEmployees); // Refresh the table after the operation
                     break;
 
                 case "failure":
@@ -336,15 +476,18 @@ public class DashboardForm {
         }
     }
 
-    private void populateEmployeeTable() {
+    private void populateEmployeeTable(List<Employee> filteredEmployees) {
         // Column names for the table
-        String[] columnNames = {"ID", "First Name", "Last Name", "Email", "Username", "Permission Level", "Active"};
+        String[] columns;
+        if("Administrator".equalsIgnoreCase(accessPosition)) {
+            columns = new String[]{"ID", "First Name", "Last Name", "Email", "Username", "Permission Level", "Active", "Locked"};
+        }else {
+            columns = new String[]{"ID", "Username", "First Name", "Last Name", "Email"};
+        }
 
-        // Fetch employees from the backend
-        List<Employee> employees = ReadEmployeesRequest.fetchEmployees();
 
         // Create a table model and add columns
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -352,16 +495,31 @@ public class DashboardForm {
         };
 
         // Populate the table model with employee data
-        for (Employee employee : employees) {
-            Object[] rowData = {
-                    employee.getId(),
-                    employee.getFirstName(),
-                    employee.getLastName(),
-                    employee.getEmail(),
-                    employee.getUsername(),
-                    employee.getPermissionLevel(), // Assuming Employee has a 'Posn' object with 'PermissionLevel'
-                    employee.isActive() ? "Yes" : "No" // Convert active status to Yes/No
-            };
+        for (Employee employee : filteredEmployees) {
+            Object[] rowData;
+            if ("Administrator".equalsIgnoreCase(accessPosition)) {
+                rowData = new Object[]{
+                        employee.getId(),
+                        employee.getFirstName(),
+                        employee.getLastName(),
+                        employee.getEmail(),
+                        employee.getUsername(),
+                        employee.getPermissionLevel().getPermissionLevel(), // Assuming 'getPermissionLevel' returns a string or value
+                        employee.isActive() ? "Yes" : "No",
+                        employee.getLocked() ? "Yes" : "No"
+                };
+            } else {
+                if (!employee.isActive()) {
+                    continue;
+                }
+                rowData = new Object[]{
+                        employee.getId(),
+                        employee.getUsername(),
+                        employee.getFirstName(),
+                        employee.getLastName(),
+                        employee.getEmail()
+                };
+            }
             tableModel.addRow(rowData);
         }
 
@@ -385,4 +543,74 @@ public class DashboardForm {
             }
         });
     }
+
+    private void populateItemsTable(List<Item> filteredItems) {
+        // Define the column names for the table
+        String[] columns = {
+                "ID",
+                "Name",
+                "SKU",
+                "Description",
+                "Category",
+                "Weight",
+                "Case Size",
+                "Cost Price",
+                "Retail Price",
+                "Notes",
+                "Active",
+                "Image Location",
+                "Supplier"
+        };
+
+        // Create a table model and add columns
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Prevent editing of table cells
+            }
+        };
+
+        // Populate the table model with item data
+        for (Item item : filteredItems) {
+            Object[] rowData = {
+                    item.getId(),
+                    item.getName(),
+                    item.getSku(),
+                    item.getDescription(),
+                    item.getCategory().getCategoryName(), // Get category name
+                    item.getWeight(),
+                    item.getCaseSize(),
+                    item.getCostPrice(),
+                    item.getRetailPrice(),
+                    item.getNotes(),
+                    item.getActive() ? "Yes" : "No", // Convert active status to Yes/No
+                    item.getImageLocation(),
+                    item.getSupplier().getName() // Get supplier name
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set the table model to the JTable
+        ItemsTabTable.setModel(tableModel);
+
+        // Allow selection of entire rows only
+        ItemsTabTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener to handle row selection
+        ItemsTabTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = ItemsTabTable.getSelectedRow();
+                if (selectedRow != -1) {
+                    int selectedItemId = (Integer) ItemsTabTable.getValueAt(selectedRow, 0); // Assuming column 0 is 'ID'
+                    System.out.println("Selected Item ID: " + selectedItemId);
+                    itemTableSelectedId = selectedItemId;
+                    // Store or process the selected item ID as needed
+                }
+                else{
+                    itemTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
 }

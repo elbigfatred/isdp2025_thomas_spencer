@@ -66,6 +66,7 @@ public class ReadEmployeesRequest {
                 }
 
                 employee.setActive(jsonObject.getInt("active") == 1);
+                employee.setLocked(jsonObject.getInt("locked"));
 
                 employees.add(employee);
             }

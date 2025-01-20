@@ -1,59 +1,20 @@
-package tom.ims.backend.model;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+package models;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "item")
 public class Item {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "itemID", nullable = false)
     private Integer id;
-
-    @Column(name = "name", nullable = false, length = 100)
     private String name;
-
-    @Column(name = "sku", nullable = false, length = 20)
     private String sku;
-
-    @Column(name = "description")
     private String description;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "category", nullable = false)
     private Category category;
-
-    @Column(name = "weight", nullable = false, precision = 10, scale = 2)
     private BigDecimal weight;
-
-    @Column(name = "caseSize", nullable = false)
     private Integer caseSize;
-
-    @Column(name = "costPrice", nullable = false, precision = 10, scale = 2)
     private BigDecimal costPrice;
-
-    @Column(name = "retailPrice", nullable = false, precision = 10, scale = 2)
     private BigDecimal retailPrice;
-
-    @Column(name = "notes")
     private String notes;
-
-    @ColumnDefault("1")
-    @Column(name = "active", nullable = false)
-    private Byte active;
-
-    @Column(name = "imageLocation")
+    private Boolean active;
     private String imageLocation;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "supplierID", nullable = false, referencedColumnName = "supplierID")
-    @JsonProperty("supplier")
     private Supplier supplier;
 
     // Getters and Setters
@@ -137,11 +98,11 @@ public class Item {
         this.notes = notes;
     }
 
-    public Byte getActive() {
+    public Boolean getActive() {
         return active;
     }
 
-    public void setActive(Byte active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
@@ -159,5 +120,24 @@ public class Item {
 
     public void setSupplier(Supplier supplier) {
         this.supplier = supplier;
+    }
+
+    @Override
+    public String toString() {
+        return "Item {" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", sku='" + sku + '\'' +
+                ", description='" + description + '\'' +
+                ", category=" + (category != null ? category.toString() : "null") +
+                ", weight=" + weight +
+                ", caseSize=" + caseSize +
+                ", costPrice=" + costPrice +
+                ", retailPrice=" + retailPrice +
+                ", notes='" + notes + '\'' +
+                ", active=" + active +
+                ", imageLocation='" + imageLocation + '\'' +
+                ", supplier=" + (supplier != null ? supplier.toString() : "null") +
+                '}';
     }
 }

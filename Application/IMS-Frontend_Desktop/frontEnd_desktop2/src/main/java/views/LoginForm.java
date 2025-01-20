@@ -102,12 +102,7 @@ public class LoginForm {
 
     private void ForgotPasswordButtonEvent() {
         // Prompt the user for a username
-        String username = JOptionPane.showInputDialog(
-                frame,
-                "Enter the username to fetch employee details:",
-                "Forgot Password",
-                JOptionPane.QUESTION_MESSAGE
-        );
+        String username = txtUsername.getText();
 
         if (username == null || username.trim().isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -136,7 +131,7 @@ public class LoginForm {
                         employee.getUsername()
                 );
 
-                JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
+                //JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
 
                 // Redirect to password reset form
                 SwingUtilities.invokeLater(() -> {

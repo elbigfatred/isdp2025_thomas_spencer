@@ -96,6 +96,7 @@ public class AddEditEmployeeForm {
         populatePositionComboBox();
         populateSitesComboBox();
         allEmployees = ReadEmployeesRequest.fetchEmployees();
+        System.out.println(allEmployees);
         if (Objects.equals(usage, "ADD")){
             System.out.println("add mode");
             // add mode
@@ -153,6 +154,7 @@ public class AddEditEmployeeForm {
         System.out.println(selectedEmployee.getSite());
         System.out.println(cmbPosition.getSelectedItem());
         System.out.println(cmbLocation.getSelectedItem());
+        System.out.println(selectedEmployee.getLocked());
         txtEmpId.setText(String.valueOf(selectedEmployee.getId()));
         txtEmpId.setEnabled(false); // ID is not editable
         txtFirstname.setText(selectedEmployee.getFirstName());

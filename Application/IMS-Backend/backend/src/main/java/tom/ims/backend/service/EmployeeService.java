@@ -58,8 +58,8 @@ public class EmployeeService {
         try {
             // Save the employee to the database using the repository
             // Encrypt the password before saving
-            String encryptedPassword = HashUtil.hashPassword(employee.getPassword());
-            employee.setPassword(encryptedPassword);
+            //String encryptedPassword = HashUtil.hashPassword(employee.getPassword());
+            //employee.setPassword(encryptedPassword);
 
             employeeRepository.save(employee);
             System.out.println("Employee saved successfully: " + employee);

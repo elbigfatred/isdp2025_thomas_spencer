@@ -1,54 +1,18 @@
-package tom.ims.backend.model;
+package models;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
-
-@Getter
-@Setter
-@Entity
-@Table(name = "supplier")
 public class Supplier {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "supplierID", nullable = false)
     private Integer id;
-
-    @Column(name = "name", nullable = false, length = 50)
     private String name;
-
-    @Column(name = "address1", nullable = false, length = 50)
     private String address1;
-
-    @Column(name = "address2", length = 50)
     private String address2;
-
-    @Column(name = "city", nullable = false, length = 50)
     private String city;
-
-    @Column(name = "country", nullable = false, length = 50)
     private String country;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "province", nullable = false)
-    private Province province;
-
-    @Column(name = "postalcode", nullable = false, length = 11)
+    private String provinceId; // Representing the nested "province" object
     private String postalcode;
-
-    @Column(name = "phone", nullable = false, length = 14)
     private String phone;
-
-    @Column(name = "contact", length = 100)
     private String contact;
-
-    @Column(name = "notes")
     private String notes;
-
-    @ColumnDefault("1")
-    @Column(name = "active", nullable = false)
-    private Byte active;
+    private Boolean active;
 
     // Getters and Setters
     public Integer getId() {
@@ -99,12 +63,12 @@ public class Supplier {
         this.country = country;
     }
 
-    public Province getProvince() {
-        return province;
+    public String getProvinceId() {
+        return provinceId;
     }
 
-    public void setProvince(Province province) {
-        this.province = province;
+    public void setProvinceId(String provinceId) {
+        this.provinceId = provinceId;
     }
 
     public String getPostalcode() {
@@ -139,12 +103,29 @@ public class Supplier {
         this.notes = notes;
     }
 
-    public Byte getActive() {
+    public Boolean getActive() {
         return active;
     }
 
-    public void setActive(Byte active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
+    @Override
+    public String toString() {
+        return "Supplier {" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", address1='" + address1 + '\'' +
+                ", address2='" + (address2 != null ? address2 : "N/A") + '\'' +
+                ", city='" + city + '\'' +
+                ", country='" + country + '\'' +
+                ", provinceId='" + provinceId + '\'' +
+                ", postalcode='" + postalcode + '\'' +
+                ", phone='" + phone + '\'' +
+                ", contact='" + (contact != null ? contact : "N/A") + '\'' +
+                ", notes='" + (notes != null ? notes : "N/A") + '\'' +
+                ", active=" + (active != null && active ? "Yes" : "No") +
+                '}';
+    }
 }

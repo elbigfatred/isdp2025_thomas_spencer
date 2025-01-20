@@ -23,4 +23,20 @@ public class Category {
     @Column(name = "active", nullable = false)
     private Byte active;
 
+    // Getters and Setters
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public Byte getActive() {
+        return active;
+    }
+
+    public void setActive(Byte active) {
+        this.active = active;
+    }
 }
