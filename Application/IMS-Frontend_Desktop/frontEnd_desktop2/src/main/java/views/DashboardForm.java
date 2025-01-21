@@ -3,8 +3,10 @@ package views;
 
 import models.Employee;
 import models.Item;
+import models.Posn;
 import utils.ReadEmployeesRequest;
 import utils.ReadItemsRequest;
+import utils.ReadPositionsRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
@@ -15,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DashboardForm {
@@ -24,7 +27,7 @@ public class DashboardForm {
     private JPanel InventoryTab;
     private JPanel LossReturnTab;
     private JPanel ReportsTab;
-    private JPanel AdminTab;
+    private JPanel EditPermissionsTab;
     private JButton BtnRefresh;
     private JButton BtnLogout;
     private JLabel SPACER;
@@ -48,6 +51,11 @@ public class DashboardForm {
     private JButton btnEditItem;
     private JTable ItemsTabTable;
     private JTextField txtItemSearch;
+    private JList lstEmployees;
+    private JList lstRoles;
+    private JButton btnEditPermissions;
+    private JTable tblEditPermissionsEmployees;
+    private JPanel pnlEditPermissionsRoles;
 
     private JFrame frame;
     private Timer idleTimer;
@@ -56,7 +64,8 @@ public class DashboardForm {
     private int employeeTableSelectedId = -1;
     private List<Employee> allEmployees;
     private List<Item> allItems;
-    private String accessPosition;
+    private List<Posn> allPosns;
+    private String[] accessPosition;
     private int itemTableSelectedId = -1;
 
     // Method to set up and display the dashboard frame
@@ -81,37 +90,61 @@ public class DashboardForm {
     private void ConfigureTabsBasedOnPosition() {
         hideAllTabs();
 
-        String position = SessionManager.getInstance().getPermissionLevel();
-        accessPosition = position;
+        // Fetch roles as a single string and split into an array
+        String permissionLevels = SessionManager.getInstance().getPermissionLevel(); // Example: "Administrator, Warehouse Manager"
+        String[] roles = permissionLevels.split(",\\s*"); // Split by ", " (comma followed by optional whitespace)
 
-        if("Administrator".equalsIgnoreCase(accessPosition)) {
-            DashboardTabPane.add("Employees", EmployeesTab);
-            DashboardTabPane.add("Admin", AdminTab);
+        accessPosition = roles;
+        adminCRUDpane.setVisible(false);
+
+        // Check roles and configure tabs accordingly
+        if (Arrays.asList(roles).contains("Administrator")) {
+            DashboardTabPane.add("Edit Permissions", EditPermissionsTab);
             adminCRUDpane.setVisible(true);
 
             loadInitialData();
             populateEmployeeTable(allEmployees);
+            populateEditPermissionsEmployeesList(allEmployees);
+            populateEditPermissionsPositionList(allPosns);
         }
-        else if("Warehouse Manager".equalsIgnoreCase(accessPosition)) {
-            DashboardTabPane.add("Employees", EmployeesTab);
+
+        if (Arrays.asList(roles).contains("Warehouse Manager")) {
             DashboardTabPane.add("Items", ItemsTab);
+
             loadInitialData();
             populateEmployeeTable(allEmployees);
             populateItemsTable(allItems);
         }
-        else{
-            DashboardTabPane.add("Employees", EmployeesTab);
+
+        if (Arrays.asList(roles).contains("Financial Manager")) {
+            DashboardTabPane.add("Reports", ReportsTab);
 
             loadInitialData();
-            populateEmployeeTable(allEmployees);
+            // Add any additional logic for Financial Manager
         }
-        // more else ifs for other roles
+
+        if (roles.length == 0) {
+            // If the user has no roles or is not permitted, display an access denied message
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Access denied: You do not have permission to access this area.",
+                    "Access Denied",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            Logout();
+        }
+
+        DashboardTabPane.add("Employees", EmployeesTab);
     }
 
     private void loadInitialData() {
         allEmployees = ReadEmployeesRequest.fetchEmployees();
 
-        if("Warehouse Manager".equalsIgnoreCase(accessPosition)) {
+        if (Arrays.asList(accessPosition).contains("Administrator")) {
+            allPosns = ReadPositionsRequest.fetchPositions();
+        }
+
+        if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ReadItemsRequest.fetchItems();
         }
     }
@@ -247,8 +280,7 @@ public class DashboardForm {
     }
 
     private void updateEmployeeTableBySearch() {
-
-        if(txtEmployeeSearch.getText().trim().isEmpty()) {
+        if (txtEmployeeSearch.getText().trim().isEmpty()) {
             populateEmployeeTable(allEmployees);
             return;
         }
@@ -257,22 +289,33 @@ public class DashboardForm {
         String search = txtEmployeeSearch.getText().trim().toLowerCase();
         List<Employee> empsToList = new ArrayList<>();
 
-        if(accessPosition.equals("Administrator")) {
+        if (Arrays.asList(accessPosition).contains("Administrator")) {
             for (Employee emp : empsToSearch) {
+                boolean matchesRoles = false;
+
+                // Check if any role matches the search term
+                if (emp.getRoles() != null) {
+                    for (Posn role : emp.getRoles()) {
+                        if (role.getPermissionLevel().toLowerCase().contains(search)) {
+                            matchesRoles = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Check if any other field matches the search term
                 if (emp.getFirstName().toLowerCase().contains(search) ||
                         emp.getLastName().toLowerCase().contains(search) ||
                         String.valueOf(emp.getId()).contains(search) ||
                         emp.getEmail().toLowerCase().contains(search) ||
                         emp.getUsername().toLowerCase().contains(search) ||
-                        emp.getPermissionLevel().getPermissionLevel().toLowerCase().contains(search) || // Assuming it's a string
+                        matchesRoles ||
                         (emp.isActive() ? "yes" : "no").contains(search) ||
                         (emp.getLocked() ? "yes" : "no").contains(search)) {
-
                     empsToList.add(emp);
                 }
             }
-        }
-        else{
+        } else {
             for (Employee emp : empsToSearch) {
                 // Skip inactive employees for non-admin roles
                 if (!emp.isActive()) {
@@ -285,14 +328,12 @@ public class DashboardForm {
                         emp.getLastName().toLowerCase().contains(search) ||
                         emp.getEmail().toLowerCase().contains(search) ||
                         emp.getUsername().toLowerCase().contains(search)) {
-
                     empsToList.add(emp);
                 }
             }
         }
 
         populateEmployeeTable(empsToList);
-
     }
 
     private void addEmployee() {
@@ -400,6 +441,7 @@ public class DashboardForm {
         JOptionPane.showMessageDialog(
                 null, "Refreshing data...", "Info", JOptionPane.INFORMATION_MESSAGE);
         SessionManager.getInfo();
+        ConfigureTabsBasedOnPosition();
         idleTimer.restart();
         countdownTimer.restart();
     }
@@ -479,12 +521,11 @@ public class DashboardForm {
     private void populateEmployeeTable(List<Employee> filteredEmployees) {
         // Column names for the table
         String[] columns;
-        if("Administrator".equalsIgnoreCase(accessPosition)) {
-            columns = new String[]{"ID", "First Name", "Last Name", "Email", "Username", "Permission Level", "Active", "Locked"};
-        }else {
+        if (Arrays.asList(accessPosition).contains("Administrator")) {
+            columns = new String[]{"ID", "First Name", "Last Name", "Email", "Username", "Roles", "Active", "Locked"};
+        } else {
             columns = new String[]{"ID", "Username", "First Name", "Last Name", "Email"};
         }
-
 
         // Create a table model and add columns
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
@@ -497,14 +538,28 @@ public class DashboardForm {
         // Populate the table model with employee data
         for (Employee employee : filteredEmployees) {
             Object[] rowData;
-            if ("Administrator".equalsIgnoreCase(accessPosition)) {
+            if (Arrays.asList(accessPosition).contains("Administrator")) {
+                // Combine all roles into a single string
+                StringBuilder roles = new StringBuilder();
+                if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
+                    for (Posn posn : employee.getRoles()) {
+                        roles.append(posn.getPermissionLevel()).append(", ");
+                    }
+                    // Remove the trailing comma and space
+                    if (roles.length() > 0) {
+                        roles.setLength(roles.length() - 2);
+                    }
+                } else {
+                    roles.append("None");
+                }
+
                 rowData = new Object[]{
                         employee.getId(),
                         employee.getFirstName(),
                         employee.getLastName(),
                         employee.getEmail(),
                         employee.getUsername(),
-                        employee.getPermissionLevel().getPermissionLevel(), // Assuming 'getPermissionLevel' returns a string or value
+                        roles.toString(), // Display combined roles
                         employee.isActive() ? "Yes" : "No",
                         employee.getLocked() ? "Yes" : "No"
                 };
@@ -535,9 +590,8 @@ public class DashboardForm {
                 int selectedRow = EmployeeTabTable.getSelectedRow();
                 if (selectedRow != -1) {
                     employeeTableSelectedId = (Integer) EmployeeTabTable.getValueAt(selectedRow, 0); // Assuming column 4 is 'id'
-                    System.out.println("Selected Username: " + employeeTableSelectedId);
-                }
-                else{
+                    System.out.println("Selected Employee ID: " + employeeTableSelectedId);
+                } else {
                     employeeTableSelectedId = -1;
                 }
             }
@@ -613,4 +667,45 @@ public class DashboardForm {
         });
     }
 
+    private void populateEditPermissionsEmployeesList(List<Employee> employees) {
+        // Ensure the JList is cleared before populating
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+
+        if (employees != null && !employees.isEmpty()) {
+            for (Employee employee : employees) {
+                // Format the employee details for display in the list
+                String employeeDetails = String.format("%d - %s, %s (%s) [%s]",
+                        employee.getId(), employee.getLastName(), employee.getFirstName(), employee.getUsername(),
+                        (employee.getSite() != null ? employee.getSite().getSiteName() : "No Site Assigned"));
+                listModel.addElement(employeeDetails);
+            }
+        } else {
+            listModel.addElement("No employees available.");
+        }
+
+        // Set the model to the JList
+        lstEmployees.setModel(listModel);
+
+
+    }
+
+
+    private void populateEditPermissionsPositionList(List<Posn> positions) {
+        pnlEditPermissionsRoles.removeAll(); // Clear any existing roles
+
+        // Set the panel layout to BoxLayout for vertical alignment
+        pnlEditPermissionsRoles.setLayout(new BoxLayout(pnlEditPermissionsRoles, BoxLayout.Y_AXIS));
+
+        if (positions != null && !positions.isEmpty()) {
+            for (Posn posn : positions) {
+                JCheckBox chkRole = new JCheckBox(posn.getPermissionLevel());
+                pnlEditPermissionsRoles.add(chkRole);
+            }
+        } else {
+            pnlEditPermissionsRoles.add(new JLabel("No roles available."));
+        }
+
+        pnlEditPermissionsRoles.revalidate();
+        pnlEditPermissionsRoles.repaint();
+    }
 }

@@ -1,11 +1,16 @@
 package tom.ims.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.hibernate.annotations.ColumnDefault;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "employee")
@@ -54,10 +59,10 @@ public class Employee {
     @JsonProperty("site")
     private Site site;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "positionID", nullable = false, referencedColumnName = "PositionID")
-    @JsonProperty("posn")
-    private Posn posn;
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonProperty("roles")
+    @JsonManagedReference
+    private List<UserPosn> roles = new ArrayList<>();
 
     // Explicit Getters and Setters
     public Integer getId() {
@@ -138,16 +143,26 @@ public class Employee {
     public void setSite(Site site) {
         this.site = site;
     }
-    public Posn getPosn() {
-        return posn;
-    }
-    public void setPosn(Posn posn) {
-        this.posn = posn;
-    }
 
-    // Optional: toString Method
+
     @Override
     public String toString() {
+        StringBuilder posnBuilder = new StringBuilder();
+        if (roles != null && !roles.isEmpty()) {
+            for (UserPosn userPosn : roles) {
+                Posn posn = userPosn.getPosn();
+                if (posn != null) {
+                    posnBuilder.append(posn.getPermissionLevel()).append(", ");
+                }
+            }
+            // Remove trailing comma and space, if present
+            if (posnBuilder.length() > 0) {
+                posnBuilder.setLength(posnBuilder.length() - 2);
+            }
+        } else {
+            posnBuilder.append("No Roles");
+        }
+
         return "Employee{" +
                 "id=" + id +
                 ", firstName='" + firstName + '\'' +
@@ -158,7 +173,7 @@ public class Employee {
                 ", locked=" + locked +
                 ", active=" + active +
                 ", site=" + site +
-                ", posn=" + posn +
+                ", roles=[" + posnBuilder.toString() + "]" +
                 '}';
     }
 }

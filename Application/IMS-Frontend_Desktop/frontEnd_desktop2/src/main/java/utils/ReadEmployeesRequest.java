@@ -45,28 +45,36 @@ public class ReadEmployeesRequest {
                 employee.setLastName(jsonObject.getString("lastname"));
                 employee.setEmail(jsonObject.getString("email"));
                 employee.setUsername(jsonObject.getString("username"));
-                // Handle nested posn object
-                if (jsonObject.has("posn")) {
-                    JSONObject posnObject = jsonObject.getJSONObject("posn");
-                    Posn posn = new Posn();
-                    posn.setId(posnObject.getInt("id"));
-                    posn.setPermissionLevel(posnObject.getString("permissionLevel"));
-                    posn.setActive(posnObject.getInt("active") == 1);
-                    employee.setPermissionLevel(posn); // Assign the posn object
-                }
+                employee.setActive(jsonObject.getInt("active") == 1);
+                employee.setLocked(jsonObject.getInt("locked"));
 
-                // Handle nested site object if required
+                // Handle nested site object
                 if (jsonObject.has("site")) {
                     JSONObject siteObject = jsonObject.getJSONObject("site");
                     Site site = new Site();
                     site.setId(siteObject.getInt("id"));
                     site.setSiteName(siteObject.getString("siteName"));
                     // Populate other Site fields as needed
-                    employee.setSite(site); // Assign the site object
+                    employee.setSite(site);
                 }
 
-                employee.setActive(jsonObject.getInt("active") == 1);
-                employee.setLocked(jsonObject.getInt("locked"));
+                // Handle roles array
+                if (jsonObject.has("roles")) {
+                    JSONArray rolesArray = jsonObject.getJSONArray("roles");
+                    List<Posn> roles = new ArrayList<>();
+
+                    for (int j = 0; j < rolesArray.length(); j++) {
+                        JSONObject roleObject = rolesArray.getJSONObject(j).getJSONObject("posn");
+
+                        Posn posn = new Posn();
+                        posn.setId(roleObject.getInt("id"));
+                        posn.setPermissionLevel(roleObject.getString("permissionLevel"));
+                        posn.setActive(roleObject.getInt("active") == 1);
+
+                        roles.add(posn);
+                    }
+                    employee.setRoles(roles);
+                }
 
                 employees.add(employee);
             }
@@ -94,37 +102,44 @@ public class ReadEmployeesRequest {
             employee.setLastName(jsonObject.getString("lastname"));
             employee.setEmail(jsonObject.getString("email"));
             employee.setUsername(jsonObject.getString("username"));
-            // Handle nested posn object
-            if (jsonObject.has("posn")) {
-                JSONObject posnObject = jsonObject.getJSONObject("posn");
-                Posn posn = new Posn();
-                posn.setId(posnObject.getInt("id"));
-                posn.setPermissionLevel(posnObject.getString("permissionLevel"));
-                posn.setActive(posnObject.getInt("active") == 1);
-                employee.setPermissionLevel(posn); // Assign the posn object
+            employee.setActive(jsonObject.getInt("active") == 1);
+            employee.setLocked(jsonObject.getInt("locked"));
+
+            // Handle roles array
+            if (jsonObject.has("roles")) {
+                JSONArray rolesArray = jsonObject.getJSONArray("roles");
+                List<Posn> roles = new ArrayList<>();
+
+                for (int i = 0; i < rolesArray.length(); i++) {
+                    JSONObject roleObject = rolesArray.getJSONObject(i).getJSONObject("posn");
+
+                    Posn posn = new Posn();
+                    posn.setId(roleObject.getInt("id"));
+                    posn.setPermissionLevel(roleObject.getString("permissionLevel"));
+                    posn.setActive(roleObject.getInt("active") == 1);
+
+                    roles.add(posn);
+                }
+                employee.setRoles(roles);
             }
 
-            // Handle nested site object if required
+            // Handle site object
             if (jsonObject.has("site")) {
                 JSONObject siteObject = jsonObject.getJSONObject("site");
                 Site site = new Site();
                 site.setId(siteObject.getInt("id"));
                 site.setSiteName(siteObject.getString("siteName"));
-                // Populate other Site fields as needed
-                employee.setSite(site); // Assign the site object
-            }            employee.setActive(jsonObject.getInt("active") == 1);
+                employee.setSite(site);
+            }
 
             return employee;
         } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
-            // Username doesn't exist (404 from backend)
-            return null;
+            return null; // Employee not found
         } catch (Exception e) {
-            // Any other error (e.g., backend is down)
             e.printStackTrace();
             throw new RuntimeException("Unable to connect to the backend. Please try again later.");
         }
     }
-
 
     public static String deactivateEmployee(int employeeId) {
         String endpoint = "http://localhost:8080/api/employees/deactivate/" + employeeId;
@@ -172,8 +187,18 @@ public class ReadEmployeesRequest {
             employeeJson.put("email", employee.getEmail());
             employeeJson.put("active", employee.isActive());
             employeeJson.put("locked", employee.getLocked());
-            employeeJson.put("permissionLevel", employee.getPermissionLevel().getId());
-            employeeJson.put("site", employee.getSite().getId()); // Send only the site ID
+
+            // Add roles array
+            JSONArray rolesArray = new JSONArray();
+            for (Posn role : employee.getRoles()) {
+                JSONObject roleJson = new JSONObject();
+                roleJson.put("id", role.getId());
+                rolesArray.put(roleJson);
+            }
+            employeeJson.put("roles", rolesArray);
+
+            // Add site
+            employeeJson.put("site", employee.getSite().getId());
 
             System.out.println(employeeJson.toString());
 
@@ -210,8 +235,18 @@ public class ReadEmployeesRequest {
             employeeJson.put("password", employee.getPassword()); // Include password only if changed
             employeeJson.put("active", employee.isActive());
             employeeJson.put("locked", employee.getLocked());
-            employeeJson.put("permissionLevel", employee.getPermissionLevel().getId());
-            employeeJson.put("site", employee.getSite().getId()); // Send only the site ID
+
+            // Add roles array
+            JSONArray rolesArray = new JSONArray();
+            for (Posn role : employee.getRoles()) {
+                JSONObject roleJson = new JSONObject();
+                roleJson.put("id", role.getId());
+                rolesArray.put(roleJson);
+            }
+            employeeJson.put("roles", rolesArray);
+
+            // Add site
+            employeeJson.put("site", employee.getSite().getId());
 
             System.out.println("Update Payload: " + employeeJson.toString());
 
@@ -228,4 +263,5 @@ public class ReadEmployeesRequest {
             e.printStackTrace();
             return false;
         }
-    }}
+    }
+}

@@ -5,6 +5,7 @@ package views;
 
 
 import models.Employee;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.LoginRequest;
 import utils.ReadEmployeesRequest;
@@ -163,11 +164,34 @@ public class LoginForm {
             String firstname = response.optString("firstname", "Unknown");
             String lastname = response.optString("lastname", "Unknown");
             String email = response.optString("email", "Unknown");
-            String permissionLevel = response.getJSONObject("posn").optString("permissionLevel", "Unknown");
             String siteName = response.getJSONObject("site").optString("siteName", "Unknown");
 
+            // Extract roles (permission levels)
+            JSONArray rolesArray = response.optJSONArray("roles");
+            StringBuilder permissionLevels = new StringBuilder();
+
+            if (rolesArray != null) {
+                for (int i = 0; i < rolesArray.length(); i++) {
+                    JSONObject roleObject = rolesArray.getJSONObject(i).getJSONObject("posn");
+                    permissionLevels.append(roleObject.optString("permissionLevel", "Unknown")).append(", ");
+                }
+                // Remove trailing comma and space
+                if (permissionLevels.length() > 0) {
+                    permissionLevels.setLength(permissionLevels.length() - 2);
+                }
+            } else {
+                permissionLevels.append("None");
+            }
+
             // Initialize session
-            SessionManager.getInstance().login(username, firstname, lastname, email, permissionLevel, siteName);
+            SessionManager.getInstance().login(
+                    username,
+                    firstname,
+                    lastname,
+                    email,
+                    permissionLevels.toString(),
+                    siteName
+            );
 
             // Proceed to the dashboard
             SwingUtilities.invokeLater(() -> new DashboardForm().showDashboard(frame.getLocation()));
@@ -200,7 +224,6 @@ public class LoginForm {
             }
         }
     }
-
     public void togglePasswordRevealed() {
 
         txtPassword.setEchoChar(passwordRevealed? '•' : ((char) 0));

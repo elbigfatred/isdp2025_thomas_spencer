@@ -1,12 +1,14 @@
 package models;
 
+import java.util.List;
+
 public class Employee {
     private Integer id;
     private String firstName;
     private String lastName;
     private String email;
     private String username;
-    private Posn permissionLevel; // New field for the employee's position
+    private List<Posn> roles; // Updated to store a list of roles
     private int permissionID;
     private boolean active;         // New field for active status
     private Site site;
@@ -54,12 +56,12 @@ public class Employee {
         this.username = username;
     }
 
-    public Posn getPermissionLevel() {
-        return permissionLevel;
+    public List<Posn> getRoles() {
+        return roles;
     }
 
-    public void setPermissionLevel(Posn permissionLevel) {
-        this.permissionLevel = permissionLevel;
+    public void setRoles(List<Posn> roles) {
+        this.roles = roles;
     }
 
     public boolean isActive() {
@@ -75,12 +77,13 @@ public class Employee {
         return "Employee{" +
                 "id=" + id +
                 ", firstName='" + firstName + '\'' +
-                ", password='" + password + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
-                ", permissionLevel='" + permissionLevel + '\'' +
                 ", active=" + active +
+                ", locked=" + locked +
+                ", site=" + site +
+                ", roles=" + roles +
                 '}';
     }
 

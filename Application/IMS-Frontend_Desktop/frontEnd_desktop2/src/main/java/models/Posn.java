@@ -1,25 +1,16 @@
 package models;
 
 public class Posn {
-    private int id; // Position ID
-    private String permissionLevel; // Permission level (e.g., Administrator, Store Manager)
-    private boolean active; // Indicates if the position is active
-
-    // Constructor
-    public Posn() {}
-
-    public Posn(int id, String permissionLevel, boolean active) {
-        this.id = id;
-        this.permissionLevel = permissionLevel;
-        this.active = active;
-    }
+    private Integer id;
+    private String permissionLevel;
+    private Boolean active;
 
     // Getters and Setters
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -31,17 +22,16 @@ public class Posn {
         this.permissionLevel = permissionLevel;
     }
 
-    public boolean isActive() {
+    public Boolean getActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
-    // ToString method for debugging
     @Override
     public String toString() {
-        return this.permissionLevel; // This is what will display in the JComboBox
+        return permissionLevel;
     }
 }
