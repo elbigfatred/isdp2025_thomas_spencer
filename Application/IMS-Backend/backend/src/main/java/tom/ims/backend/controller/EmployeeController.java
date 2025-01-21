@@ -89,6 +89,7 @@ public class EmployeeController {
 
             // Check if the account is locked
             if (employee.getLocked() == 1) {
+                resetFailedAttempts(employee.getUsername());
                 System.out.println("Account is locked for user: " + loginRequest.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Your account has been locked due to too many incorrect login attempts. " +
@@ -112,6 +113,7 @@ public class EmployeeController {
 
                 // Check if the account should be locked
                 if (failedLoginAttempts.getOrDefault(employee.getUsername(), 0) >= 3) {
+                    resetFailedAttempts(employee.getUsername());
                     employee.setLocked((byte) 1); // Lock the account
                     employeeService.saveEmployee(employee); // Save the locked status to DB
                     System.out.println("Account locked due to too many failed attempts: " + loginRequest.getUsername());

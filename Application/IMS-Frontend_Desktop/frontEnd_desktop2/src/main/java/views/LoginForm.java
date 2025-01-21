@@ -121,7 +121,11 @@ public class LoginForm {
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                 );
-            } else {
+            }
+            if (employee.getLocked()){
+                JOptionPane.showMessageDialog(frame,"Your account has been locked due to too many incorrect login attempts.\n Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);
+            }
+            else {
                 // Format and display the employee data
                 String employeeData = String.format(
                         "Employee Details:\n\nID: %d\nName: %s %s\nEmail: %s\nUsername: %s",

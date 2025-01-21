@@ -135,6 +135,8 @@ public class DashboardForm {
         }
 
         DashboardTabPane.add("Employees", EmployeesTab);
+        populateEmployeeTable(allEmployees);
+
     }
 
     private void loadInitialData() {
@@ -147,6 +149,8 @@ public class DashboardForm {
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ReadItemsRequest.fetchItems();
         }
+
+        allEmployees = ReadEmployeesRequest.fetchEmployees();
     }
 
     public void hideAllTabs(){
@@ -519,6 +523,7 @@ public class DashboardForm {
     }
 
     private void populateEmployeeTable(List<Employee> filteredEmployees) {
+        System.out.println(filteredEmployees.size());
         // Column names for the table
         String[] columns;
         if (Arrays.asList(accessPosition).contains("Administrator")) {
