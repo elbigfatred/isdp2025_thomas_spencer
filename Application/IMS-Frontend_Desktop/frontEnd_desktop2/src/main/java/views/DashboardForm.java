@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
@@ -67,6 +68,7 @@ public class DashboardForm {
     private List<Posn> allPosns;
     private String[] accessPosition;
     private int itemTableSelectedId = -1;
+    private List<Posn> EditPermissionsSelectedItems = new ArrayList<>();
 
     // Method to set up and display the dashboard frame
     public void showDashboard(Point currentLocation) {
@@ -679,7 +681,7 @@ public class DashboardForm {
         if (employees != null && !employees.isEmpty()) {
             for (Employee employee : employees) {
                 // Format the employee details for display in the list
-                String employeeDetails = String.format("%d - %s, %s (%s) [%s]",
+                String employeeDetails = String.format("%d, %s, %s (%s) [%s]",
                         employee.getId(), employee.getLastName(), employee.getFirstName(), employee.getUsername(),
                         (employee.getSite() != null ? employee.getSite().getSiteName() : "No Site Assigned"));
                 listModel.addElement(employeeDetails);
@@ -691,9 +693,23 @@ public class DashboardForm {
         // Set the model to the JList
         lstEmployees.setModel(listModel);
 
+        lstEmployees.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        lstEmployees.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = lstEmployees.getSelectedIndex();
+                if (selectedRow != -1) {
+                    String selectedEmployeeDetails = (String) lstEmployees.getSelectedValue();
+                    System.out.println("Selected Employee String: " + selectedEmployeeDetails);
+                    String[] employeeDetails = selectedEmployeeDetails.split(", ");
+                    employeeTableSelectedId = Integer.parseInt(employeeDetails[0]);
+                    System.out.println("Selected Employee ID: " + employeeTableSelectedId);
+                    System.out.println("Selected Employee Details: " + employeeDetails[1]);
+                }
+            }
+        });
+
 
     }
-
 
     private void populateEditPermissionsPositionList(List<Posn> positions) {
         pnlEditPermissionsRoles.removeAll(); // Clear any existing roles
@@ -705,6 +721,15 @@ public class DashboardForm {
             for (Posn posn : positions) {
                 JCheckBox chkRole = new JCheckBox(posn.getPermissionLevel());
                 pnlEditPermissionsRoles.add(chkRole);
+                chkRole.addItemListener(e -> {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
+                        EditPermissionsSelectedItems.add(posn);
+                    }
+                    else{
+                        EditPermissionsSelectedItems.remove(posn);
+                    }
+                    System.out.println(EditPermissionsSelectedItems);
+                });
             }
         } else {
             pnlEditPermissionsRoles.add(new JLabel("No roles available."));
