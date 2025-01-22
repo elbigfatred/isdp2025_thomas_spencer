@@ -7,6 +7,7 @@ import models.Supplier;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -90,4 +91,31 @@ public class ReadItemsRequest {
 
         return items;
     }
+
+    // New method to deactivate an item
+    public static boolean deactivateItem(int itemId) {
+        String endpoint = "http://localhost:8080/api/items/" + itemId + "/deactivate";
+
+        try {
+            URL url = new URL(endpoint);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Accept", "application/json");
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                System.out.println("Item deactivated successfully.");
+                return true;
+            } else if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                System.err.println("Item not found.");
+            } else {
+                System.err.println("Failed to deactivate item. HTTP Response Code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
 }

@@ -214,6 +214,14 @@ public class DashboardForm {
            editPermissions();
         });
 
+        btnDeleteItem.addActionListener(e -> {
+            deactivateItem();
+        });
+
+        btnEditItem.addActionListener(e -> {
+            editItem();
+        });
+
         txtEmployeeSearch.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
@@ -806,6 +814,104 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(null, "Failed to update employee roles.");
         }
     }
+
+    private void deactivateItem() {
+        // Ensure an item is selected
+        if (itemTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(null,
+                    "Please select an item from the table.",
+                    "No Item Selected",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Find the selected item in the list
+        Item selectedItem = allItems.stream()
+                .filter(item -> item.getId() == itemTableSelectedId)
+                .findFirst()
+                .orElse(null);
+
+        if (selectedItem == null) {
+            JOptionPane.showMessageDialog(null,
+                    "Selected item could not be found in the list.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Check if the item is already deactivated
+        if (!selectedItem.getActive()) {
+            JOptionPane.showMessageDialog(null,
+                    "The selected item is already deactivated.",
+                    "Item Already Deactivated",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Confirm the action with the user
+        int confirm = JOptionPane.showConfirmDialog(null,
+                "Are you sure you want to deactivate the item: " + selectedItem.getName() + "?",
+                "Confirm Deactivation",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return; // User canceled the action
+        }
+
+        // Attempt to deactivate the item via backend service
+        boolean success = ReadItemsRequest.deactivateItem(itemTableSelectedId);
+
+        // Handle the result
+        if (success) {
+            JOptionPane.showMessageDialog(null,
+                    "Item successfully deactivated.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            ConfigureTabsBasedOnPosition();
+        } else {
+            JOptionPane.showMessageDialog(null,
+                    "Failed to deactivate the item. Please try again.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void editItem(){
+
+        //get employee
+        Item itemtoEdit = null;
+
+        if (itemTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an item to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        allItems = ReadItemsRequest.fetchItems();
+        for (Item item : allItems) {
+            if (item.getId() == itemTableSelectedId) {
+                itemtoEdit = item;
+                break;
+            }
+        }
+
+        sessionActive = false;
+        idleTimer.stop();
+        countdownTimer.stop();
+
+        Item finalItemtoEdit = itemtoEdit;
+
+        SwingUtilities.invokeLater(()-> new EditItemForm().showItemEditForm(frame, frame.getLocation(), finalItemtoEdit,() ->{
+            // Resume session when the dialog is closed
+            idleTimer.restart();
+            countdownTimer.restart();
+            sessionActive = true;
+            loadInitialData();
+            populateItemsTable(allItems);
+        }));
+
+
+    }
 }
+
 
 

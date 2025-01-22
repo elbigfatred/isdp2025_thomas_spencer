@@ -356,6 +356,28 @@ public class EmployeeController {
             }
 
             // Update basic fields (as before)
+            //            // Update basic fields
+            employee.setFirstName((String) employeeData.get("firstname"));
+            employee.setLastName((String) employeeData.get("lastname"));
+            employee.setEmail((String) employeeData.get("email"));
+            employee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
+            employee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
+
+            // Update password if provided
+            if (employeeData.containsKey("password")) {
+                String newPassword = (String) employeeData.get("password");
+                if (newPassword != null && !newPassword.isEmpty()) {
+                    String hashedPassword = HashUtil.hashPassword(newPassword);
+                    employee.setPassword(hashedPassword);
+                }
+            }
+
+            // Update site
+            Integer siteId = (Integer) employeeData.get("site");
+            if (siteId != null) {
+                Site site = siteService.getSiteById(siteId);
+                employee.setSite(site);
+            }
 
             // Handle roles
             if (employeeData.containsKey("roles")) {

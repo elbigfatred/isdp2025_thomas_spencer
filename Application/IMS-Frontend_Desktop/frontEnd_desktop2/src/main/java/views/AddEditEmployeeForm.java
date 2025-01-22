@@ -179,7 +179,8 @@ public class AddEditEmployeeForm {
         }
         positionsText.append("</html>");
         lblPositions.setText(positionsText.toString());
-        lblPositions.setText(positionsText.toString()); // Update label with roles
+        lblPositions.setVisible(false);
+        lblPos.setVisible(false);
 
         // Populate the site combo box
         for (int i = 0; i < cmbLocation.getItemCount(); i++) {
