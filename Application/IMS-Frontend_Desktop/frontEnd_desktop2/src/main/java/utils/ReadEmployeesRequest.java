@@ -1,5 +1,6 @@
 package utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import models.Employee;
 import models.Posn;
 import models.Site;
@@ -14,6 +15,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -220,6 +222,8 @@ public class ReadEmployeesRequest {
     public static boolean updateEmployee(Employee employee) {
         String endpoint = "http://localhost:8080/api/employees/" + employee.getId();
 
+        System.out.println(employee.toString());
+
         try {
             URL url = new URL(endpoint);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -264,4 +268,5 @@ public class ReadEmployeesRequest {
             return false;
         }
     }
+
 }

@@ -4,12 +4,10 @@ package views;
 import models.Employee;
 import models.Item;
 import models.Posn;
-import utils.ReadEmployeesRequest;
-import utils.ReadItemsRequest;
-import utils.ReadPositionsRequest;
-import utils.SessionManager;
+import utils.*;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -17,8 +15,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 public class DashboardForm {
@@ -107,7 +104,7 @@ public class DashboardForm {
             loadInitialData();
             populateEmployeeTable(allEmployees);
             populateEditPermissionsEmployeesList(allEmployees);
-            populateEditPermissionsPositionList(allPosns);
+            populateEditPermissionsPositionList(allPosns, null);
         }
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
@@ -211,6 +208,10 @@ public class DashboardForm {
 
         btnEditEmployee.addActionListener(e -> {
             editEmployee();
+        });
+
+        btnEditPermissions.addActionListener(e -> {
+           editPermissions();
         });
 
         txtEmployeeSearch.getDocument().addDocumentListener(new DocumentListener() {
@@ -696,6 +697,7 @@ public class DashboardForm {
         lstEmployees.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         lstEmployees.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
+                EditPermissionsSelectedItems.clear();
                 int selectedRow = lstEmployees.getSelectedIndex();
                 if (selectedRow != -1) {
                     String selectedEmployeeDetails = (String) lstEmployees.getSelectedValue();
@@ -704,6 +706,16 @@ public class DashboardForm {
                     employeeTableSelectedId = Integer.parseInt(employeeDetails[0]);
                     System.out.println("Selected Employee ID: " + employeeTableSelectedId);
                     System.out.println("Selected Employee Details: " + employeeDetails[1]);
+
+                    for(Employee employee : allEmployees) {
+                        if (employee.getId() == employeeTableSelectedId) {
+                            System.out.println(employee.getRoles()); //gets list of Posn objects
+                            populateEditPermissionsPositionList(allPosns, employee.getRoles());
+                        }
+                    }
+                }
+                else{
+                    employeeTableSelectedId = -1;
                 }
             }
         });
@@ -711,24 +723,38 @@ public class DashboardForm {
 
     }
 
-    private void populateEditPermissionsPositionList(List<Posn> positions) {
+    private void populateEditPermissionsPositionList(List<Posn> allPositions, List<Posn> selectedPositions) {
+        System.out.println("All Positions: " + allPositions);
+        System.out.println("Selected Positions: " + selectedPositions);
         pnlEditPermissionsRoles.removeAll(); // Clear any existing roles
-
         // Set the panel layout to BoxLayout for vertical alignment
         pnlEditPermissionsRoles.setLayout(new BoxLayout(pnlEditPermissionsRoles, BoxLayout.Y_AXIS));
 
-        if (positions != null && !positions.isEmpty()) {
-            for (Posn posn : positions) {
+        if (allPositions != null && !allPositions.isEmpty()) {
+            for (Posn posn : allPositions) {
                 JCheckBox chkRole = new JCheckBox(posn.getPermissionLevel());
-                pnlEditPermissionsRoles.add(chkRole);
-                chkRole.addItemListener(e -> {
-                    if (e.getStateChange() == ItemEvent.SELECTED) {
+
+                // Check if the role is in the selected positions based on ID
+                if (selectedPositions != null && selectedPositions.stream().anyMatch(selected -> selected.getId().equals(posn.getId()))) {
+                    chkRole.setSelected(true);
+
+                    // Add to EditPermissionsSelectedItems only if not already present
+                    if (!EditPermissionsSelectedItems.contains(posn)) {
                         EditPermissionsSelectedItems.add(posn);
                     }
-                    else{
+                }
+
+                pnlEditPermissionsRoles.add(chkRole);
+
+                chkRole.addItemListener(e -> {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
+                        if (!EditPermissionsSelectedItems.contains(posn)) {
+                            EditPermissionsSelectedItems.add(posn);
+                        }
+                    } else {
                         EditPermissionsSelectedItems.remove(posn);
                     }
-                    System.out.println(EditPermissionsSelectedItems);
+                    System.out.println("Currently selected roles: " + EditPermissionsSelectedItems);
                 });
             }
         } else {
@@ -738,4 +764,48 @@ public class DashboardForm {
         pnlEditPermissionsRoles.revalidate();
         pnlEditPermissionsRoles.repaint();
     }
+
+    private void editPermissions() {
+        if (employeeTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(null, "Please select an employee to edit permissions.");
+            return;
+        }
+
+        // Find the selected employee
+        Employee selectedEmployee = allEmployees.stream()
+                .filter(emp -> emp.getId() == employeeTableSelectedId)
+                .findFirst()
+                .orElse(null);
+
+        if (selectedEmployee == null) {
+            JOptionPane.showMessageDialog(null, "Selected employee not found.");
+            return;
+        }
+
+        // Create a temporary Employee object
+        Employee tempEmployee = new Employee();
+        tempEmployee.setId(selectedEmployee.getId());
+        tempEmployee.setFirstName(selectedEmployee.getFirstName());
+        tempEmployee.setLastName(selectedEmployee.getLastName());
+        tempEmployee.setEmail(selectedEmployee.getEmail());
+        tempEmployee.setPassword(selectedEmployee.getPassword()); // Include password if needed
+        tempEmployee.setActive(selectedEmployee.isActive());
+        tempEmployee.setLocked(selectedEmployee.getLocked() ? 1 : 0);
+        tempEmployee.setSite(selectedEmployee.getSite());
+
+        // Use the class-level EditPermissionsSelectedItems for roles
+        tempEmployee.setRoles(new ArrayList<>(EditPermissionsSelectedItems));
+
+        // Send the updated employee to the server
+        boolean success = ReadEmployeesRequest.updateEmployee(tempEmployee);
+        if (success) {
+            JOptionPane.showMessageDialog(null, "Employee roles updated successfully.");
+            EditPermissionsSelectedItems.clear();
+            ConfigureTabsBasedOnPosition();
+        } else {
+            JOptionPane.showMessageDialog(null, "Failed to update employee roles.");
+        }
+    }
 }
+
+

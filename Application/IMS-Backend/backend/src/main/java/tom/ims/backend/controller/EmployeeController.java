@@ -254,148 +254,142 @@ public class EmployeeController {
         }
     }
 
+
 //    @PutMapping("/{id}")
+//    @Transactional // Ensures atomicity and proper database interaction
 //    public ResponseEntity<?> updateEmployee(@PathVariable int id, @RequestBody Map<String, Object> employeeData) {
 //        try {
-//            // Fetch the employee to update
+//            // Fetch the existing employee
 //            Employee existingEmployee = employeeService.getEmployeeById(id);
-//
 //            if (existingEmployee == null) {
 //                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found.");
 //            }
 //
-//            // Update employee fields
+//            // Update basic fields
 //            existingEmployee.setFirstName((String) employeeData.get("firstname"));
 //            existingEmployee.setLastName((String) employeeData.get("lastname"));
 //            existingEmployee.setEmail((String) employeeData.get("email"));
 //            existingEmployee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
 //            existingEmployee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
 //
-//            // If password is provided, hash it and update
+//            // Update password if provided
 //            if (employeeData.containsKey("password")) {
 //                String newPassword = (String) employeeData.get("password");
-//                if (!newPassword.isEmpty()) {
+//                if (newPassword != null && !newPassword.isEmpty()) {
 //                    String hashedPassword = HashUtil.hashPassword(newPassword);
 //                    existingEmployee.setPassword(hashedPassword);
 //                }
 //            }
 //
-//            // Fetch and update the Site
+//            // Update site
 //            Integer siteId = (Integer) employeeData.get("site");
-//            Site site = siteService.getSiteById(siteId);
-//            existingEmployee.setSite(site);
+//            if (siteId != null) {
+//                Site site = siteService.getSiteById(siteId);
+//                existingEmployee.setSite(site);
+//            }
 //
-//            // Fetch and update the Position
-//            Integer posnId = (Integer) employeeData.get("permissionLevel");
-//            Posn posn = posnService.getPositionById(posnId);
-//            //existingEmployee.setPosn(posn); TODO
+//            // Handle roles
+//            if (employeeData.containsKey("roles")) {
+//                @SuppressWarnings("unchecked")
+//                List<Map<String, Object>> rolesData = (List<Map<String, Object>>) employeeData.get("roles");
+//
+//                System.out.println("Roles received for update: " + rolesData);
+//
+//                // Fetch existing roles for the employee
+//                List<UserPosn> existingRoles = userPosnService.getUserPosnsByUserId(existingEmployee.getId());
+//                System.out.println("Existing roles: " + existingRoles);
+//
+//                // Convert incoming roles to a Set of IDs for easier comparison
+//                Set<Integer> incomingRoleIds = rolesData.stream()
+//                        .map(role -> (Integer) role.get("id"))
+//                        .collect(Collectors.toSet());
+//
+//                // Iterate through existing roles and delete those not in the incoming list
+//                for (UserPosn existingRole : existingRoles) {
+//                    if (!incomingRoleIds.contains(existingRole.getPosn().getId())) {
+//                        System.out.println("Deleting role: " + existingRole.getPosn().getPermissionLevel());
+//                        userPosnService.deleteUserPosnById(existingRole.getId());
+//                    } else {
+//                        System.out.println("Keeping role: " + existingRole.getPosn().getPermissionLevel());
+//                    }
+//                }
+//
+//                // Iterate through incoming roles and add any that don't already exist
+//                for (Map<String, Object> roleData : rolesData) {
+//                    Integer posnId = (Integer) roleData.get("id");
+//                    boolean alreadyExists = existingRoles.stream()
+//                            .anyMatch(existingRole -> existingRole.getPosn().getId().equals(posnId));
+//
+//                    if (!alreadyExists) {
+//                        Posn posn = posnService.getPositionById(posnId);
+//
+//                        // Create and save the new UserPosn
+//                        UserPosn userPosn = new UserPosn();
+//                        userPosn.setId(new UserPosnKey(existingEmployee.getId(), posnId));
+//                        userPosn.setUser(existingEmployee);
+//                        userPosn.setPosn(posn);
+//
+//                        System.out.println("Adding new role: " + posn.getPermissionLevel());
+//                        userPosnService.saveUserPosn(userPosn);
+//                    }
+//                }
+//            }
 //
 //            // Save the updated employee
 //            employeeService.saveEmployee(existingEmployee);
 //
 //            return ResponseEntity.ok("Employee updated successfully.");
-//        } catch (RuntimeException e) {
-//            System.err.println("Error updating employee: " + e.getMessage());
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to update employee.");
 //        } catch (Exception e) {
-//            System.err.println("Unexpected error occurred while updating employee:");
+//            System.err.println("Error updating employee: " + e.getMessage());
 //            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the employee.");
 //        }
 //    }
 
     @PutMapping("/{id}")
-    @Transactional // Ensures atomicity and proper database interaction
+    @Transactional
     public ResponseEntity<?> updateEmployee(@PathVariable int id, @RequestBody Map<String, Object> employeeData) {
         try {
-            // Fetch the existing employee
-            Employee existingEmployee = employeeService.getEmployeeById(id);
-            if (existingEmployee == null) {
+            Employee employee = employeeService.getEmployeeById(id);
+            if (employee == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found.");
             }
 
-            // Update basic fields
-            existingEmployee.setFirstName((String) employeeData.get("firstname"));
-            existingEmployee.setLastName((String) employeeData.get("lastname"));
-            existingEmployee.setEmail((String) employeeData.get("email"));
-            existingEmployee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
-            existingEmployee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
-
-            // Update password if provided
-            if (employeeData.containsKey("password")) {
-                String newPassword = (String) employeeData.get("password");
-                if (newPassword != null && !newPassword.isEmpty()) {
-                    String hashedPassword = HashUtil.hashPassword(newPassword);
-                    existingEmployee.setPassword(hashedPassword);
-                }
-            }
-
-            // Update site
-            Integer siteId = (Integer) employeeData.get("site");
-            if (siteId != null) {
-                Site site = siteService.getSiteById(siteId);
-                existingEmployee.setSite(site);
-            }
+            // Update basic fields (as before)
 
             // Handle roles
             if (employeeData.containsKey("roles")) {
+                System.out.println(" --- MODIFYING ROLES --- ");
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> rolesData = (List<Map<String, Object>>) employeeData.get("roles");
 
-                System.out.println("Roles received for update: " + rolesData);
+                // Convert rolesData into a list of UserPosn
+                List<UserPosn> newRoles = rolesData.stream().map(role -> {
+                    Integer posnId = (Integer) role.get("id");
+                    Posn posn = posnService.getPositionById(posnId);
 
-                // Fetch existing roles for the employee
-                List<UserPosn> existingRoles = userPosnService.getUserPosnsByUserId(existingEmployee.getId());
-                System.out.println("Existing roles: " + existingRoles);
+                    UserPosn userPosn = new UserPosn();
+                    userPosn.setId(new UserPosnKey(employee.getId(), posnId));
+                    userPosn.setUser(employee);
+                    userPosn.setPosn(posn);
 
-                // Convert incoming roles to a Set of IDs for easier comparison
-                Set<Integer> incomingRoleIds = rolesData.stream()
-                        .map(role -> (Integer) role.get("id"))
-                        .collect(Collectors.toSet());
+                    return userPosn;
+                }).collect(Collectors.toList());
 
-                // Iterate through existing roles and delete those not in the incoming list
-                for (UserPosn existingRole : existingRoles) {
-                    if (!incomingRoleIds.contains(existingRole.getPosn().getId())) {
-                        System.out.println("Deleting role: " + existingRole.getPosn().getPermissionLevel());
-                        userPosnService.deleteUserPosnById(existingRole.getId());
-                    } else {
-                        System.out.println("Keeping role: " + existingRole.getPosn().getPermissionLevel());
-                    }
-                }
-
-                // Iterate through incoming roles and add any that don't already exist
-                for (Map<String, Object> roleData : rolesData) {
-                    Integer posnId = (Integer) roleData.get("id");
-                    boolean alreadyExists = existingRoles.stream()
-                            .anyMatch(existingRole -> existingRole.getPosn().getId().equals(posnId));
-
-                    if (!alreadyExists) {
-                        Posn posn = posnService.getPositionById(posnId);
-
-                        // Create and save the new UserPosn
-                        UserPosn userPosn = new UserPosn();
-                        userPosn.setId(new UserPosnKey(existingEmployee.getId(), posnId));
-                        userPosn.setUser(existingEmployee);
-                        userPosn.setPosn(posn);
-
-                        System.out.println("Adding new role: " + posn.getPermissionLevel());
-                        userPosnService.saveUserPosn(userPosn);
-                    }
-                }
+                userPosnService.replaceRolesForEmployee(id, newRoles);
             }
 
-            // Save the updated employee
-            employeeService.saveEmployee(existingEmployee);
+            employeeService.saveEmployee(employee); // Save employee
 
             return ResponseEntity.ok("Employee updated successfully.");
         } catch (Exception e) {
-            System.err.println("Error updating employee: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the employee.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
 
-// Increment failed login attempts
+
+    // Increment failed login attempts
     private void incrementFailedAttempts(String username) {
         failedLoginAttempts.put(username, failedLoginAttempts.getOrDefault(username, 0) + 1);
         System.out.println("Failed login attempts for " + username + ": " + failedLoginAttempts.get(username));

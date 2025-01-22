@@ -21,15 +21,14 @@ public class UserPosn {
 
     @MapsId("userID") // Maps this part of the composite key
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonProperty("employeeID")
     @JoinColumn(name = "userID", nullable = false)
     @JsonBackReference
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Employee user;
 
     @MapsId("posnID") // Maps this part of the composite key
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonProperty("posn")
     @JoinColumn(name = "posnID", nullable = false)
     private Posn posn;

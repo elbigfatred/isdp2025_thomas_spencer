@@ -241,6 +241,7 @@ public class AddEditEmployeeForm {
             );
         }
     }
+
     private void generateUsername() {
         String firstName = txtFirstname.getText().trim().toLowerCase();
         String lastName = txtLastname.getText().trim().toLowerCase();
