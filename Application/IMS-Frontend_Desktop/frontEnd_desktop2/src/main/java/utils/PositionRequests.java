@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ReadPositionsRequest {
+public class PositionRequests {
 
     private static final String POSITIONS_ENDPOINT = "http://localhost:8080/api/positions";
 

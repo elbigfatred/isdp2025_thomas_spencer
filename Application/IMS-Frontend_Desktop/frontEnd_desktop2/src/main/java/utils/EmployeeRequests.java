@@ -1,6 +1,5 @@
 package utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import models.Employee;
 import models.Posn;
 import models.Site;
@@ -8,25 +7,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpStatus;
 
 
-public class ReadEmployeesRequest {
+public class EmployeeRequests {
 
     public static List<Employee> fetchEmployees() {
         String employeesEndpoint = "http://localhost:8080/api/employees";

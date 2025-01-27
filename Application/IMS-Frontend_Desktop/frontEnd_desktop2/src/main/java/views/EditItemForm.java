@@ -2,11 +2,9 @@ package views;
 
 import models.Item;
 import utils.ItemUploader;
-import utils.ReadItemsRequest;
 import utils.SessionManager;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.net.URL;
 

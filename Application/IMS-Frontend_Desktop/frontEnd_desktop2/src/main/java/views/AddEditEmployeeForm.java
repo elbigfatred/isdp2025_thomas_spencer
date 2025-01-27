@@ -96,7 +96,7 @@ public class AddEditEmployeeForm {
         System.out.println("setting up fields...");
         populatePositionComboBox();
         populateSitesComboBox();
-        allEmployees = ReadEmployeesRequest.fetchEmployees();
+        allEmployees = EmployeeRequests.fetchEmployees();
         System.out.println(allEmployees);
         if (Objects.equals(usage, "ADD")){
             System.out.println("add mode");
@@ -216,7 +216,7 @@ public class AddEditEmployeeForm {
             }
 
             // Call the backend to update the employee
-            boolean success = ReadEmployeesRequest.updateEmployee(selectedEmployee);
+            boolean success = EmployeeRequests.updateEmployee(selectedEmployee);
             if (success) {
                 JOptionPane.showMessageDialog(
                         frame,
@@ -307,7 +307,7 @@ public class AddEditEmployeeForm {
             }
 
             // Call the backend to save the new employee
-            boolean success = ReadEmployeesRequest.addEmployee(newEmployee);
+            boolean success = EmployeeRequests.addEmployee(newEmployee);
 
             if (success) {
                 JOptionPane.showMessageDialog(
@@ -417,7 +417,7 @@ public class AddEditEmployeeForm {
     }
 
     private void populateSitesComboBox() {
-        List<Site> sites = ReadSitesRequest.fetchSites();
+        List<Site> sites = SiteRequests.fetchSites();
         cmbLocation.removeAllItems();
 
         for (Site site : sites) {
@@ -428,7 +428,7 @@ public class AddEditEmployeeForm {
     }
 
     private void populatePositionComboBox() {
-        List<Posn> positions = ReadPositionsRequest.fetchPositions();
+        List<Posn> positions = PositionRequests.fetchPositions();
         cmbPosition.removeAllItems();
 
         for (Posn posn : positions) {

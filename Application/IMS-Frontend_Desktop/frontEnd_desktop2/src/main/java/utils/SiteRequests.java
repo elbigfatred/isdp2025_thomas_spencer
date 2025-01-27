@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ReadSitesRequest {
+public class SiteRequests {
 
     public static List<Site> fetchSites() {
         String endpoint = "http://localhost:8080/api/sites";

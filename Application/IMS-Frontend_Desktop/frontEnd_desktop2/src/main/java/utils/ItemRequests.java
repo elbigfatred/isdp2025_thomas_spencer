@@ -7,7 +7,6 @@ import models.Supplier;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ReadItemsRequest {
+public class ItemRequests {
 
     public static List<Item> fetchItems() {
         String endpoint = "http://localhost:8080/api/items";

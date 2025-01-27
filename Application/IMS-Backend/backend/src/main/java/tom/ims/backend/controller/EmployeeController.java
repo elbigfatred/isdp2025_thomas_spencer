@@ -25,7 +25,6 @@ public class EmployeeController {
 
     private final String defaultPassword = "P@ssw0rd-";
 
-
     // for tracking failed logins
     private final ConcurrentHashMap<String, Integer> failedLoginAttempts = new ConcurrentHashMap<>();
 
@@ -68,83 +67,6 @@ public class EmployeeController {
     @GetMapping("/{id}")
     public Employee getEmployeeById(@PathVariable int id) {
         return employeeService.getEmployeeById(id);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        System.out.println("Login request received:");
-        System.out.println("Username: " + loginRequest.getUsername());
-        System.out.println("Password: " + loginRequest.getPassword());
-
-        try {
-            // Fetch the employee by username
-            Employee employee;
-            try {
-                employee = employeeService.findByUsername(loginRequest.getUsername());
-            } catch (RuntimeException e) {
-                // Employee does not exist; we don't increment failed attempts in this case
-                System.out.println("Invalid login attempt: Username does not exist - " + loginRequest.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-            }
-
-            // Check if the account is locked
-            if (employee.getLocked() == 1) {
-                resetFailedAttempts(employee.getUsername());
-                System.out.println("Account is locked for user: " + loginRequest.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Your account has been locked due to too many incorrect login attempts. " +
-                                "Please contact your Administrator at admin@bullseye.ca for assistance.");
-            }
-
-            // Check if the stored password is the default
-            if ("P@ssw0rd-".equals(employee.getPassword()) && "P@ssw0rd-".equals(loginRequest.getPassword())) {
-                resetFailedAttempts(employee.getUsername());
-                System.out.println("Default password detected. Prompting user to change password.");
-                return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED)
-                        .body("Password change required. Please update your password.");
-            }
-
-            // Validate the hashed password
-            if (!HashUtil.matchesPassword(loginRequest.getPassword(), employee.getPassword())) {
-                System.out.println("Invalid password for username: " + loginRequest.getUsername());
-
-                // Increment failed login attempts
-                incrementFailedAttempts(employee.getUsername());
-
-                // Check if the account should be locked
-                if (failedLoginAttempts.getOrDefault(employee.getUsername(), 0) >= 3) {
-                    resetFailedAttempts(employee.getUsername());
-                    employee.setLocked((byte) 1); // Lock the account
-                    employeeService.saveEmployee(employee); // Save the locked status to DB
-                    System.out.println("Account locked due to too many failed attempts: " + loginRequest.getUsername());
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("Your account has been locked due to too many incorrect login attempts. Please contact your Administrator at admin@bullseye.ca for assistance.");
-                }
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-            }
-
-            // Reset failed attempts on successful login
-            resetFailedAttempts(employee.getUsername());
-
-            // Check if the account is active
-            if (employee.getActive() == 0) {
-                System.out.println("Account is not active for user: " + loginRequest.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid username and/or password. Please contact your Administrator at admin@bullseye.ca for assistance.");
-            }
-
-            // Exclude sensitive fields like the password before sending the response
-            employee.setPassword(null);
-
-            System.out.println("Login successful for user: " + employee.getUsername());
-            return ResponseEntity.ok(employee);
-
-        } catch (Exception e) {
-            System.err.println("Error during login process:");
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
-        }
     }
 
     @PostMapping("/reset-password")
@@ -210,10 +132,10 @@ public class EmployeeController {
             // Handle password (set to default if blank or null)
             String newPassword = (String) employeeData.get("password");
             if (newPassword == null || newPassword.isEmpty()) {
-                newPassword = "P@ssw0rd-"; // Default password
+                newPassword = defaultPassword; // Default password
             }
-            String hashedPassword = HashUtil.hashPassword(newPassword);
-            employee.setPassword(hashedPassword);
+            //String hashedPassword = HashUtil.hashPassword(newPassword);
+            employee.setPassword(newPassword);
 
             employee.setFirstName((String) employeeData.get("firstname"));
             employee.setLastName((String) employeeData.get("lastname"));
@@ -254,97 +176,6 @@ public class EmployeeController {
         }
     }
 
-
-//    @PutMapping("/{id}")
-//    @Transactional // Ensures atomicity and proper database interaction
-//    public ResponseEntity<?> updateEmployee(@PathVariable int id, @RequestBody Map<String, Object> employeeData) {
-//        try {
-//            // Fetch the existing employee
-//            Employee existingEmployee = employeeService.getEmployeeById(id);
-//            if (existingEmployee == null) {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found.");
-//            }
-//
-//            // Update basic fields
-//            existingEmployee.setFirstName((String) employeeData.get("firstname"));
-//            existingEmployee.setLastName((String) employeeData.get("lastname"));
-//            existingEmployee.setEmail((String) employeeData.get("email"));
-//            existingEmployee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
-//            existingEmployee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
-//
-//            // Update password if provided
-//            if (employeeData.containsKey("password")) {
-//                String newPassword = (String) employeeData.get("password");
-//                if (newPassword != null && !newPassword.isEmpty()) {
-//                    String hashedPassword = HashUtil.hashPassword(newPassword);
-//                    existingEmployee.setPassword(hashedPassword);
-//                }
-//            }
-//
-//            // Update site
-//            Integer siteId = (Integer) employeeData.get("site");
-//            if (siteId != null) {
-//                Site site = siteService.getSiteById(siteId);
-//                existingEmployee.setSite(site);
-//            }
-//
-//            // Handle roles
-//            if (employeeData.containsKey("roles")) {
-//                @SuppressWarnings("unchecked")
-//                List<Map<String, Object>> rolesData = (List<Map<String, Object>>) employeeData.get("roles");
-//
-//                System.out.println("Roles received for update: " + rolesData);
-//
-//                // Fetch existing roles for the employee
-//                List<UserPosn> existingRoles = userPosnService.getUserPosnsByUserId(existingEmployee.getId());
-//                System.out.println("Existing roles: " + existingRoles);
-//
-//                // Convert incoming roles to a Set of IDs for easier comparison
-//                Set<Integer> incomingRoleIds = rolesData.stream()
-//                        .map(role -> (Integer) role.get("id"))
-//                        .collect(Collectors.toSet());
-//
-//                // Iterate through existing roles and delete those not in the incoming list
-//                for (UserPosn existingRole : existingRoles) {
-//                    if (!incomingRoleIds.contains(existingRole.getPosn().getId())) {
-//                        System.out.println("Deleting role: " + existingRole.getPosn().getPermissionLevel());
-//                        userPosnService.deleteUserPosnById(existingRole.getId());
-//                    } else {
-//                        System.out.println("Keeping role: " + existingRole.getPosn().getPermissionLevel());
-//                    }
-//                }
-//
-//                // Iterate through incoming roles and add any that don't already exist
-//                for (Map<String, Object> roleData : rolesData) {
-//                    Integer posnId = (Integer) roleData.get("id");
-//                    boolean alreadyExists = existingRoles.stream()
-//                            .anyMatch(existingRole -> existingRole.getPosn().getId().equals(posnId));
-//
-//                    if (!alreadyExists) {
-//                        Posn posn = posnService.getPositionById(posnId);
-//
-//                        // Create and save the new UserPosn
-//                        UserPosn userPosn = new UserPosn();
-//                        userPosn.setId(new UserPosnKey(existingEmployee.getId(), posnId));
-//                        userPosn.setUser(existingEmployee);
-//                        userPosn.setPosn(posn);
-//
-//                        System.out.println("Adding new role: " + posn.getPermissionLevel());
-//                        userPosnService.saveUserPosn(userPosn);
-//                    }
-//                }
-//            }
-//
-//            // Save the updated employee
-//            employeeService.saveEmployee(existingEmployee);
-//
-//            return ResponseEntity.ok("Employee updated successfully.");
-//        } catch (Exception e) {
-//            System.err.println("Error updating employee: " + e.getMessage());
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the employee.");
-//        }
-//    }
 
     @PutMapping("/{id}")
     @Transactional
@@ -408,18 +239,5 @@ public class EmployeeController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
-    }
-
-
-    // Increment failed login attempts
-    private void incrementFailedAttempts(String username) {
-        failedLoginAttempts.put(username, failedLoginAttempts.getOrDefault(username, 0) + 1);
-        System.out.println("Failed login attempts for " + username + ": " + failedLoginAttempts.get(username));
-    }
-
-    // Reset failed login attempts
-    private void resetFailedAttempts(String username) {
-        failedLoginAttempts.remove(username);
-        System.out.println("Failed login attempts reset for " + username);
     }
 }

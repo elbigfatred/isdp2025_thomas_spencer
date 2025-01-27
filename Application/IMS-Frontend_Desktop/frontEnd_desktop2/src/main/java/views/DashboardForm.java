@@ -133,23 +133,24 @@ public class DashboardForm {
             Logout();
         }
 
+        loadInitialData();
         DashboardTabPane.add("Employees", EmployeesTab);
         populateEmployeeTable(allEmployees);
 
     }
 
     private void loadInitialData() {
-        allEmployees = ReadEmployeesRequest.fetchEmployees();
+        allEmployees = EmployeeRequests.fetchEmployees();
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
-            allPosns = ReadPositionsRequest.fetchPositions();
+            allPosns = PositionRequests.fetchPositions();
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
-            allItems = ReadItemsRequest.fetchItems();
+            allItems = ItemRequests.fetchItems();
         }
 
-        allEmployees = ReadEmployeesRequest.fetchEmployees();
+        allEmployees = EmployeeRequests.fetchEmployees();
     }
 
     public void hideAllTabs(){
@@ -375,7 +376,7 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(frame, "Please select an employee to modify.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        List<Employee> allEmployees = ReadEmployeesRequest.fetchEmployees();
+        List<Employee> allEmployees = EmployeeRequests.fetchEmployees();
         for (Employee employee : allEmployees) {
             if (employee.getId() == employeeTableSelectedId) {
                 employeeToEdit = employee;
@@ -413,7 +414,7 @@ public class DashboardForm {
         );
 
         if (confirmation == JOptionPane.YES_OPTION) {
-            String result = ReadEmployeesRequest.deactivateEmployee(employeeTableSelectedId);
+            String result = EmployeeRequests.deactivateEmployee(employeeTableSelectedId);
 
             switch (result) {
                 case "success":
@@ -805,7 +806,7 @@ public class DashboardForm {
         tempEmployee.setRoles(new ArrayList<>(EditPermissionsSelectedItems));
 
         // Send the updated employee to the server
-        boolean success = ReadEmployeesRequest.updateEmployee(tempEmployee);
+        boolean success = EmployeeRequests.updateEmployee(tempEmployee);
         if (success) {
             JOptionPane.showMessageDialog(null, "Employee roles updated successfully.");
             EditPermissionsSelectedItems.clear();
@@ -859,7 +860,7 @@ public class DashboardForm {
         }
 
         // Attempt to deactivate the item via backend service
-        boolean success = ReadItemsRequest.deactivateItem(itemTableSelectedId);
+        boolean success = ItemRequests.deactivateItem(itemTableSelectedId);
 
         // Handle the result
         if (success) {
@@ -886,7 +887,7 @@ public class DashboardForm {
             return;
         }
 
-        allItems = ReadItemsRequest.fetchItems();
+        allItems = ItemRequests.fetchItems();
         for (Item item : allItems) {
             if (item.getId() == itemTableSelectedId) {
                 itemtoEdit = item;

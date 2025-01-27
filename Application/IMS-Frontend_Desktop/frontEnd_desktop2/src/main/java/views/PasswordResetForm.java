@@ -1,7 +1,7 @@
 package views;
 
 import org.json.JSONObject;
-import utils.LoginRequest;
+import utils.LoginRequests;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -172,7 +172,7 @@ public class PasswordResetForm {
 
         try {
             // Call backend API to reset the password
-            JSONObject response = LoginRequest.resetPassword(username, newPassword);
+            JSONObject response = LoginRequests.resetPassword(username, newPassword);
 
             if (response != null && response.optString("status", "failure").equals("success")) {
                 JOptionPane.showMessageDialog(frame, "Password successfully reset.", "Success", JOptionPane.INFORMATION_MESSAGE);

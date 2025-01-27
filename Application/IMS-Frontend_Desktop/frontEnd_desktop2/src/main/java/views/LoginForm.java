@@ -1,14 +1,10 @@
 package views;
 
-
-
-
-
 import models.Employee;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import utils.LoginRequest;
-import utils.ReadEmployeesRequest;
+import utils.LoginRequests;
+import utils.EmployeeRequests;
 import utils.SessionManager;
 
 import javax.swing.*;
@@ -17,7 +13,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 
+/**
+ * LoginForm handles the user login interface for the Bullseye Inventory Management System.
+ * This form manages login validation, password reset navigation, and session setup.
+ */
 public class LoginForm {
+    // GUI components
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnExit;
@@ -33,135 +34,84 @@ public class LoginForm {
     private JLabel logoLabel;
     private JLabel lblPasswordEyeball;
 
+    // Frame and state variables
     private JFrame frame;
     private boolean passwordRevealed = true; // will be toggled on display to run functionality
 
-    // Method to set up and display the dashboard frame
+    // =================== FRAME INITIALIZATION SECTION ===================
+    /**
+     * Initializes and displays the login form.
+     *
+     * @param currentLocation The location to center the form on (optional).
+     */
     public void showLoginForm(Point currentLocation) {
-        frame = new JFrame("Bullseye Inventory Management System - Login"); // Create the frame
-        frame.setContentPane(getMainPanel());       // Set the content pane
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(500, 350);                   // Set frame size
-        if(currentLocation != null) {
-            frame.setLocation(currentLocation);
-        }
-        frame.setLocationRelativeTo(null);         // Center the frame
-        frame.setVisible(true);                    // Make it visible
-
-
+        setupListeners();           // Add action listeners for buttons
+        setupFrame(currentLocation); // Create and configure the frame
         togglePasswordRevealed();
+        setLogo("/bullseye.jpg", logoLabel, 50, 50); // Set up the Bullseye logo
+    }
+    /**
+     * Sets up the frame with the main panel and basic properties.
+     *
+     * @param currentLocation The location to center the frame (optional).
+     */
+    private void setupFrame(Point currentLocation) {
+        frame = new JFrame("Bullseye Inventory Management System - Login");
+        frame.setContentPane(getMainPanel());
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(500, 350);
 
-        SetupBullseyeLogo();
+        // Set frame location to either the provided location or center of the screen
+        if (currentLocation != null) frame.setLocation(currentLocation);
+        frame.setLocationRelativeTo(null);
+
+        frame.setVisible(true); // Show the frame
     }
 
-    private void SetupBullseyeLogo() {
-        String logoPath = "/bullseye.jpg"; // Classpath-relative path
-        URL logoURL = getClass().getResource(logoPath);
-        ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
-        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
 
+    // =================== EVENT LISTENERS SECTION ===================
 
-        logoLabel.setIcon(resizedIcon);
-        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        logoLabel.setText("");
-    }
+    /**
+     * Sets up listeners for all interactive components in the form.
+     */
+    private void setupListeners() {
+        // Login button triggers login validation
+        btnLogin.addActionListener(e -> LoginButtonEvent());
 
-    public JPanel getMainPanel() {
+        // Exit button closes the application
+        btnExit.addActionListener(e -> System.exit(0));
 
-        // action listeners for buttons
-        btnLogin.addActionListener(e -> {
-            LoginButtonEvent();
-        });
+        // Forgot Password button navigates to the password reset form
+        btnForgotPassword.addActionListener(e -> ForgotPasswordButtonEvent());
 
-        btnExit.addActionListener(e -> {
-            System.exit(0); // Exit the application
-        });
-
-        btnForgotPassword.addActionListener(e -> {
-            ForgotPasswordButtonEvent();
-        });
-
+        // Toggle password visibility on eyeball click
         lblPasswordEyeball.addMouseListener(new MouseAdapter() {
-           @Override
-           public void mouseClicked(MouseEvent e) {
-               togglePasswordRevealed();
-           }
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                lblPasswordEyeball.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // Change cursor to hand
+            public void mouseClicked(MouseEvent e) {
+                togglePasswordRevealed();
             }
 
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                lblPasswordEyeball.setCursor(Cursor.getDefaultCursor()); // Revert cursor to default
+            public void mouseEntered(MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            }
+
+            public void mouseExited(MouseEvent e) {
+                lblPasswordEyeball.setCursor(Cursor.getDefaultCursor());
             }
         });
-
-        return ContentPane;
     }
 
-    private void ForgotPasswordButtonEvent() {
-        // Prompt the user for a username
-        String username = txtUsername.getText();
+    // =================== LOGIN FUNCTIONALITY SECTION ===================
 
-        if (username == null || username.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        try {
-            // Fetch employee data for the entered username
-            Employee employee = ReadEmployeesRequest.fetchEmployeeByUsername(username);
-
-            if (employee == null) {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "No employee found with username: " + username,
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-            if (employee.getLocked()){
-                JOptionPane.showMessageDialog(frame,"Your account has been locked due to too many incorrect login attempts.\n Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);
-            }
-            else {
-                // Format and display the employee data
-                String employeeData = String.format(
-                        "Employee Details:\n\nID: %d\nName: %s %s\nEmail: %s\nUsername: %s",
-                        employee.getId(),
-                        employee.getFirstName(),
-                        employee.getLastName(),
-                        employee.getEmail(),
-                        employee.getUsername()
-                );
-
-                //JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
-
-                // Redirect to password reset form
-                SwingUtilities.invokeLater(() -> {
-                    new PasswordResetForm(employee.getUsername()).showPasswordResetForm(frame.getLocation());
-                    frame.dispose();
-                });
-            }
-        } catch (RuntimeException ex) {
-            // Handle backend connectivity issues
-            JOptionPane.showMessageDialog(
-                    frame,
-                    ex.getMessage(),
-                    "Backend Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
-
+    /**
+     * Handles the "Login" button event. Validates credentials and starts a user session.
+     */
     private void LoginButtonEvent() {
         try {
             String usernameInput = txtUsername.getText();
             String passwordInput = new String(txtPassword.getPassword());
 
             // Attempt login
-            JSONObject response = LoginRequest.login(usernameInput, passwordInput);
+            JSONObject response = LoginRequests.login(usernameInput, passwordInput);
 
             // Parse response to extract session details
             String username = response.optString("username", "Unknown");
@@ -221,28 +171,133 @@ public class LoginForm {
                 // Display other errors
                 JOptionPane.showMessageDialog(
                         frame,
-                        ex.getMessage(),
+                        "Could not connect to the database,",
                         "Login Error",
                         JOptionPane.ERROR_MESSAGE
                 );
             }
         }
     }
-    public void togglePasswordRevealed() {
 
-        txtPassword.setEchoChar(passwordRevealed? '•' : ((char) 0));
+    /**
+     * Handles the "Forgot Password" button event. Navigates to the password reset form.
+     */
+    private void ForgotPasswordButtonEvent() {
+        // Prompt the user for a username
+        String username = txtUsername.getText();
 
-        String logoPath = passwordRevealed ? "/hide.png" : "/view.png";
-        URL logoURL = getClass().getResource(logoPath);
-        ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH); // Resize
-        ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
+        if (username == null || username.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Username is required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
+        try {
+            // Fetch employee data for the entered username
+            Employee employee = EmployeeRequests.fetchEmployeeByUsername(username);
 
-        lblPasswordEyeball.setIcon(resizedIcon);
-        lblPasswordEyeball.setHorizontalAlignment(SwingConstants.CENTER);
-        lblPasswordEyeball.setText("");
+            if (employee == null) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "No employee found with username: " + username,
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+            if (employee.getLocked()){
+                JOptionPane.showMessageDialog(frame,"Your account has been locked due to too many incorrect login attempts.\n Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);
+            }
+            else {
+                // Format and display the employee data
+                String employeeData = String.format(
+                        "Employee Details:\n\nID: %d\nName: %s %s\nEmail: %s\nUsername: %s",
+                        employee.getId(),
+                        employee.getFirstName(),
+                        employee.getLastName(),
+                        employee.getEmail(),
+                        employee.getUsername()
+                );
 
+                //JOptionPane.showMessageDialog(frame, employeeData, "Employee Details", JOptionPane.INFORMATION_MESSAGE);
+
+                // Redirect to password reset form
+                SwingUtilities.invokeLater(() -> {
+                    new PasswordResetForm(employee.getUsername()).showPasswordResetForm(frame.getLocation());
+                    frame.dispose();
+                });
+            }
+        } catch (RuntimeException ex) {
+            // Handle backend connectivity issues
+            JOptionPane.showMessageDialog(
+                    frame,
+                    ex.getMessage(),
+                    "Backend Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    // =================== PASSWORD VISIBILITY SECTION ===================
+    /**
+     * Toggles the visibility of the password field when the "eyeball" icon is clicked.
+     */
+    private void togglePasswordRevealed() {
+        // Toggle the echo character for the password field
+        txtPassword.setEchoChar(passwordRevealed ? '•' : (char) 0);
+
+        // Update the eyeball icon
+        setLogo(passwordRevealed ? "/hide.png" : "/view.png", lblPasswordEyeball, 25, 25);
+
+        // Flip the visibility state
         passwordRevealed = !passwordRevealed;
     }
+
+
+    // =================== UTILITY FUNCTIONS SECTION ===================
+
+    /**
+     * Displays a message dialog to the user.
+     *
+     * @param message The message to display.
+     * @param title   The title of the dialog box.
+     * @param type    The type of message (e.g., error, info).
+     */
+    private void showMessage(String message, String title, int type) {
+        JOptionPane.showMessageDialog(frame, message, title, type);
+    }
+
+    /**
+     * Navigates to another form by disposing of the current frame and initializing the new form.
+     *
+     * @param formInitializer A runnable that initializes the next form.
+     */
+    private void switchToForm(Runnable formInitializer) {
+        SwingUtilities.invokeLater(formInitializer);
+        frame.dispose();
+    }
+
+    /**
+     * Sets a logo or icon for a JLabel.
+     *
+     * @param path   The path to the image resource.
+     * @param label  The JLabel to set the icon for.
+     * @param width  The width of the scaled image.
+     * @param height The height of the scaled image.
+     */
+    private void setLogo(String path, JLabel label, int width, int height) {
+        URL logoURL = getClass().getResource(path);
+        ImageIcon icon = new ImageIcon(logoURL);
+        Image scaledImage = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        label.setIcon(new ImageIcon(scaledImage));
+    }
+
+    // =================== GETTER SECTION ===================
+    /**
+     * Returns the main content panel of the form.
+     *
+     * @return The JPanel containing all form components.
+     */
+    public JPanel getMainPanel() {
+        return ContentPane;
+    }
+
 }
