@@ -11,6 +11,7 @@ import javax.swing.Timer;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -89,6 +90,9 @@ public class DashboardForm {
     private void ConfigureTabsBasedOnPosition() {
         hideAllTabs();
 
+        txtEmployeeSearch.setText("");
+        txtItemSearch.setText("");
+
         // Fetch roles as a single string and split into an array
         String permissionLevels = SessionManager.getInstance().getPermissionLevel(); // Example: "Administrator, Warehouse Manager"
         String[] roles = permissionLevels.split(",\\s*"); // Split by ", " (comma followed by optional whitespace)
@@ -120,6 +124,17 @@ public class DashboardForm {
 
             loadInitialData();
             // Add any additional logic for Financial Manager
+        }
+
+        if (roles.length == 1 && Arrays.asList(roles).contains("Online Customer")) {
+            // If the user has no roles or is not permitted, display an access denied message
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Access denied: You do not have permission to access this area.",
+                    "Access Denied",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            Logout();
         }
 
         if (roles.length == 0) {
@@ -188,6 +203,7 @@ public class DashboardForm {
 
         // Set up initial components
         LblWelcome.setText("User: " + session.getUsername());
+
         LblLocation.setText("Location: " + session.getSiteName());
 
         // action listeners for buttons
@@ -196,6 +212,15 @@ public class DashboardForm {
         });
 
         BtnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    frame,
+                    "Are you sure you want to log out?",
+                    "Confirm Logout",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirm == JOptionPane.NO_OPTION) return;
             Logout();
         });
 
@@ -221,6 +246,17 @@ public class DashboardForm {
 
         btnEditItem.addActionListener(e -> {
             editItem();
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        BtnLogout.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        BtnLogout.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BtnLogout.doClick();
+            }
         });
 
         txtEmployeeSearch.getDocument().addDocumentListener(new DocumentListener() {
@@ -322,6 +358,7 @@ public class DashboardForm {
                 // Check if any other field matches the search term
                 if (emp.getFirstName().toLowerCase().contains(search) ||
                         emp.getLastName().toLowerCase().contains(search) ||
+                        emp.getSite().getSiteName().toLowerCase().contains(search) ||
                         String.valueOf(emp.getId()).contains(search) ||
                         emp.getEmail().toLowerCase().contains(search) ||
                         emp.getUsername().toLowerCase().contains(search) ||
@@ -342,6 +379,7 @@ public class DashboardForm {
                 if (emp.getFirstName().toLowerCase().contains(search) ||
                         String.valueOf(emp.getId()).contains(search) ||
                         emp.getLastName().toLowerCase().contains(search) ||
+                        emp.getSite().getSiteName().toLowerCase().contains(search) ||
                         emp.getEmail().toLowerCase().contains(search) ||
                         emp.getUsername().toLowerCase().contains(search)) {
                     empsToList.add(emp);
@@ -454,10 +492,21 @@ public class DashboardForm {
     private void RefreshButtonEvent() {
         idleTimer.stop();
         countdownTimer.stop();
+
+        // get selected tab if available
+        int selectedTab = -1;
+        if(DashboardTabPane.getSelectedIndex()!= -1){
+            selectedTab = DashboardTabPane.getSelectedIndex();
+        }
         JOptionPane.showMessageDialog(
                 null, "Refreshing data...", "Info", JOptionPane.INFORMATION_MESSAGE);
         SessionManager.getInfo();
         ConfigureTabsBasedOnPosition();
+
+        // reset to selected tab
+        if (selectedTab != -1) {
+            DashboardTabPane.setSelectedIndex(selectedTab);
+        }
         idleTimer.restart();
         countdownTimer.restart();
     }
@@ -539,9 +588,9 @@ public class DashboardForm {
         // Column names for the table
         String[] columns;
         if (Arrays.asList(accessPosition).contains("Administrator")) {
-            columns = new String[]{"ID", "First Name", "Last Name", "Email", "Username", "Roles", "Active", "Locked"};
+            columns = new String[]{"ID", "First Name", "Last Name", "Location", "Email", "Username", "Role(s)", "Active", "Locked"};
         } else {
-            columns = new String[]{"ID", "Username", "First Name", "Last Name", "Email"};
+            columns = new String[]{"Username", "First Name", "Last Name", "Location", "Role(s)"};
         }
 
         // Create a table model and add columns
@@ -554,26 +603,27 @@ public class DashboardForm {
 
         // Populate the table model with employee data
         for (Employee employee : filteredEmployees) {
-            Object[] rowData;
-            if (Arrays.asList(accessPosition).contains("Administrator")) {
-                // Combine all roles into a single string
-                StringBuilder roles = new StringBuilder();
-                if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
-                    for (Posn posn : employee.getRoles()) {
-                        roles.append(posn.getPermissionLevel()).append(", ");
-                    }
-                    // Remove the trailing comma and space
-                    if (roles.length() > 0) {
-                        roles.setLength(roles.length() - 2);
-                    }
-                } else {
-                    roles.append("None");
+            // Combine all roles into a single string
+            StringBuilder roles = new StringBuilder();
+            if (employee.getRoles() != null && !employee.getRoles().isEmpty()) {
+                for (Posn posn : employee.getRoles()) {
+                    roles.append(posn.getPermissionLevel()).append(", ");
                 }
+                // Remove the trailing comma and space
+                if (roles.length() > 0) {
+                    roles.setLength(roles.length() - 2);
+                }
+            } else {
+                roles.append("None");
+            }
+            Object[] rowData;
 
+            if (Arrays.asList(accessPosition).contains("Administrator")) {
                 rowData = new Object[]{
                         employee.getId(),
                         employee.getFirstName(),
                         employee.getLastName(),
+                        employee.getSite(),
                         employee.getEmail(),
                         employee.getUsername(),
                         roles.toString(), // Display combined roles
@@ -585,11 +635,11 @@ public class DashboardForm {
                     continue;
                 }
                 rowData = new Object[]{
-                        employee.getId(),
                         employee.getUsername(),
                         employee.getFirstName(),
                         employee.getLastName(),
-                        employee.getEmail()
+                        employee.getSite(),
+                        roles.toString(),
                 };
             }
             tableModel.addRow(rowData);

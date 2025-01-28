@@ -8,6 +8,8 @@ import utils.*;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
@@ -66,7 +68,7 @@ public class AddEditEmployeeForm {
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(700, 475);                   // Set frame size
+        frame.setSize(700, 425);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -107,6 +109,15 @@ public class AddEditEmployeeForm {
             btnGenerateStrongPassword.setVisible(false);
             assignEmployeeID();
             btnSave.addActionListener(e -> {
+                int confirm = JOptionPane.showConfirmDialog(
+                        frame,
+                        "Save new Employee?",
+                        "Confirm",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                if (confirm == JOptionPane.NO_OPTION) return;
                 AddNewEmployee();
             });
 
@@ -149,7 +160,18 @@ public class AddEditEmployeeForm {
             //edit mode
             System.out.println("Edit mode");
             populateFieldsForEditing();
-            btnSave.addActionListener(e -> updateEmployee());
+            btnSave.addActionListener(e -> {
+                int confirm = JOptionPane.showConfirmDialog(
+                        frame,
+                        "Modify Employee?",
+                        "Confirm",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                if (confirm == JOptionPane.NO_OPTION) return;
+                updateEmployee();
+            });
         }
     }
 
@@ -498,6 +520,28 @@ public class AddEditEmployeeForm {
 
         btnGenerateStrongPassword.addActionListener(e -> {
             generateStrongPassword();
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        btnExit.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnExit.doClick();
+            }
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnSave.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "cancel");
+
+        btnSave.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnSave.doClick();
+            }
         });
 
         txtPassword.getDocument().addDocumentListener(new DocumentListener() {

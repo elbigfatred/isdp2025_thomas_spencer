@@ -21,6 +21,9 @@
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <background color="-1762775"/>
+              <enabled value="true"/>
+              <font size="16" style="1"/>
               <text value="Login"/>
             </properties>
           </component>
@@ -37,7 +40,7 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Label"/>
+                  <text value=""/>
                 </properties>
               </component>
             </children>
@@ -102,7 +105,7 @@
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Label"/>
+              <text value=""/>
             </properties>
           </component>
         </children>
@@ -120,7 +123,7 @@
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Exit"/>
+              <text value="&amp;Exit ␛"/>
             </properties>
           </component>
           <hspacer id="db97f">
@@ -128,20 +131,12 @@
               <grid row="1" column="1" row-span="2" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
-          <component id="65b75" class="javax.swing.JButton" binding="btnLogin">
-            <constraints>
-              <grid row="0" column="2" row-span="2" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Login"/>
-            </properties>
-          </component>
           <component id="e37ec" class="javax.swing.JButton" binding="btnForgotPassword">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Forgot Password?"/>
+              <text value="&amp;Forgot Password?"/>
             </properties>
           </component>
           <component id="e3b7c" class="javax.swing.JLabel" binding="SPACER">
@@ -150,6 +145,14 @@
             </constraints>
             <properties>
               <text value=""/>
+            </properties>
+          </component>
+          <component id="7846c" class="javax.swing.JButton" binding="btnLogin">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="&amp;Login ⎆"/>
             </properties>
           </component>
         </children>

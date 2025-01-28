@@ -10,11 +10,20 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 
+/**
+ * PasswordResetForm provides a UI for users to reset their passwords.
+ * It includes validation, password strength checking, and a password generator.
+ */
 public class PasswordResetForm {
+
+    // =================== UI COMPONENTS ===================
+
     private JPanel ContentPane;
     private JLabel LblChangePassword;
     private JPasswordField txtNewPassword;
@@ -32,19 +41,28 @@ public class PasswordResetForm {
     private JLabel lblStrengthAdvisor;
     private JButton btnGenerateStrongPassword;
 
-    private JFrame frame;
-    private String username; // To store the username for this form
+    // =================== FRAME VARIABLES ===================
 
+    private JFrame frame;
+    private String username; // To store the username for this form; passed from login
     private boolean newPasswordRevealed = true; // will be toggled on display to run functionality
     private boolean confirmPasswordRevealed = true; // will be toggled on display to run functionality
 
-    // Constructor accepting a username
+    // =================== CONSTRUCTOR & INITIALIZATION ===================
+
+    /**
+     * Constructs the password reset form.
+     *
+     * @param username The username of the account for which the password is being reset.
+     */
     public PasswordResetForm(String username) {
         this.username = username; // Store the username
         initializeForm(); // Initialize form elements
     }
 
-    // Initialize form elements
+    /**
+     * Initializes the form elements, ensuring the username label is correctly set.
+     */
     private void initializeForm() {
         // Set the username label to display the user's username
         if (LblUsername != null) {
@@ -52,6 +70,11 @@ public class PasswordResetForm {
         }
     }
 
+    /**
+     * Displays the password reset form centered on the screen or at the provided location.
+     *
+     * @param currentLocation Optional parameter to place the form at a specific location.
+     */
     public void showPasswordResetForm(Point currentLocation) {
         frame = new JFrame("Bullseye Inventory Management System - Password Reset"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
@@ -81,6 +104,13 @@ public class PasswordResetForm {
         logoLabel.setText("");
     }
 
+    // =================== EVENT LISTENERS SECTION ===================
+
+    /**
+     * Returns the main content panel and sets up event listeners for user interaction.
+     *
+     * @return The main JPanel containing all UI elements.
+     */
     public JPanel getMainPanel() {
         // action listeners for buttons
         BtnExit.addActionListener(e -> {
@@ -145,10 +175,37 @@ public class PasswordResetForm {
             }
         });
 
+        // Allow Login to be accessed via 'Enter' key
+        BtnReset.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "click");
+
+        BtnReset.getActionMap().put("click", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BtnReset.doClick();
+            }
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        BtnExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        BtnExit.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                frame.dispose(); // Close the password reset form
+                new LoginForm().showLoginForm(frame.getLocation()); // Redirect to login form
+            }
+        });
 
         return ContentPane;
     }
 
+    // =================== PASSWORD HANDLING SECTION ===================
+
+    /**
+     * Handles password reset logic, ensuring validation, strength, and backend communication.
+     */
     private void ResetButtonEvent() {
         // Validate and reset password logic here
         String newPassword = txtNewPassword.getText();
@@ -170,6 +227,16 @@ public class PasswordResetForm {
             return;
         }
 
+        int confirm = JOptionPane.showConfirmDialog(
+                frame,
+                "Save new password?",
+                "Confirm Password Change",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm == JOptionPane.NO_OPTION) return;
+
         try {
             // Call backend API to reset the password
             JSONObject response = LoginRequests.resetPassword(username, newPassword);
@@ -188,12 +255,23 @@ public class PasswordResetForm {
         }
     }
 
+    /**
+     * Validates if a password meets security criteria.
+     *
+     * @param password The password to validate.
+     * @return True if the password is strong, otherwise false.
+     */
     private boolean isStrongPassword(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Z].*") &&
                 password.matches(".*[-!@#$%^&*(),.?\":{}|<>].*");
     }
 
+    // =================== UTILITY FUNCTIONS ===================
+
+    /**
+     * Generates a strong password containing uppercase, digits, and special characters.
+     */
     private void generateStrongPassword() {
         // Character pools
         final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
@@ -231,6 +309,10 @@ public class PasswordResetForm {
         //evaluatePasswordStrength(new String(passwordArray));
     }
 
+    /**
+     * Toggles the visibility of the new password field.
+     * Updates the field to show or hide characters and changes the eyeball icon accordingly.
+     */
     public void toggleNewPasswordRevealed() {
 
         txtNewPassword.setEchoChar(newPasswordRevealed? '•' : ((char) 0));
@@ -249,6 +331,10 @@ public class PasswordResetForm {
         newPasswordRevealed = !newPasswordRevealed;
     }
 
+    /**
+     * Toggles the visibility of the confirm password field.
+     * Updates the field to show or hide characters and changes the eyeball icon accordingly.
+     */
     public void toggleConfirmPasswordRevealed() {
 
         txtConfirmPassword.setEchoChar(confirmPasswordRevealed? '•' : ((char) 0));
@@ -267,6 +353,12 @@ public class PasswordResetForm {
         confirmPasswordRevealed = !confirmPasswordRevealed;
     }
 
+    /**
+     * Evaluates the strength of the given password and provides feedback to the user.
+     * Updates the UI label with a strength indicator based on password complexity.
+     *
+     * @param password The password entered by the user.
+     */
     private void advisePasswordStrength(String password) {
 
         if(password.length() < 4){
@@ -311,11 +403,22 @@ public class PasswordResetForm {
         lblStrengthAdvisor.setForeground(strengthColor);
     }
 
+    /**
+     * Applies a filter to the given JTextField to prevent whitespace input.
+     * Ensures that users cannot enter spaces in password fields.
+     *
+     * @param textField The JTextField to apply the filter to.
+     */
     private void applyNoWhitespaceFilter(JTextField textField) {
         AbstractDocument document = (AbstractDocument) textField.getDocument();
         document.setDocumentFilter(new NoWhitespaceFilter());
     }
 
+    // =================== INNER CLASSES ===================
+
+    /**
+     * Custom DocumentFilter to prevent whitespace input in text fields.
+     */
     public class NoWhitespaceFilter extends DocumentFilter {
         @Override
         public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {

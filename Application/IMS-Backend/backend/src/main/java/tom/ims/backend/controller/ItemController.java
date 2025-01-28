@@ -77,7 +77,7 @@ public class ItemController {
             }
 
             // Update notes if provided
-            if (notes != null && !notes.isEmpty()) {
+            if (notes != null) {
                 item.setNotes(notes);
             }
 

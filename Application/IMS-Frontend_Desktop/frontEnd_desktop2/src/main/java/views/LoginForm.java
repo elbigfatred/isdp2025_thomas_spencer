@@ -9,9 +9,12 @@ import utils.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.stream.Collectors;
 
 /**
  * LoginForm handles the user login interface for the Bullseye Inventory Management System.
@@ -96,6 +99,28 @@ public class LoginForm {
 
             public void mouseExited(MouseEvent e) {
                 lblPasswordEyeball.setCursor(Cursor.getDefaultCursor());
+            }
+        });
+
+        // Allow Login to be accessed via 'Enter' key
+        btnLogin.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "click");
+
+        btnLogin.getActionMap().put("click", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnLogin.doClick();
+            }
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        btnExit.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
             }
         });
     }
@@ -203,7 +228,10 @@ public class LoginForm {
                         JOptionPane.ERROR_MESSAGE
                 );
             }
-            if (employee.getLocked()){
+            if(!employee.isActive()){
+                JOptionPane.showMessageDialog(frame,"Invalid username and/or password. Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);
+            }
+            else if (employee.getLocked()){
                 JOptionPane.showMessageDialog(frame,"Your account has been locked due to too many incorrect login attempts.\n Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);
             }
             else {

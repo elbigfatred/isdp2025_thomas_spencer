@@ -5,23 +5,48 @@ import utils.ItemUploader;
 import utils.SessionManager;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.net.URL;
 
+/**
+ * EditItemForm provides a UI for modifying an item's notes and image.
+ * Users can update the item's details and submit changes to the backend.
+ */
 public class EditItemForm {
+
+    // =================== UI COMPONENTS ===================
+
     private JPanel ContentPane;
-    private JLabel lblEditItem;
     private JLabel logoLabel;
-    private JTextArea txtNotes;
+    private JTextField txtNotes;
     private JLabel lblNotes;
     private JButton btnAddImage;
     private JButton btnSave;
     private JButton btnCancel;
+    private JLabel lblImagePath;
+    private JLabel lblWelcome;
+    private JLabel lblLocation;
+
+    // =================== FRAME VARIABLES ===================
 
     JDialog frame;
     private Item selectedItem;
     private String selectedImagePath = null;
 
+    // =================== FORM INITIALIZATION ===================
+
+    /**
+     * Initializes and returns the main panel for editing an item.
+     * Ensures that a user is logged in before displaying the form.
+     *
+     * @return The JPanel containing all form components or null if the user is not logged in.
+     */
     public JPanel getMainPanel() {
         // Check if a user is logged in
         SessionManager session = SessionManager.getInstance();
@@ -35,6 +60,9 @@ public class EditItemForm {
             return null; // Return null to avoid further execution
         }
 
+        // Set up initial components
+        lblWelcome.setText("User: " + session.getUsername());
+        lblLocation.setText("Location: " + session.getSiteName());
 
         // action listeners for buttons
         btnSave.addActionListener(e -> {
@@ -49,9 +77,39 @@ public class EditItemForm {
             addImage();
         });
 
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnCancel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        btnCancel.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                frame.dispose();
+            }
+        });
+
+        // Allow Login to be accessed via 'Enter' key
+        btnSave.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "click");
+
+        btnSave.getActionMap().put("click", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnAddImage.doClick();
+            }
+        });
+
         return ContentPane;
     }
 
+    /**
+     * Displays the item edit form as a modal dialog.
+     *
+     * @param parentFrame    The parent frame for modal behavior.
+     * @param currentLocation The screen location to center the form.
+     * @param itemToModify   The item to be modified.
+     * @param onCloseCallback A callback executed when the form is closed.
+     */
     public void showItemEditForm(Frame parentFrame, Point currentLocation, Item itemToModify, Runnable onCloseCallback) {
         frame = new JDialog(parentFrame, true);
 
@@ -62,7 +120,7 @@ public class EditItemForm {
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(700, 475);                   // Set frame size
+        frame.setSize(600, 350);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -88,6 +146,10 @@ public class EditItemForm {
         });
     }
 
+    // =================== UI SETUP SECTION ===================
+    /**
+     * Loads and sets the Bullseye logo in the form.
+     */
     private void SetupBullseyeLogo() {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
@@ -101,21 +163,36 @@ public class EditItemForm {
         logoLabel.setText("");
     }
 
+    /**
+     * Populates the form fields with existing item data.
+     * If the item has an image, updates the button text accordingly.
+     */
     private void setupFields() {
         if (selectedItem != null) {
             // Populate the notes field
             String existingNotes = selectedItem.getNotes();
             txtNotes.setText(existingNotes != null ? existingNotes : "");
 
+            // Limit notes input to 255 characters
+            AbstractDocument document = (AbstractDocument) txtNotes.getDocument();
+            document.setDocumentFilter(new CharacterLimitFilter(255));
+
             // Display existing image location (if available)
             if (selectedItem.getImageLocation() != null) {
                 btnAddImage.setText("Change Image");
+                lblImagePath.setText("Current Image on server: " + selectedItem.getImageLocation());
             } else {
                 btnAddImage.setText("Add Image");
             }
         }
     }
 
+    // =================== EVENT HANDLING SECTION ===================
+
+    /**
+     * Handles the save button event.
+     * Validates the input and sends an update request to the backend.
+     */
     private void saveEvent() {
         // Validate fields
         String updatedNotes = txtNotes.getText().trim();
@@ -135,6 +212,10 @@ public class EditItemForm {
         }
     }
 
+    /**
+     * Handles the "Add Image" button click event.
+     * Opens a file chooser to select an image file.
+     */
     private void addImage() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Select an Image");
@@ -145,8 +226,36 @@ public class EditItemForm {
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             selectedImagePath = fileChooser.getSelectedFile().getAbsolutePath();
-            JOptionPane.showMessageDialog(frame, "Selected image: " + selectedImagePath, "Image Selected", JOptionPane.INFORMATION_MESSAGE);
+            //JOptionPane.showMessageDialog(frame, "Selected image: " + selectedImagePath, "Image Selected", JOptionPane.INFORMATION_MESSAGE);
+            lblImagePath.setText("Current Image on server: " + selectedImagePath);
         }
     }
 
+    // =================== INTERNAL CLASSES ===================
+
+    public class CharacterLimitFilter extends DocumentFilter {
+        private final int limit;
+
+        public CharacterLimitFilter(int limit) {
+            this.limit = limit;
+        }
+
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+            if ((fb.getDocument().getLength() + string.length()) <= limit) {
+                super.insertString(fb, offset, string, attr);
+            } else {
+                Toolkit.getDefaultToolkit().beep(); // Optional: play a beep sound on excess input
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            if ((fb.getDocument().getLength() - length + text.length()) <= limit) {
+                super.replace(fb, offset, length, text, attrs);
+            } else {
+                Toolkit.getDefaultToolkit().beep(); // Optional: play a beep sound on excess input
+            }
+        }
+    }
 }
