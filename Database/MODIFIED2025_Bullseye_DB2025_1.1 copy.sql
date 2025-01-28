@@ -123,6 +123,9 @@ CREATE TABLE `employee` (
   CONSTRAINT username_constraint UNIQUE (`username`)
 );
 
+--  add main_role to employee...
+ALTER TABLE employees ADD COLUMN main_role VARCHAR(255) NOT NULL DEFAULT 'Unassigned';
+
 --
 -- Create table `supplier`
 --
