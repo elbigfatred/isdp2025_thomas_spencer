@@ -124,7 +124,7 @@ CREATE TABLE `employee` (
 );
 
 --  add main_role to employee...
-ALTER TABLE employees ADD COLUMN main_role VARCHAR(255) NOT NULL DEFAULT 'Unassigned';
+ALTER TABLE employee ADD COLUMN main_role VARCHAR(255) NOT NULL DEFAULT 'Unassigned';
 
 --
 -- Create table `supplier`

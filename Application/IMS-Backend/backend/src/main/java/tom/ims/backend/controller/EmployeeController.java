@@ -148,6 +148,8 @@ public class EmployeeController {
             Site site = siteService.getSiteById(siteId);
             employee.setSite(site);
 
+            employee.setMainRole((String) employeeData.get("mainrole"));
+
             // Save the Employee first (to ensure the ID exists for UserPosn)
             employeeService.saveEmployee(employee);
 

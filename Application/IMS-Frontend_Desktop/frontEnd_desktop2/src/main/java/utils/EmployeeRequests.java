@@ -54,6 +54,7 @@ public class EmployeeRequests {
                 employee.setUsername(jsonObject.getString("username"));
                 employee.setActive(jsonObject.getInt("active") == 1);
                 employee.setLocked(jsonObject.getInt("locked"));
+                employee.setMainRole(jsonObject.getString("mainrole"));
 
                 // Handle nested site object
                 if (jsonObject.has("site")) {
@@ -117,6 +118,7 @@ public class EmployeeRequests {
             employee.setUsername(jsonObject.getString("username"));
             employee.setActive(jsonObject.getInt("active") == 1);
             employee.setLocked(jsonObject.getInt("locked"));
+            employee.setMainRole(jsonObject.getString("mainrole"));
 
             // Handle roles array
             if (jsonObject.has("roles")) {
@@ -214,6 +216,7 @@ public class EmployeeRequests {
             employeeJson.put("email", employee.getEmail());
             employeeJson.put("active", employee.isActive());
             employeeJson.put("locked", employee.getLocked());
+            employeeJson.put("mainrole", employee.getMainRole());
 
             // Add roles array
             JSONArray rolesArray = new JSONArray();
@@ -271,6 +274,8 @@ public class EmployeeRequests {
             employeeJson.put("password", employee.getPassword()); // Include password only if changed
             employeeJson.put("active", employee.isActive());
             employeeJson.put("locked", employee.getLocked());
+            employeeJson.put("mainrole", employee.getMainRole());
+
 
             // Add roles array
             JSONArray rolesArray = new JSONArray();

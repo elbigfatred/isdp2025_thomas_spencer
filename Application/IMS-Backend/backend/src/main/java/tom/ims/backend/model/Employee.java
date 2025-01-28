@@ -64,6 +64,10 @@ public class Employee {
     @JsonManagedReference
     private List<UserPosn> roles = new ArrayList<>();
 
+    @Column(name = "main_role", nullable = false, length = 255)
+    @JsonProperty("mainrole")
+    private String mainRole;
+
     // Explicit Getters and Setters
     public Integer getId() {
         return id;
@@ -142,6 +146,14 @@ public class Employee {
     }
     public void setSite(Site site) {
         this.site = site;
+    }
+
+    public void setMainRole(String mainRole) {
+        this.mainRole = mainRole;
+    }
+
+    public String getMainRole() {
+        return mainRole;
     }
 
 

@@ -14,6 +14,8 @@ public class Employee {
     private Site site;
     private String password;
     private boolean locked;
+    private String mainRole;   // New main role field
+
 
     // Getters and Setters
     public Integer getId() {
@@ -114,7 +116,18 @@ public class Employee {
     public int getPermissionID() {
         return permissionID;
     }
+
     public void setPermissionID(int permissionID) {
         this.permissionID = permissionID;
     }
+
+    // Getter & Setter for mainRole
+    public String getMainRole() {
+        return mainRole;
+    }
+
+    public void setMainRole(String mainRole) {
+        this.mainRole = mainRole;
+    }
+
 }

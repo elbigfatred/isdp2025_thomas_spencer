@@ -55,7 +55,6 @@ public class AddEditEmployeeForm {
     private JLabel lblPasswordEyeball;
     private JButton btnGenerateStrongPassword;
     private JLabel lblStrengthAdvisor;
-    private JLabel lblPositions;
 
     // =================== FRAME VARIABLES ===================
 
@@ -63,6 +62,7 @@ public class AddEditEmployeeForm {
     private List<Employee> allEmployees;
     private boolean passwordRevealed = true; // will be toggled on display to run functionality
     private Employee selectedEmployee;
+    private String mode = null;
 
     // =================== INITIALIZATION SECTION ===================
 
@@ -79,16 +79,19 @@ public class AddEditEmployeeForm {
         frame = new JDialog(parentFrame, true);
         if (Objects.equals(usage, "ADD")){
             frame.setTitle("Bullseye Inventory Management System - Add New Employee"); // Create the frame
+            frame.setSize(700, 405);                   // Set frame size
+
         }
         else if (Objects.equals(usage, "EDIT")){
             frame.setTitle("Bullseye Inventory Management System - Modify Employee"); // Create the frame
+            frame.setSize(700, 455);                   // Set frame size
+
         }
         if (employeeToModify != null) {
             selectedEmployee = employeeToModify;
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(700, 425);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -215,12 +218,16 @@ public class AddEditEmployeeForm {
         populatePositionComboBox();
         populateSitesComboBox();
         allEmployees = EmployeeRequests.fetchEmployees();
+
         if (Objects.equals(usage, "ADD")){
             // add mode
+            mode = "ADD";
             lblPassword.setVisible(false);
             txtPassword.setVisible(false);
             lblPasswordEyeball.setVisible(false);
             btnGenerateStrongPassword.setVisible(false);
+            lblStrengthAdvisor.setVisible(false);
+
             assignEmployeeID();
             btnSave.addActionListener(e -> {
                 int confirm = JOptionPane.showConfirmDialog(
@@ -269,8 +276,10 @@ public class AddEditEmployeeForm {
             });
 
         }
+
         else if (Objects.equals(usage, "EDIT") && selectedEmployee != null) {
             //edit mode
+            mode = "EDIT";
             populateFieldsForEditing();
             btnSave.addActionListener(e -> {
                 int confirm = JOptionPane.showConfirmDialog(
@@ -312,8 +321,6 @@ public class AddEditEmployeeForm {
             positionsText.append(userPosn.getPermissionLevel()).append("<br>");
         }
         positionsText.append("</html>");
-        lblPositions.setText(positionsText.toString());
-        lblPositions.setVisible(false);
         lblPos.setVisible(false);
 
         // Populate the site combo box
@@ -455,6 +462,8 @@ public class AddEditEmployeeForm {
                 newEmployee.setRoles(roles); // Assign the primary role
             }
 
+            newEmployee.setMainRole(primaryRole.getPermissionLevel());
+
             // Call the backend to save the new employee
             boolean success = EmployeeRequests.addEmployee(newEmployee);
 
@@ -554,7 +563,7 @@ public class AddEditEmployeeForm {
     private void advisePasswordStrength(String password) {
 
         if(password.length() < 4){
-            lblStrengthAdvisor.setText("");
+            lblStrengthAdvisor.setText("<html><br><br><br><br></html>");
             return;
         }
 
