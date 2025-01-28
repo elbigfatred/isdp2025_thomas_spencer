@@ -1,7 +1,7 @@
 package views;
 
 import models.Item;
-import utils.ItemUploader;
+import utils.ItemRequests;
 import utils.SessionManager;
 
 import javax.swing.*;
@@ -52,7 +52,7 @@ public class EditItemForm {
         SessionManager session = SessionManager.getInstance();
         if (!session.isLoggedIn()) {
             JOptionPane.showMessageDialog(
-                    null,
+                    frame,
                     "No user is currently logged in. Returning to login screen.",
                     "Session Error",
                     JOptionPane.ERROR_MESSAGE
@@ -95,7 +95,7 @@ public class EditItemForm {
         btnSave.getActionMap().put("click", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                btnAddImage.doClick();
+                btnSave.doClick();
             }
         });
 
@@ -128,7 +128,6 @@ public class EditItemForm {
 
         // Delay setup methods until the dialog is visible
         SwingUtilities.invokeLater(() -> {
-            System.out.println(itemToModify);
             SetupBullseyeLogo();
             setupFields();
         });
@@ -202,7 +201,7 @@ public class EditItemForm {
         }
 
         // Send the PUT request
-        boolean success = ItemUploader.updateItem(selectedItem.getId(), updatedNotes, selectedImagePath);
+        boolean success = ItemRequests.updateItem(selectedItem.getId(), updatedNotes, selectedImagePath);
 
         if (success) {
             JOptionPane.showMessageDialog(frame, "Item updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);

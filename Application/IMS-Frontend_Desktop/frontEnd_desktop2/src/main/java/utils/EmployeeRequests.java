@@ -14,9 +14,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * EmployeeRequests handles API interactions related to employee management.
+ * It provides methods to fetch, add, update, and deactivate employees from the backend.
+ *
+ * Features:
+ * - Fetch all employees or a specific employee by username.
+ * - Add new employees with role and site assignments.
+ * - Update existing employee details including roles and site.
+ * - Deactivate employees securely.
+ * - Uses REST API calls via `RestTemplate` and `HttpURLConnection`.
+ */
 public class EmployeeRequests {
 
+    /**
+     * Fetches a list of all employees from the backend API.
+     * Parses the JSON response and maps it to Employee objects.
+     *
+     * @return A list of Employee objects, or an empty list if an error occurs.
+     */
     public static List<Employee> fetchEmployees() {
         String employeesEndpoint = "http://localhost:8080/api/employees";
         List<Employee> employees = new ArrayList<>();
@@ -76,7 +92,13 @@ public class EmployeeRequests {
         return employees;
     }
 
-    // Fetch employee by username
+    /**
+     * Retrieves an employee by their username from the backend API.
+     * If the employee does not exist, returns null.
+     *
+     * @param username The username of the employee to fetch.
+     * @return An Employee object if found, otherwise null.
+     */
     public static Employee fetchEmployeeByUsername(String username) {
         String endpoint = "http://localhost:8080/api/employees/username/" + username;
 
@@ -132,6 +154,13 @@ public class EmployeeRequests {
         }
     }
 
+    /**
+     * Deactivates an employee by their ID using a PUT request.
+     * Returns a status string indicating success, failure, or error.
+     *
+     * @param employeeId The ID of the employee to deactivate.
+     * @return A status string: "success", "failure", "unexpected", or "network_error".
+     */
     public static String deactivateEmployee(int employeeId) {
         String endpoint = "http://localhost:8080/api/employees/deactivate/" + employeeId;
 
@@ -158,6 +187,13 @@ public class EmployeeRequests {
         }
     }
 
+    /**
+     * Adds a new employee to the backend database using a POST request.
+     * Converts the Employee object into JSON and sends it to the API.
+     *
+     * @param employee The Employee object to be added.
+     * @return true if the employee was successfully added, false otherwise.
+     */
     public static boolean addEmployee(Employee employee) {
         String endpoint = "http://localhost:8080/api/employees";
 
@@ -208,6 +244,13 @@ public class EmployeeRequests {
         }
     }
 
+    /**
+     * Updates an existing employee’s details in the backend.
+     * Sends a PUT request with the updated employee information.
+     *
+     * @param employee The Employee object containing updated details.
+     * @return true if the update was successful, false otherwise.
+     */
     public static boolean updateEmployee(Employee employee) {
         String endpoint = "http://localhost:8080/api/employees/" + employee.getId();
 

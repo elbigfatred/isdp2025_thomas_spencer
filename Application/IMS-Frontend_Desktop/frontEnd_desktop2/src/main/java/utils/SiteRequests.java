@@ -11,8 +11,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * SiteRequests handles API interactions for managing site locations.
+ *
+ * Features:
+ * - Fetch all available sites from the backend.
+ * - Parses site details including address, province, and contact information.
+ * - Uses `HttpURLConnection` to perform API requests.
+ */
 public class SiteRequests {
 
+    /**
+     * Fetches a list of all active sites from the backend API.
+     * Parses JSON data and maps it to Site objects with detailed attributes.
+     *
+     * @return A list of Site objects, or an empty list if an error occurs.
+     */
     public static List<Site> fetchSites() {
         String endpoint = "http://localhost:8080/api/sites";
         List<Site> sites = new ArrayList<>();

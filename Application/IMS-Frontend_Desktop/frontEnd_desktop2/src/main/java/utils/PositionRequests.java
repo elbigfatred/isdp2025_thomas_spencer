@@ -11,10 +11,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * PositionRequests handles API interactions for retrieving position data.
+ *
+ * Features:
+ * - Fetch all positions from the backend API.
+ * - Parses JSON response and maps it to Posn objects.
+ * - Uses `HttpURLConnection` for API communication.
+ */
 public class PositionRequests {
 
     private static final String POSITIONS_ENDPOINT = "http://localhost:8080/api/positions";
 
+    /**
+     * Fetches a list of all positions from the backend API.
+     * Parses JSON data and maps it to Posn objects.
+     *
+     * @return A list of Posn objects, or an empty list if an error occurs.
+     */
     public static List<Posn> fetchPositions() {
         List<Posn> positions = new ArrayList<>();
 

@@ -196,7 +196,7 @@ public class LoginForm {
                 // Display other errors
                 JOptionPane.showMessageDialog(
                         frame,
-                        "Could not connect to the database,",
+                        ex.getMessage(),
                         "Login Error",
                         JOptionPane.ERROR_MESSAGE
                 );

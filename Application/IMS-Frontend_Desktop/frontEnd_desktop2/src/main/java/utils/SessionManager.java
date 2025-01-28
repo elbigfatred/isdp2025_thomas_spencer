@@ -1,11 +1,20 @@
 package utils;
 
+/**
+ * SessionManager manages user session data and authentication state.
+ *
+ * Features:
+ * - Implements a singleton pattern to maintain a single session instance.
+ * - Stores user information including username, roles, and last activity time.
+ * - Supports session timeout management.
+ * - Provides utility methods to reset, update, and retrieve session details.
+ */
 public class SessionManager {
 
     private static SessionManager instance; // Singleton instance
 
     //Constants
-    private static final long MAX_SESSION_TIME = 60000; //20 sec in milliseconds
+    private static final long MAX_SESSION_TIME = 8000; //20 sec in milliseconds
 
     private String username; // Store the current username
     private String location; // Example: user's current location
@@ -22,7 +31,12 @@ public class SessionManager {
         resetSession();
     }
 
-    // Get the singleton instance
+    /**
+     * Retrieves the singleton instance of SessionManager.
+     * Ensures only one instance exists throughout the application.
+     *
+     * @return The single instance of SessionManager.
+     */
     public static synchronized SessionManager getInstance() {
         if (instance == null) {
             instance = new SessionManager();
@@ -30,8 +44,17 @@ public class SessionManager {
         return instance;
     }
 
-    // Initialize session with user data
-    // Initialize session with user data
+    /**
+     * Initializes the session with user data on login.
+     * Stores user credentials and activity timestamp.
+     *
+     * @param username        The username of the logged-in user.
+     * @param firstname       The first name of the user.
+     * @param lastname        The last name of the user.
+     * @param email           The email of the user.
+     * @param permissionLevel The user's access level or role.
+     * @param siteName        The site or location associated with the user.
+     */
     public void login(String username, String firstname, String lastname, String email, String permissionLevel, String siteName) {
         this.username = username;
         this.firstname = firstname;
@@ -42,7 +65,10 @@ public class SessionManager {
         this.lastActivityTime = System.currentTimeMillis();
     }
 
-    // Reset session to clear user data (e.g., on logout)
+    /**
+     * Resets the session data, clearing all stored user information.
+     * Typically called on logout.
+     */
     public void resetSession() {
         username = null;
         firstname = null;
@@ -53,12 +79,19 @@ public class SessionManager {
         lastActivityTime = 0;
     }
 
-    // Check if user is logged in
+    /**
+     * Checks whether a user is currently logged in.
+     *
+     * @return true if a user session is active, false otherwise.
+     */
     public boolean isLoggedIn() {
         return username != null;
     }
 
-    // Update activity time
+    /**
+     * Updates the last activity timestamp of the session.
+     * Used to track inactivity for session timeout purposes.
+     */
     public void updateLastActivityTime() {
         lastActivityTime = System.currentTimeMillis();
     }
@@ -68,7 +101,6 @@ public class SessionManager {
         return System.currentTimeMillis() - lastActivityTime > MAX_SESSION_TIME;
     }
 
-    // Getters for user info
     public String getUsername() {
         return username;
     }
@@ -93,7 +125,6 @@ public class SessionManager {
         return siteName;
     }
 
-    // Get the max session time (if needed elsewhere)
     public static long getMaxSessionTime() {
         return MAX_SESSION_TIME;
     }

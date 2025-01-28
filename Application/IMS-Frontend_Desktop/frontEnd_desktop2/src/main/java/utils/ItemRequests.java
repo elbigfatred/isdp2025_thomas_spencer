@@ -4,9 +4,17 @@ import models.Category;
 import models.Item;
 import models.Province;
 import models.Supplier;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -14,8 +22,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * ItemRequests handles API interactions for managing inventory items.
+ *
+ * Features:
+ * - Fetch all items from the backend with detailed attributes.
+ * - Parse category, supplier, and province information from the response.
+ * - Deactivate an item by ID via a PUT request.
+ * - Update item details, including notes and image uploads.
+ * - Uses `HttpURLConnection` for API communication.
+ */
 public class ItemRequests {
 
+    /**
+     * Fetches a list of all items from the backend API.
+     * Parses JSON data and maps it to Item objects with detailed attributes.
+     *
+     * @return A list of Item objects, or an empty list if an error occurs.
+     */
     public static List<Item> fetchItems() {
         String endpoint = "http://localhost:8080/api/items";
         List<Item> items = new ArrayList<>();
@@ -91,7 +115,13 @@ public class ItemRequests {
         return items;
     }
 
-    // New method to deactivate an item
+    /**
+     * Deactivates an item by its ID using a PUT request.
+     * Returns true if the item was successfully deactivated.
+     *
+     * @param itemId The ID of the item to deactivate.
+     * @return true if successful, false otherwise.
+     */
     public static boolean deactivateItem(int itemId) {
         String endpoint = "http://localhost:8080/api/items/" + itemId + "/deactivate";
 
@@ -116,5 +146,58 @@ public class ItemRequests {
 
         return false;
     }
+
+    /**
+     * Updates an item's details via a multipart HTTP POST request.
+     * Includes item ID, notes, and an optional image file.
+     *
+     * @param itemId    The ID of the item to update.
+     * @param notes     Notes or additional details about the item.
+     * @param imagePath The local file path of the image to upload (optional).
+     * @return true if the update was successful, false otherwise.
+     */
+    public static boolean updateItem(int itemId, String notes, String imagePath) {
+        String endpoint = "http://localhost:8080/api/items/update"; // Adjust as needed
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(endpoint);
+
+            // Build the multipart entity
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            builder.addTextBody("id", String.valueOf(itemId)); // Add item ID as text
+            builder.addTextBody("notes", notes);              // Add notes as text
+            if (imagePath != null && !imagePath.isEmpty()) {
+                File imageFile = new File(imagePath);
+                if (imageFile.exists()) {
+                    builder.addBinaryBody("file", imageFile); // Add image file
+                } else {
+                    System.err.println("Image file does not exist: " + imagePath);
+                    return false;
+                }
+            }
+
+            // Attach the multipart entity to the request
+            HttpEntity entity = builder.build();
+            request.setEntity(entity);
+
+            // Execute the request and handle the response
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                int statusCode = response.getCode();
+                String responseBody = EntityUtils.toString(response.getEntity());
+                if (statusCode == 200) {
+                    System.out.println("Success: " + responseBody);
+                    return true;
+                } else {
+                    System.err.println("Failed to upload. HTTP Code: " + statusCode);
+                    System.err.println("Response: " + responseBody);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
 }

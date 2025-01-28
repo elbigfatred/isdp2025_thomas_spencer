@@ -16,7 +16,14 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 
+/**
+ * AddEditEmployeeForm provides a UI for adding and editing employees.
+ * It includes form validation, automatic username generation, and password handling.
+ */
 public class AddEditEmployeeForm {
+
+    // =================== UI COMPONENTS ===================
+
     private JPanel ContentPane;
     private JLabel lblWelcome;
     private JLabel lblLocation;
@@ -50,11 +57,24 @@ public class AddEditEmployeeForm {
     private JLabel lblStrengthAdvisor;
     private JLabel lblPositions;
 
+    // =================== FRAME VARIABLES ===================
+
     private JDialog frame;
     private List<Employee> allEmployees;
     private boolean passwordRevealed = true; // will be toggled on display to run functionality
     private Employee selectedEmployee;
 
+    // =================== INITIALIZATION SECTION ===================
+
+    /**
+     * Displays the form for adding or editing an employee.
+     *
+     * @param parentFrame     The parent frame (used for modal dialog behavior).
+     * @param currentLocation The location to center the dialog.
+     * @param usage           Determines whether the form is for "ADD" or "EDIT".
+     * @param employeeToModify The employee to edit (null if adding a new employee).
+     * @param onCloseCallback A callback function to execute when the dialog closes.
+     */
     public void showAddEditEmployeeForm(Frame parentFrame, Point currentLocation, String usage, Employee employeeToModify, Runnable onCloseCallback) {
         frame = new JDialog(parentFrame, true);
         if (Objects.equals(usage, "ADD")){
@@ -94,398 +114,17 @@ public class AddEditEmployeeForm {
         });
     }
 
-    private void setupFields(String usage) {
-        System.out.println("setting up fields...");
-        populatePositionComboBox();
-        populateSitesComboBox();
-        allEmployees = EmployeeRequests.fetchEmployees();
-        System.out.println(allEmployees);
-        if (Objects.equals(usage, "ADD")){
-            System.out.println("add mode");
-            // add mode
-            lblPassword.setVisible(false);
-            txtPassword.setVisible(false);
-            lblPasswordEyeball.setVisible(false);
-            btnGenerateStrongPassword.setVisible(false);
-            assignEmployeeID();
-            btnSave.addActionListener(e -> {
-                int confirm = JOptionPane.showConfirmDialog(
-                        frame,
-                        "Save new Employee?",
-                        "Confirm",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                if (confirm == JOptionPane.NO_OPTION) return;
-                AddNewEmployee();
-            });
-
-            txtFirstname.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-
-                @Override
-                public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-
-                @Override
-                public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-            });
-
-            txtLastname.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-
-                @Override
-                public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-
-                @Override
-                public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                    generateUsername();
-                }
-            });
-
-        }
-        else if (Objects.equals(usage, "EDIT") && selectedEmployee != null) {
-            //edit mode
-            System.out.println("Edit mode");
-            populateFieldsForEditing();
-            btnSave.addActionListener(e -> {
-                int confirm = JOptionPane.showConfirmDialog(
-                        frame,
-                        "Modify Employee?",
-                        "Confirm",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                if (confirm == JOptionPane.NO_OPTION) return;
-                updateEmployee();
-            });
-        }
-    }
-
-    private void populateFieldsForEditing() {
-        System.out.println(selectedEmployee.getRoles()); // Print roles for debugging
-        System.out.println(selectedEmployee.getSite());
-        System.out.println(selectedEmployee.getLocked());
-
-        // Set text fields and checkboxes
-        txtEmpId.setText(String.valueOf(selectedEmployee.getId()));
-        txtEmpId.setEnabled(false); // ID is not editable
-        txtFirstname.setText(selectedEmployee.getFirstName());
-        txtLastname.setText(selectedEmployee.getLastName());
-        txtUsername.setText(selectedEmployee.getUsername());
-        txtUsername.setEnabled(false); // Username is not editable
-        txtEmail.setText(selectedEmployee.getEmail());
-        chkActive.setSelected(selectedEmployee.isActive());
-        chkLocked.setSelected(selectedEmployee.getLocked());
-
-        // Hide the combo box for positions
-        cmbPosition.setVisible(false);
-
-        // Display all roles in lblPositions
-        StringBuilder positionsText = new StringBuilder("<html>Roles:<br>");
-        for (Posn userPosn : selectedEmployee.getRoles()) {
-            positionsText.append(userPosn.getPermissionLevel()).append("<br>");
-        }
-        positionsText.append("</html>");
-        lblPositions.setText(positionsText.toString());
-        lblPositions.setVisible(false);
-        lblPos.setVisible(false);
-
-        // Populate the site combo box
-        for (int i = 0; i < cmbLocation.getItemCount(); i++) {
-            Site site = (Site) cmbLocation.getItemAt(i);
-            if (site.getId() == selectedEmployee.getSite().getId()) {
-                cmbLocation.setSelectedItem(site);
-                break;
-            }
-        }
-
-        // Leave the password field blank for security reasons
-        txtPassword.setText("");
-    }
-
-    private void updateEmployee() {
-        try {
-            if (!validateFieldsForAdd()) {
-                return; // Stop execution if validation fails
-            }
-
-            // Update basic employee details
-            selectedEmployee.setFirstName(txtFirstname.getText().trim());
-            selectedEmployee.setLastName(txtLastname.getText().trim());
-            selectedEmployee.setEmail(txtEmail.getText().trim());
-            selectedEmployee.setActive(chkActive.isSelected());
-            selectedEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
-            selectedEmployee.setSite((Site) cmbLocation.getSelectedItem());
-
-            // Update password if the field is not empty
-            String newPassword = new String(txtPassword.getPassword()).trim();
-            if (!newPassword.isEmpty()) {
-                selectedEmployee.setPassword(newPassword);
-            }
-
-            // Call the backend to update the employee
-            boolean success = EmployeeRequests.updateEmployee(selectedEmployee);
-            if (success) {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Employee updated successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-                frame.dispose(); // Close the form after successful update
-            } else {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Failed to update employee. Please try again.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Error: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
-
-    private void generateUsername() {
-        String firstName = txtFirstname.getText().trim().toLowerCase();
-        String lastName = txtLastname.getText().trim().toLowerCase();
-
-        if (!firstName.isEmpty() && !lastName.isEmpty()) {
-            String baseUsername = firstName.charAt(0) + lastName;
-            String uniqueUsername = getUniqueUsername(baseUsername);
-            txtUsername.setText(uniqueUsername);
-            txtEmail.setText(uniqueUsername + "@bullseye.ca");
-        }
-        else{
-            txtUsername.setText("");
-            txtEmail.setText("");
-        }
-    }
-
-    private String getUniqueUsername(String baseUsername) {
-        Set<String> existingUsernames = new HashSet<>();
-        for (Employee employee : allEmployees) {
-            existingUsernames.add(employee.getUsername().toLowerCase());
-        }
-
-        if (!existingUsernames.contains(baseUsername)) {
-            return baseUsername;
-        }
-
-        // Add numbers to the base username to make it unique
-        int counter = 1;
-        String newUsername;
-        do {
-            newUsername = baseUsername + String.format("%02d", counter);
-            counter++;
-        } while (existingUsernames.contains(newUsername));
-
-        return newUsername;
-    }
-
-    private void AddNewEmployee() {
-        // Construct the Employee object from form inputs
-        try {
-            // Validate input fields
-            if (!validateFieldsForAdd()) {
-                return; // Stop execution if validation fails
-            }
-            Employee newEmployee = new Employee();
-            newEmployee.setId(Integer.parseInt(txtEmpId.getText()));
-            newEmployee.setUsername(txtUsername.getText().trim());
-            newEmployee.setPassword("");
-            newEmployee.setFirstName(txtFirstname.getText().trim());
-            newEmployee.setLastName(txtLastname.getText().trim());
-            newEmployee.setEmail(txtEmail.getText().trim());
-            newEmployee.setActive(chkActive.isSelected());
-            newEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
-            newEmployee.setSite((Site) cmbLocation.getSelectedItem());
-
-            // Assign the primary role from cmbPosition
-            Posn primaryRole = (Posn) cmbPosition.getSelectedItem();
-            if (primaryRole != null) {
-                List<Posn> roles = new ArrayList<>();
-                roles.add(primaryRole);
-                newEmployee.setRoles(roles); // Assign the primary role
-            }
-
-            // Call the backend to save the new employee
-            boolean success = EmployeeRequests.addEmployee(newEmployee);
-
-            if (success) {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Employee added successfully!",
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-                frame.dispose(); // Close the form after successful addition
-            } else {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Failed to add employee. Please try again.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }}
-                catch (Exception ex) {
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Error: " + ex.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-    }
-
-    private boolean validateFields() {
-        // Ensure no fields are empty
-        if (txtFirstname.getText().trim().isEmpty() ||
-                txtLastname.getText().trim().isEmpty() ||
-                txtEmail.getText().trim().isEmpty() ||
-                txtPassword.getPassword().length == 0 ||
-                cmbPosition.getSelectedItem() == null ||
-                cmbLocation.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "All fields must be filled in.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return false;
-        }
-
-        // Validate email format
-        if (!txtEmail.getText().matches("^[\\w-.]+@[\\w-]+\\.[a-z]{2,3}$")) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Invalid email format.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return false;
-        }
-
-        // Validate password strength
-        String password = new String(txtPassword.getPassword());
-        if (!validatePassword(password)) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Password must be at least 8 characters long, include an uppercase letter, and a special character.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean validateFieldsForAdd() {
-        // Ensure no fields are empty except the password
-        if (txtFirstname.getText().trim().isEmpty() ||
-                txtLastname.getText().trim().isEmpty() ||
-                txtEmail.getText().trim().isEmpty() ||
-                cmbPosition.getSelectedItem() == null ||
-                cmbLocation.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "All fields must be filled in.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return false;
-        }
-
-        // Validate email format
-        if (!txtEmail.getText().matches("^[\\w-.]+@[\\w-]+\\.[a-z]{2,3}$")) {
-            JOptionPane.showMessageDialog(
-                    frame,
-                    "Invalid email format.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return false;
-        }
-
-        return true; // Password is skipped for validation since it's defaulted
-    }
-
-    private boolean validatePassword(String password) {
-        boolean hasUppercase = password.matches(".*[A-Z].*");
-        boolean hasSpecialCharacter = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
-        boolean hasMinimumLength = password.length() >= 8;
-
-        return hasUppercase && hasSpecialCharacter && hasMinimumLength;
-    }
-
-    private void populateSitesComboBox() {
-        List<Site> sites = SiteRequests.fetchSites();
-        cmbLocation.removeAllItems();
-
-        for (Site site : sites) {
-            if(site.isActive()){
-                cmbLocation.addItem(site);
-            }
-        }
-    }
-
-    private void populatePositionComboBox() {
-        List<Posn> positions = PositionRequests.fetchPositions();
-        cmbPosition.removeAllItems();
-
-        for (Posn posn : positions) {
-            if(posn.getActive()){
-                cmbPosition.addItem(posn);
-            }
-        }
-    }
-
-    private void assignEmployeeID() {
-        List<Integer> existingIds = new ArrayList<>();
-        for (Employee employee : allEmployees) {
-            existingIds.add(employee.getId());
-        }
-
-        int newId = findFirstAvailableID(existingIds);
-        txtEmpId.setText(String.valueOf(newId));
-    }
-
-    private int findFirstAvailableID(List<Integer> existingIds) {
-        for (int i = 1000; i <= 9998; i++){
-            if (!existingIds.contains(i)){
-                System.out.println(i);
-                return i;
-            }
-        }
-        throw new RuntimeException("No available employee IDs in the range 1000-9998.");
-    }
-
+    /**
+     * Returns the main panel for the form and sets up UI event listeners.
+     *
+     * @return JPanel The main panel of the form.
+     */
     public JPanel getMainPanel() {
         // Check if a user is logged in
         SessionManager session = SessionManager.getInstance();
         if (!session.isLoggedIn()) {
             JOptionPane.showMessageDialog(
-                    null,
+                    frame,
                     "No user is currently logged in. Not sure how you got here.",
                     "Session Error",
                     JOptionPane.ERROR_MESSAGE
@@ -496,6 +135,7 @@ public class AddEditEmployeeForm {
 
         // Set up initial components
         lblWelcome.setText("User: " + session.getUsername());
+
         lblLocation.setText("Location: " + session.getSiteName());
 
         lblPasswordEyeball.addMouseListener(new MouseAdapter() {
@@ -564,6 +204,162 @@ public class AddEditEmployeeForm {
         return ContentPane;
     }
 
+    // =================== UI SETUP & FIELD POPULATION ===================
+
+    /**
+     * Populates the UI fields when adding or editing an employee.
+     *
+     * @param usage Determines whether the form is for "ADD" or "EDIT".
+     */
+    private void setupFields(String usage) {
+        populatePositionComboBox();
+        populateSitesComboBox();
+        allEmployees = EmployeeRequests.fetchEmployees();
+        if (Objects.equals(usage, "ADD")){
+            // add mode
+            lblPassword.setVisible(false);
+            txtPassword.setVisible(false);
+            lblPasswordEyeball.setVisible(false);
+            btnGenerateStrongPassword.setVisible(false);
+            assignEmployeeID();
+            btnSave.addActionListener(e -> {
+                int confirm = JOptionPane.showConfirmDialog(
+                        frame,
+                        "Save new Employee?",
+                        "Confirm",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                if (confirm == JOptionPane.YES_OPTION) AddNewEmployee();
+            });
+
+            txtFirstname.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+            });
+
+            txtLastname.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    generateUsername();
+                }
+            });
+
+        }
+        else if (Objects.equals(usage, "EDIT") && selectedEmployee != null) {
+            //edit mode
+            populateFieldsForEditing();
+            btnSave.addActionListener(e -> {
+                int confirm = JOptionPane.showConfirmDialog(
+                        frame,
+                        "Modify Employee?",
+                        "Confirm",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                if (confirm == JOptionPane.YES_OPTION) updateEmployee();
+            });
+        }
+    }
+
+    /**
+     * Populates the form fields when editing an employee.
+     */
+    private void populateFieldsForEditing() {
+
+
+        // Set text fields and checkboxes
+        txtEmpId.setText(String.valueOf(selectedEmployee.getId()));
+        txtEmpId.setEnabled(false); // ID is not editable
+        txtFirstname.setText(selectedEmployee.getFirstName());
+        txtLastname.setText(selectedEmployee.getLastName());
+        txtUsername.setText(selectedEmployee.getUsername());
+        txtUsername.setEnabled(false); // Username is not editable
+        txtEmail.setText(selectedEmployee.getEmail());
+        chkActive.setSelected(selectedEmployee.isActive());
+        chkLocked.setSelected(selectedEmployee.getLocked());
+
+        // Hide the combo box for positions
+        cmbPosition.setVisible(false);
+
+        // Display all roles in lblPositions
+        StringBuilder positionsText = new StringBuilder("<html>Roles:<br>");
+        for (Posn userPosn : selectedEmployee.getRoles()) {
+            positionsText.append(userPosn.getPermissionLevel()).append("<br>");
+        }
+        positionsText.append("</html>");
+        lblPositions.setText(positionsText.toString());
+        lblPositions.setVisible(false);
+        lblPos.setVisible(false);
+
+        // Populate the site combo box
+        for (int i = 0; i < cmbLocation.getItemCount(); i++) {
+            Site site = (Site) cmbLocation.getItemAt(i);
+            if (site.getId() == selectedEmployee.getSite().getId()) {
+                cmbLocation.setSelectedItem(site);
+                break;
+            }
+        }
+
+        // Leave the password field blank for security reasons
+        txtPassword.setText("");
+    }
+
+    /**
+     * Populates the position (roles) dropdown menu with available positions.
+     */
+    private void populatePositionComboBox() {
+        List<Posn> positions = PositionRequests.fetchPositions();
+        cmbPosition.removeAllItems();
+
+        for (Posn posn : positions) {
+            if(posn.getActive()){
+                cmbPosition.addItem(posn);
+            }
+        }
+    }
+
+    /**
+     * Populates the site (location) dropdown menu with active sites.
+     */
+    private void populateSitesComboBox() {
+        List<Site> sites = SiteRequests.fetchSites();
+        cmbLocation.removeAllItems();
+
+        for (Site site : sites) {
+            if(site.isActive()){
+                cmbLocation.addItem(site);
+            }
+        }
+    }
+
+    /**
+     * Loads and sets the Bullseye logo in the UI.
+     */
     private void SetupBullseyeLogo() {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
@@ -577,6 +373,122 @@ public class AddEditEmployeeForm {
         lblLogo.setText("");
     }
 
+    // =================== EMPLOYEE OPERATIONS ===================
+
+    /**
+     * Updates an existing employee with modified details and sends the update request.
+     */
+    private void updateEmployee() {
+        try {
+            if (!validateFields()) {
+                return; // Stop execution if validation fails
+            }
+
+            // Update basic employee details
+            selectedEmployee.setFirstName(txtFirstname.getText().trim());
+            selectedEmployee.setLastName(txtLastname.getText().trim());
+            selectedEmployee.setEmail(txtEmail.getText().trim());
+            selectedEmployee.setActive(chkActive.isSelected());
+            selectedEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
+            selectedEmployee.setSite((Site) cmbLocation.getSelectedItem());
+
+            // Update password if the field is not empty
+            String newPassword = new String(txtPassword.getPassword()).trim();
+            if (!newPassword.isEmpty()) {
+                selectedEmployee.setPassword(newPassword);
+            }
+
+            // Call the backend to update the employee
+            boolean success = EmployeeRequests.updateEmployee(selectedEmployee);
+            if (success) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Employee updated successfully!",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                frame.dispose(); // Close the form after successful update
+            } else {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Failed to update employee. Please try again.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Error: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    /**
+     * Adds a new employee to the system after validating input fields.
+     */
+    private void AddNewEmployee() {
+        // Construct the Employee object from form inputs
+        try {
+            // Validate input fields
+            if (!validateFields()) {
+                return; // Stop execution if validation fails
+            }
+            Employee newEmployee = new Employee();
+            newEmployee.setId(Integer.parseInt(txtEmpId.getText()));
+            newEmployee.setUsername(txtUsername.getText().trim());
+            newEmployee.setPassword("");
+            newEmployee.setFirstName(txtFirstname.getText().trim());
+            newEmployee.setLastName(txtLastname.getText().trim());
+            newEmployee.setEmail(txtEmail.getText().trim());
+            newEmployee.setActive(chkActive.isSelected());
+            newEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
+            newEmployee.setSite((Site) cmbLocation.getSelectedItem());
+
+            // Assign the primary role from cmbPosition
+            Posn primaryRole = (Posn) cmbPosition.getSelectedItem();
+            if (primaryRole != null) {
+                List<Posn> roles = new ArrayList<>();
+                roles.add(primaryRole);
+                newEmployee.setRoles(roles); // Assign the primary role
+            }
+
+            // Call the backend to save the new employee
+            boolean success = EmployeeRequests.addEmployee(newEmployee);
+
+            if (success) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Employee added successfully!",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                frame.dispose(); // Close the form after successful addition
+            } else {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Failed to add employee. Please try again.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }}
+        catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Error: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    // =================== PASSWORD MANAGEMENT ===================
+
+    /**
+     * Toggles password visibility between hidden and visible.
+     */
     public void togglePasswordRevealed() {
 
         txtPassword.setEchoChar(passwordRevealed? '•' : ((char) 0));
@@ -595,6 +507,9 @@ public class AddEditEmployeeForm {
         passwordRevealed = !passwordRevealed;
     }
 
+    /**
+     * Generates a strong password following security best practices.
+     */
     private void generateStrongPassword() {
         // Character pools
         final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
@@ -631,6 +546,11 @@ public class AddEditEmployeeForm {
         //evaluatePasswordStrength(new String(passwordArray));
     }
 
+    /**
+     * Advises the user on password strength based on security rules.
+     *
+     * @param password The password to evaluate.
+     */
     private void advisePasswordStrength(String password) {
 
         if(password.length() < 4){
@@ -675,4 +595,113 @@ public class AddEditEmployeeForm {
         lblStrengthAdvisor.setForeground(strengthColor);
     }
 
+    // =================== UI UTILITIES ===================
+    /**
+     * Automatically generates a unique username based on first and last name input.
+     */
+    private void generateUsername() {
+        String firstName = txtFirstname.getText().trim().toLowerCase();
+        String lastName = txtLastname.getText().trim().toLowerCase();
+
+        if (!firstName.isEmpty() && !lastName.isEmpty()) {
+            String baseUsername = firstName.charAt(0) + lastName;
+            String uniqueUsername = getUniqueUsername(baseUsername);
+            txtUsername.setText(uniqueUsername);
+            txtEmail.setText(uniqueUsername + "@bullseye.ca");
+        }
+        else{
+            txtUsername.setText("");
+            txtEmail.setText("");
+        }
+    }
+
+    /**
+     * Ensures the generated username is unique by appending numbers if necessary.
+     *
+     * @param baseUsername The base username derived from first and last name.
+     * @return String A unique username.
+     */
+    private String getUniqueUsername(String baseUsername) {
+        Set<String> existingUsernames = new HashSet<>();
+        for (Employee employee : allEmployees) {
+            existingUsernames.add(employee.getUsername().toLowerCase());
+        }
+
+        if (!existingUsernames.contains(baseUsername)) {
+            return baseUsername;
+        }
+
+        // Add numbers to the base username to make it unique
+        int counter = 1;
+        String newUsername;
+        do {
+            newUsername = baseUsername + String.format("%02d", counter);
+            counter++;
+        } while (existingUsernames.contains(newUsername));
+
+        return newUsername;
+    }
+
+    /**
+     * Validates form fields to ensure all required inputs are provided.
+     *
+     * @return boolean True if all fields are valid, false otherwise.
+     */
+    private boolean validateFields() {
+        // Ensure no fields are empty except the password
+        if (txtFirstname.getText().trim().isEmpty() ||
+                txtLastname.getText().trim().isEmpty() ||
+                txtEmail.getText().trim().isEmpty() ||
+                cmbPosition.getSelectedItem() == null ||
+                cmbLocation.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "All fields must be filled in.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return false;
+        }
+
+        // Validate email format
+        if (!txtEmail.getText().matches("^[\\w-.]+@[\\w-]+\\.[a-z]{2,3}$")) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Invalid email format.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return false;
+        }
+
+        return true; // Password is skipped for validation since it's defaulted
+    }
+
+    /**
+     * Assigns a new employee ID by finding the first available ID in the system.
+     */
+    private void assignEmployeeID() {
+        List<Integer> existingIds = new ArrayList<>();
+        for (Employee employee : allEmployees) {
+            existingIds.add(employee.getId());
+        }
+
+        int newId = findFirstAvailableID(existingIds);
+        txtEmpId.setText(String.valueOf(newId));
+    }
+
+    /**
+     * Finds the first available employee ID within the range 1000-9998.
+     *
+     * @param existingIds List of currently assigned employee IDs.
+     * @return int The first available ID.
+     */
+    private int findFirstAvailableID(List<Integer> existingIds) {
+        for (int i = 1000; i <= 9998; i++){
+            if (!existingIds.contains(i)){
+                return i;
+            }
+        }
+        throw new RuntimeException("No available employee IDs in the range 1000-9998.");
+    }
 }
