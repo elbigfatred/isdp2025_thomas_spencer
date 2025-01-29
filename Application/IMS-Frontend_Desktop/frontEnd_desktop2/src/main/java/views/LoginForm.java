@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.ConnectException;
 import java.net.URL;
 import java.util.stream.Collectors;
 
@@ -192,7 +193,16 @@ public class LoginForm {
                     new PasswordResetForm(username).showPasswordResetForm(frame.getLocation());
                     frame.dispose();
                 });
-            } else {
+            }
+            else if (ex.getMessage().contains("Connection refused")) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Could not connect to the database.\n\nPlease contact a Bullseye Administrator.",
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+            else {
                 // Display other errors
                 JOptionPane.showMessageDialog(
                         frame,
@@ -227,6 +237,7 @@ public class LoginForm {
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                 );
+                return;
             }
             if(!employee.isActive()){
                 JOptionPane.showMessageDialog(frame,"Invalid username and/or password. Please contact your Administrator at admin@bullseye.ca for assistance.","Error",JOptionPane.ERROR_MESSAGE);

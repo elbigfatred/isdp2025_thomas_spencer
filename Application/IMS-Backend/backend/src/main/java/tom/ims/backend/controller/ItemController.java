@@ -1,10 +1,11 @@
 package tom.ims.backend.controller;
 
-import jakarta.annotation.Resource;
+import org.springframework.core.io.Resource;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -68,6 +69,7 @@ public class ItemController {
     public ResponseEntity<String> updateItem(
             @RequestParam("id") int id,
             @RequestParam(value = "notes", required = false) String notes,
+            @RequestParam(value = "desc", required = false) String desc,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
             // Retrieve the item from the database
@@ -79,6 +81,10 @@ public class ItemController {
             // Update notes if provided
             if (notes != null) {
                 item.setNotes(notes);
+            }
+            // Update description if provided
+            if (desc != null) {
+                item.setDescription(desc);
             }
 
             // Handle file upload
@@ -114,6 +120,36 @@ public class ItemController {
         return filePath.toString(); // Return the file path for storage in the DB
     }
 
+
+    @GetMapping("/image/{itemId}")
+    public ResponseEntity<Resource> getItemImage(@PathVariable int itemId) {
+        try {
+
+            System.out.println("Getting image");
+            Item item = itemService.getItemById(itemId);
+            Path imagePath = Paths.get(item.getImageLocation()).toAbsolutePath();
+
+            System.out.println(imagePath + " is the path");
+
+            // Load the file as a resource\
+            Resource resource = new UrlResource(imagePath.toUri());
+
+            // Check if the file exists
+            if (!resource.exists() || !resource.isReadable()) {
+                System.out.println("Could not read the image");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            // Return the image as a response
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "image/jpeg")
+                    .body((Resource) resource);
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
 
 }

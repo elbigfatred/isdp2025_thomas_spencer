@@ -32,6 +32,10 @@ public class EditItemForm {
     private JLabel lblImagePath;
     private JLabel lblWelcome;
     private JLabel lblLocation;
+    private JLabel lblSKUlabel;
+    private JTextField txtDesc;
+    private JLabel lblDesc;
+    private JLabel lblItemImage;
 
     // =================== FRAME VARIABLES ===================
 
@@ -120,7 +124,7 @@ public class EditItemForm {
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(600, 350);                   // Set frame size
+        frame.setSize(600, 550);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -168,19 +172,38 @@ public class EditItemForm {
      */
     private void setupFields() {
         if (selectedItem != null) {
+            //clear item text
+            lblItemImage.setText("");
+
+            //Title
+            lblSKUlabel.setText("Editing Details of SKU: " + selectedItem.getSku());
+
             // Populate the notes field
             String existingNotes = selectedItem.getNotes();
             txtNotes.setText(existingNotes != null ? existingNotes : "");
 
-            // Limit notes input to 255 characters
-            AbstractDocument document = (AbstractDocument) txtNotes.getDocument();
-            document.setDocumentFilter(new CharacterLimitFilter(255));
+            // Populate description field
+            String exisitngDesc = selectedItem.getDescription();
+            txtDesc.setText(exisitngDesc != null ? exisitngDesc : "");
+
+            // Limit notes & desc input to 255 characters
+            AbstractDocument notesDocuments = (AbstractDocument) txtNotes.getDocument();
+            notesDocuments.setDocumentFilter(new CharacterLimitFilter(255));
+            AbstractDocument descDocuments = (AbstractDocument) txtDesc.getDocument();
+            descDocuments.setDocumentFilter(new CharacterLimitFilter(255));
+
 
             // Display existing image location (if available)
             if (selectedItem.getImageLocation() != null) {
-                btnAddImage.setText("Change Image");
-                //lblImagePath.setText("Current Image on server: " + selectedItem.getImageLocation());
-            } else {
+                btnAddImage.setText("Change Existing Image");
+                ImageIcon itemImage = ItemRequests.fetchItemImage(selectedItem.getId(), 150, 150);
+                if (itemImage != null) {
+                    lblItemImage.setIcon(itemImage);
+                } else {
+                    lblItemImage.setText("Image Not Found");
+                }
+            }
+         else {
                 btnAddImage.setText("Add Image");
             }
         }
@@ -195,13 +218,18 @@ public class EditItemForm {
     private void saveEvent() {
         // Validate fields
         String updatedNotes = txtNotes.getText().trim();
+        String updatedDesc = txtDesc.getText().trim();
         if (updatedNotes.length() > 255) {
             JOptionPane.showMessageDialog(frame, "Notes cannot exceed 255 characters.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        if (updatedDesc.length() > 255) {
+            JOptionPane.showMessageDialog(frame, "Description cannot exceed 255 characters.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         // Send the PUT request
-        boolean success = ItemRequests.updateItem(selectedItem.getId(), updatedNotes, selectedImagePath);
+        boolean success = ItemRequests.updateItem(selectedItem.getId(), updatedNotes, updatedDesc, selectedImagePath);
 
         if (success) {
             JOptionPane.showMessageDialog(frame, "Item updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -229,8 +257,13 @@ public class EditItemForm {
                 JOptionPane.showMessageDialog(frame, "Please select a valid image file: \n PNG, JPG or JPEG", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            selectedImagePath = fileChooser.getSelectedFile().getName();
-            //JOptionPane.showMessageDialog(frame, "Selected image: " + selectedImagePath, "Image Selected", JOptionPane.INFORMATION_MESSAGE);
+            selectedImagePath = fileChooser.getSelectedFile().getAbsolutePath();
+            // Load and display the new image
+            ImageIcon newImage = new ImageIcon(selectedImagePath);
+            Image scaledImage = newImage.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+            lblItemImage.setIcon(new ImageIcon(scaledImage));
+            lblItemImage.setText("");
+            btnAddImage.setText("Change Image");
             lblImagePath.setText("Image Ready to Save ✔\n");
         }
     }

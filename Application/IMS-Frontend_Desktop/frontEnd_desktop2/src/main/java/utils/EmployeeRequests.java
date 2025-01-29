@@ -152,7 +152,7 @@ public class EmployeeRequests {
             return null; // Employee not found
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("Unable to connect to the backend. Please try again later.");
+            throw new RuntimeException("Unable to connect to the database.\nPlease try again later.");
         }
     }
 

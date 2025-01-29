@@ -73,6 +73,10 @@ public class DashboardForm {
     private JPanel pnlEditPermissionsRoles;
     private JCheckBox chkInactiveEmployees;
     private JLabel lblEditPermissionsEmployeeDetails;
+    private JTable tblEmployeesPermissions;
+    private JLabel lblEditEmployeeTablesTitle;
+    private JLabel lblEditEmployeePermissionsTitle;
+    private JTextField txtEditPermissionsEmployeeSearch;
 
     // =================== FRAME VARIABLES ===================
 
@@ -138,7 +142,7 @@ public class DashboardForm {
 
             loadInitialData();
             populateEmployeeTable(allEmployees);
-            populateEditPermissionsEmployeesList(allEmployees);
+            populateEditPermissionsEmployeesTable(allEmployees);
             populateEditPermissionsPositionList(allPosns, null);
         }
 
@@ -340,6 +344,23 @@ public class DashboardForm {
             }
         });
 
+        txtEditPermissionsEmployeeSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateEditEmployeesTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateEditEmployeesTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateEditEmployeesTableBySearch();
+            }
+        });
+
         return ContentPane;
     }
 
@@ -451,49 +472,90 @@ public class DashboardForm {
      *
      * @param employees List of employees to display.
      */
-    private void populateEditPermissionsEmployeesList(List<Employee> employees) {
-        // Ensure the JList is cleared before populating
-        DefaultListModel<String> listModel = new DefaultListModel<>();
+    private void populateEditPermissionsEmployeesTable(List<Employee> employees) {
+        // Define column names (ID is hidden later)
+        String[] columns = {"ID", "Username", "First Name", "Last Name"};
 
+        // Create a table model
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make table cells non-editable
+            }
+        };
+
+        // Populate the table with employee data
         if (employees != null && !employees.isEmpty()) {
             for (Employee employee : employees) {
-                // Format the employee details for display in the list
-                String employeeDetails = String.format("%d, %s, %s (%s) [%s]",
-                        employee.getId(), employee.getLastName(), employee.getFirstName(), employee.getUsername(),
-                        (employee.getSite() != null ? employee.getSite().getSiteName() : "No Site Assigned"));
-                listModel.addElement(employeeDetails);
+                Object[] rowData = {
+                        employee.getId(),         // Hidden but used for selection
+                        employee.getUsername(),
+                        employee.getFirstName(),
+                        employee.getLastName()
+                };
+                tableModel.addRow(rowData);
             }
-        } else {
-            listModel.addElement("No employees available.");
         }
 
-        // Set the model to the JList
-        lstEmployees.setModel(listModel);
+        // Set the table model
+        tblEmployeesPermissions.setModel(tableModel);
 
-        lstEmployees.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        lstEmployees.getSelectionModel().addListSelectionListener(e -> {
+        // Hide the first column (Employee ID)
+        tblEmployeesPermissions.getColumnModel().getColumn(0).setMinWidth(0);
+        tblEmployeesPermissions.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblEmployeesPermissions.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set selection mode to single row selection
+        tblEmployeesPermissions.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener to handle row selection
+        tblEmployeesPermissions.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 EditPermissionsSelectedItems.clear();
-                int selectedRow = lstEmployees.getSelectedIndex();
+                int selectedRow = tblEmployeesPermissions.getSelectedRow();
                 if (selectedRow != -1) {
-                    String selectedEmployeeDetails = (String) lstEmployees.getSelectedValue();
-                    String[] employeeDetails = selectedEmployeeDetails.split(", ");
-                    employeeTableSelectedId = Integer.parseInt(employeeDetails[0]);
+                    employeeTableSelectedId = (Integer) tblEmployeesPermissions.getValueAt(selectedRow, 0); // Get employee ID
                     UpdateEditEmployeeDetailsBox();
 
-                    for(Employee employee : allEmployees) {
+                    // Find the selected employee
+                    for (Employee employee : allEmployees) {
                         if (employee.getId() == employeeTableSelectedId) {
                             populateEditPermissionsPositionList(allPosns, employee.getRoles());
+                            break;
                         }
                     }
-                }
-                else{
+                } else {
                     employeeTableSelectedId = -1;
                 }
             }
         });
+    }
+
+    /**
+     * Updates the item table based on the search field input.
+     */
+    private void updateEditEmployeesTableBySearch() {
+        if (txtEditPermissionsEmployeeSearch.getText().trim().isEmpty()) {
+            populateEditPermissionsEmployeesTable(allEmployees);
+            return;
+        }
+
+        List<Employee> empsToSearch = allEmployees;
+        String search = txtEditPermissionsEmployeeSearch.getText().trim().toLowerCase();
+        List<Employee> empsToList = new ArrayList<>();
+
+            for (Employee emp : empsToSearch) {
 
 
+                // Check if any otherfield matches the search term
+                if (emp.getFirstName().toLowerCase().contains(search) ||
+                        emp.getLastName().toLowerCase().contains(search) ||
+                        emp.getUsername().toLowerCase().contains(search)) {
+                    empsToList.add(emp);
+                }
+            }
+
+        populateEditPermissionsEmployeesTable(empsToList);
     }
 
     /**
@@ -603,7 +665,8 @@ public class DashboardForm {
                         "Email: " + email + "<br>" +
                         "Main Role: " + mainRole + "<br>" +
                         "Site: " + site +
-                        "</html>";                lblEditPermissionsEmployeeDetails.setText(display);
+                        "</html>";
+                lblEditPermissionsEmployeeDetails.setText(display);
             }
         }
 

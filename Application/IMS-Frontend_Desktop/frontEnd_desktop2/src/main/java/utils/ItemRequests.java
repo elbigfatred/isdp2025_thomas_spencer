@@ -14,6 +14,8 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -156,7 +158,7 @@ public class ItemRequests {
      * @param imagePath The local file path of the image to upload (optional).
      * @return true if the update was successful, false otherwise.
      */
-    public static boolean updateItem(int itemId, String notes, String imagePath) {
+    public static boolean updateItem(int itemId, String notes, String desc, String imagePath) {
         String endpoint = "http://localhost:8080/api/items/update"; // Adjust as needed
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
@@ -166,6 +168,8 @@ public class ItemRequests {
             MultipartEntityBuilder builder = MultipartEntityBuilder.create();
             builder.addTextBody("id", String.valueOf(itemId)); // Add item ID as text
             builder.addTextBody("notes", notes);              // Add notes as text
+            builder.addTextBody("desc", desc);
+
             if (imagePath != null && !imagePath.isEmpty()) {
                 File imageFile = new File(imagePath);
                 if (imageFile.exists()) {
@@ -198,6 +202,41 @@ public class ItemRequests {
             return false;
         }
     }
+
+
+    /**
+     * Fetches an item's image from the backend.
+     * Checks if the image exists before returning it.
+     *
+     * @param itemId The ID of the item.
+     * @param width  Desired width of the image.
+     * @param height Desired height of the image.
+     * @return ImageIcon if found, or null if not.
+     */
+    public static ImageIcon fetchItemImage(int itemId, int width, int height) {
+        final String BASE_URL = "http://localhost:8080/api/items/image/";
+        try {
+            URL imageUrl = new URL(BASE_URL + itemId);
+            HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+
+            // Check if the response is HTTP 200 (OK)
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                ImageIcon itemImage = new ImageIcon(imageUrl);
+                Image scaledImage = itemImage.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                connection.disconnect();
+                return new ImageIcon(scaledImage);
+            } else {
+                connection.disconnect();
+                return null; // No image found
+            }
+        } catch (Exception e) {
+            return null; // Handle connection errors
+        }
+    }
+
+
 
 
 }
