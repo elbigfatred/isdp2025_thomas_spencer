@@ -1,6 +1,7 @@
 package views;
 
 import org.json.JSONObject;
+import utils.HelpBlurbs;
 import utils.LoginRequests;
 
 import javax.swing.*;
@@ -40,6 +41,7 @@ public class PasswordResetForm {
     private JLabel lblConfirmPasswordEyeball;
     private JLabel lblStrengthAdvisor;
     private JButton btnGenerateStrongPassword;
+    private JButton btnHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -79,7 +81,7 @@ public class PasswordResetForm {
         frame = new JFrame("Bullseye Inventory Management System - Password Reset"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(475, 415);                   // Set frame size
+        frame.setSize(475, 445);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -196,6 +198,10 @@ public class PasswordResetForm {
                 frame.dispose(); // Close the password reset form
                 new LoginForm().showLoginForm(frame.getLocation()); // Redirect to login form
             }
+        });
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.RESET_PASSWORD_HELP,"Password Reset Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
         return ContentPane;

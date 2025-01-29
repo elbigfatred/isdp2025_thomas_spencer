@@ -55,6 +55,7 @@ public class AddEditEmployeeForm {
     private JLabel lblPasswordEyeball;
     private JButton btnGenerateStrongPassword;
     private JLabel lblStrengthAdvisor;
+    private JButton btnHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -80,11 +81,17 @@ public class AddEditEmployeeForm {
         if (Objects.equals(usage, "ADD")){
             frame.setTitle("Bullseye Inventory Management System - Add New Employee"); // Create the frame
             frame.setSize(700, 445);                   // Set frame size
+            btnHelp.addActionListener(e -> {
+                JOptionPane.showMessageDialog(frame, HelpBlurbs.ADD_EMPLOYEE_HELP,"Add Employee Help",JOptionPane.INFORMATION_MESSAGE);
+            });
 
         }
         else if (Objects.equals(usage, "EDIT")){
             frame.setTitle("Bullseye Inventory Management System - Modify Employee"); // Create the frame
-            frame.setSize(700, 525);                   // Set frame size
+            frame.setSize(700, 555);                   // Set frame size
+            btnHelp.addActionListener(e -> {
+                JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_EMPLOYEE_HELP,"Edit Employee Help",JOptionPane.INFORMATION_MESSAGE);
+            });
 
         }
         if (employeeToModify != null) {

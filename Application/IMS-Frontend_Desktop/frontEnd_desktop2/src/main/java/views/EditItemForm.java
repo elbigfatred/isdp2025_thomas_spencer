@@ -1,6 +1,7 @@
 package views;
 
 import models.Item;
+import utils.HelpBlurbs;
 import utils.ItemRequests;
 import utils.SessionManager;
 
@@ -36,6 +37,7 @@ public class EditItemForm {
     private JTextField txtDesc;
     private JLabel lblDesc;
     private JLabel lblItemImage;
+    private JButton btnHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -101,6 +103,10 @@ public class EditItemForm {
             public void actionPerformed(ActionEvent e) {
                 btnSave.doClick();
             }
+        });
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_ITEM_HELP,"Edit Item Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
         return ContentPane;

@@ -3,6 +3,7 @@ package views;
 import models.Employee;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import utils.HelpBlurbs;
 import utils.LoginRequests;
 import utils.EmployeeRequests;
 import utils.SessionManager;
@@ -13,9 +14,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.ConnectException;
 import java.net.URL;
-import java.util.stream.Collectors;
 
 /**
  * LoginForm handles the user login interface for the Bullseye Inventory Management System.
@@ -37,6 +36,7 @@ public class LoginForm {
     private JPanel ContentPane;
     private JLabel logoLabel;
     private JLabel lblPasswordEyeball;
+    private JButton btnHelp;
 
     // Frame and state variables
     private JFrame frame;
@@ -54,6 +54,7 @@ public class LoginForm {
         togglePasswordRevealed();
         setLogo("/bullseye.jpg", logoLabel, 100, 100); // Set up the Bullseye logo
     }
+
     /**
      * Sets up the frame with the main panel and basic properties.
      *
@@ -63,7 +64,7 @@ public class LoginForm {
         frame = new JFrame("Bullseye Inventory Management System - Login");
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(475, 325);
+        frame.setSize(475, 355);
 
         // Set frame location to either the provided location or center of the screen
         if (currentLocation != null) frame.setLocation(currentLocation);
@@ -123,6 +124,10 @@ public class LoginForm {
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
             }
+        });
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.LOGIN_HELP,"Login Help",JOptionPane.INFORMATION_MESSAGE);
         });
     }
 

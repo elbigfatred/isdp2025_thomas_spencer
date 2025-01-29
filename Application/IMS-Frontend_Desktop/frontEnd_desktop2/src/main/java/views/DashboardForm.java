@@ -74,9 +74,11 @@ public class DashboardForm {
     private JCheckBox chkInactiveEmployees;
     private JLabel lblEditPermissionsEmployeeDetails;
     private JTable tblEmployeesPermissions;
-    private JLabel lblEditEmployeeTablesTitle;
-    private JLabel lblEditEmployeePermissionsTitle;
     private JTextField txtEditPermissionsEmployeeSearch;
+    private JButton btnHelpDashboard;
+    private JButton btnItemHelp;
+    private JButton btnEmployeesHelp;
+    private JButton btnHelpEditPermissions;
 
     // =================== FRAME VARIABLES ===================
 
@@ -103,7 +105,7 @@ public class DashboardForm {
         frame = new JFrame("Bullseye IMS"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(1400, 600);                   // Set frame size
+        frame.setSize(1000, 635);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -359,6 +361,22 @@ public class DashboardForm {
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
                 updateEditEmployeesTableBySearch();
             }
+        });
+
+        btnHelpDashboard.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.DASHBOARD_HELP,"Dashboard Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnHelpEditPermissions.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_PERMISSIONS_HELP,"Edit Permissions Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnEmployeesHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.EMPLOYEES_HELP,"Employees Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnItemHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.ITEMS_HELP,"Items Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
         return ContentPane;
