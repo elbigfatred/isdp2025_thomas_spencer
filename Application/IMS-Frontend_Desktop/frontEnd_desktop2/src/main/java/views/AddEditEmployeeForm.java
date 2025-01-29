@@ -84,7 +84,7 @@ public class AddEditEmployeeForm {
         }
         else if (Objects.equals(usage, "EDIT")){
             frame.setTitle("Bullseye Inventory Management System - Modify Employee"); // Create the frame
-            frame.setSize(700, 455);                   // Set frame size
+            frame.setSize(700, 495);                   // Set frame size
 
         }
         if (employeeToModify != null) {
@@ -300,7 +300,6 @@ public class AddEditEmployeeForm {
      */
     private void populateFieldsForEditing() {
 
-
         // Set text fields and checkboxes
         txtEmpId.setText(String.valueOf(selectedEmployee.getId()));
         txtEmpId.setEnabled(false); // ID is not editable
@@ -312,22 +311,28 @@ public class AddEditEmployeeForm {
         chkActive.setSelected(selectedEmployee.isActive());
         chkLocked.setSelected(selectedEmployee.getLocked());
 
-        // Hide the combo box for positions
-        cmbPosition.setVisible(false);
-
         // Display all roles in lblPositions
         StringBuilder positionsText = new StringBuilder("<html>Roles:<br>");
         for (Posn userPosn : selectedEmployee.getRoles()) {
             positionsText.append(userPosn.getPermissionLevel()).append("<br>");
         }
         positionsText.append("</html>");
-        lblPos.setVisible(false);
+        //lblPos.setVisible(false);
 
         // Populate the site combo box
         for (int i = 0; i < cmbLocation.getItemCount(); i++) {
             Site site = (Site) cmbLocation.getItemAt(i);
             if (site.getId() == selectedEmployee.getSite().getId()) {
                 cmbLocation.setSelectedItem(site);
+                break;
+            }
+        }
+
+        // Populate the position combo box
+        for (int i = 0; i < cmbPosition.getItemCount(); i++) {
+            Posn posn = (Posn) cmbPosition.getItemAt(i);
+            if(Objects.equals(posn.getPermissionLevel(), selectedEmployee.getMainRole())){
+                cmbPosition.setSelectedItem(posn);
                 break;
             }
         }
@@ -398,6 +403,49 @@ public class AddEditEmployeeForm {
             selectedEmployee.setActive(chkActive.isSelected());
             selectedEmployee.setLocked(chkLocked.isSelected() ? 1 : 0);
             selectedEmployee.setSite((Site) cmbLocation.getSelectedItem());
+
+            Employee tempEmployee = new Employee();
+            for (Employee employee : allEmployees) {
+                if (employee.getId() == selectedEmployee.getId()) {
+                    tempEmployee = employee;
+                    break;
+                }
+            }
+
+            // Assign the primary role from cmbPosition
+            Posn primaryRole = (Posn) cmbPosition.getSelectedItem();
+            if (primaryRole != null) {
+                List<Posn> roles = new ArrayList<>(selectedEmployee.getRoles()); // Get existing roles
+
+                boolean mainRoleExists = false;
+                Posn oldMainRole = null;
+
+                // Check if the main role already exists & track old main role
+                for (Posn role : roles) {
+                    if (role.getId() == primaryRole.getId()) {
+                        mainRoleExists = true;
+                    }
+                    if (role.getPermissionLevel().equals(selectedEmployee.getMainRole())) {
+                        oldMainRole = role; // Store old main role
+                    }
+                }
+
+                // If the main role is NOT in the list, add it
+                if (!mainRoleExists) {
+                    roles.add(primaryRole);
+                }
+
+                // If the old main role is different from the new one, remove it
+                if (oldMainRole != null && oldMainRole.getId() != primaryRole.getId()) {
+                    roles.remove(oldMainRole);
+                }
+
+                // Assign updated roles list to employee
+                selectedEmployee.setRoles(roles);
+                selectedEmployee.setMainRole(primaryRole.getPermissionLevel()); // Update main role text field
+            }
+
+            selectedEmployee.setMainRole(primaryRole.getPermissionLevel());
 
             // Update password if the field is not empty
             String newPassword = new String(txtPassword.getPassword()).trim();

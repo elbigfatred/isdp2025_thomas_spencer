@@ -368,25 +368,25 @@ INSERT INTO `site` (`siteID`, `siteName`, `provinceID`, `address`, `address2`, `
 (9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999,'acadia',  6),
 (10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1,'online', 10000); */
 
--- *MODIFIED FROM ABOVE*
-INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Email`, `active`, `siteID`, `username`) VALUES
-(1000, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'admin', 'admin', 'admin@bullseye.com', 1, 1, 'admin'),
-(1001, 'P@ssw0rd-', 'Eduardo', 'Concepcion', 'econcepcion@bullseye.ca', 1, 1, 'econcepcion'),
-(1002, 'P@ssw0rd-', 'Monica', 'Munoz', 'mmunoz@bullseye.ca', 1, 1, 'mmunoz'),
-(1003, 'P@ssw0rd-', 'Chris', 'Patstone', 'cpatstone@bullseye.ca', 1, 2, 'cpatstone'),
-(1004, 'P@ssw0rd-', 'Jose', 'Perez', 'jperez@bullseye.ca', 1, 4, 'jperez'),
-(1005, 'P@ssw0rd-', 'Kevin', 'Blanche', 'kblanche@bullseye.ca', 1, 5, 'kblanche'),
-(1006, 'P@ssw0rd-', 'Willow', 'Bray', 'wbray@bullseye.ca', 1, 6, 'wbray'),
-(1007, 'P@ssw0rd-', 'Tansy', 'Graupel', 'tgraupel@bullseye.ca', 1, 7, 'tgraupel'),
-(1008, 'P@ssw0rd-', 'Shuncho', 'Yuasa', 'syuasa@bullseye.ca', 1, 8, 'syuasa'),
-(1009, 'P@ssw0rd-', 'Emi', 'Byron', 'ebyron@bullseye.ca', 1, 9, 'ebyron'),
-(1010, 'P@ssw0rd-', 'Arabella', 'Bean', 'abean@bullseye.ca', 1, 10, 'abean'),
-(1011, 'P@ssw0rd-', 'Hattie', 'Trent', 'htrent@bullseye.ca', 1, 2, 'htrent'),
-(1012, 'P@ssw0rd-', 'Berniece', 'Callan', 'bcallan@bullseye.ca', 1, 2, 'bcallan'),
-(1013, 'P@ssw0rd-', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton'),
-(1014, 'P@ssw0rd-', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones'),
-(9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999, 'acadia'),
-(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1, 'online');
+-- Insert employees with main roles
+INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Email`, `active`, `siteID`, `username`, `main_role`) VALUES
+(1000, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'admin', 'admin', 'admin@bullseye.com', 1, 1, 'admin', 'Administrator'),
+(1001, 'P@ssw0rd-', 'Eduardo', 'Concepcion', 'econcepcion@bullseye.ca', 1, 1, 'econcepcion', 'Regional Manager'),
+(1002, 'P@ssw0rd-', 'Monica', 'Munoz', 'mmunoz@bullseye.ca', 1, 1, 'mmunoz', 'Financial Manager'),
+(1003, 'P@ssw0rd-', 'Chris', 'Patstone', 'cpatstone@bullseye.ca', 1, 2, 'cpatstone', 'Warehouse Manager'),
+(1004, 'P@ssw0rd-', 'Jose', 'Perez', 'jperez@bullseye.ca', 1, 4, 'jperez', 'Store Manager'),
+(1005, 'P@ssw0rd-', 'Kevin', 'Blanche', 'kblanche@bullseye.ca', 1, 5, 'kblanche', 'Store Manager'),
+(1006, 'P@ssw0rd-', 'Willow', 'Bray', 'wbray@bullseye.ca', 1, 6, 'wbray', 'Store Manager'),
+(1007, 'P@ssw0rd-', 'Tansy', 'Graupel', 'tgraupel@bullseye.ca', 1, 7, 'tgraupel', 'Store Manager'),
+(1008, 'P@ssw0rd-', 'Shuncho', 'Yuasa', 'syuasa@bullseye.ca', 1, 8, 'syuasa', 'Store Manager'),
+(1009, 'P@ssw0rd-', 'Emi', 'Byron', 'ebyron@bullseye.ca', 1, 9, 'ebyron', 'Store Manager'),
+(1010, 'P@ssw0rd-', 'Arabella', 'Bean', 'abean@bullseye.ca', 1, 10, 'abean', 'Store Manager'),
+(1011, 'P@ssw0rd-', 'Hattie', 'Trent', 'htrent@bullseye.ca', 1, 2, 'htrent', 'Warehouse Worker'),
+(1012, 'P@ssw0rd-', 'Berniece', 'Callan', 'bcallan@bullseye.ca', 1, 2, 'bcallan', 'Warehouse Worker'),
+(1013, 'P@ssw0rd-', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton', 'Warehouse Worker'),
+(1014, 'P@ssw0rd-', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones', 'Warehouse Worker'),
+(9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999, 'acadia', 'Delivery'),
+(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1, 'online', 'Online Customer');
 
 -- Insert relationships into the user_posn table
 INSERT INTO `user_posn` (`userID`, `posnID`) VALUES

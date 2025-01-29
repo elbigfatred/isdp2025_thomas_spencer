@@ -72,6 +72,7 @@ public class DashboardForm {
     private JTable tblEditPermissionsEmployees;
     private JPanel pnlEditPermissionsRoles;
     private JCheckBox chkInactiveEmployees;
+    private JLabel lblEditPermissionsEmployeeDetails;
 
     // =================== FRAME VARIABLES ===================
 
@@ -189,6 +190,7 @@ public class DashboardForm {
      */
     private void loadInitialData() {
         allEmployees = EmployeeRequests.fetchEmployees();
+        lblEditPermissionsEmployeeDetails.setText("Please select an employee.");
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
             allPosns = PositionRequests.fetchPositions();
@@ -392,6 +394,7 @@ public class DashboardForm {
 //            sessionActive = true;
             loadInitialData();
             populateEmployeeTable(allEmployees);
+            lstEmployees.clearSelection();
         }));
 
     }
@@ -475,6 +478,7 @@ public class DashboardForm {
                     String selectedEmployeeDetails = (String) lstEmployees.getSelectedValue();
                     String[] employeeDetails = selectedEmployeeDetails.split(", ");
                     employeeTableSelectedId = Integer.parseInt(employeeDetails[0]);
+                    UpdateEditEmployeeDetailsBox();
 
                     for(Employee employee : allEmployees) {
                         if (employee.getId() == employeeTableSelectedId) {
@@ -566,6 +570,7 @@ public class DashboardForm {
         tempEmployee.setActive(selectedEmployee.isActive());
         tempEmployee.setLocked(selectedEmployee.getLocked() ? 1 : 0);
         tempEmployee.setSite(selectedEmployee.getSite());
+        tempEmployee.setMainRole(selectedEmployee.getMainRole());
 
         // Use the class-level EditPermissionsSelectedItems for roles
         tempEmployee.setRoles(new ArrayList<>(EditPermissionsSelectedItems));
@@ -579,6 +584,28 @@ public class DashboardForm {
         } else {
             JOptionPane.showMessageDialog(frame, "Failed to update employee roles.");
         }
+    }
+
+    /**
+     * Displays employee details in permission editing.
+     */
+    private void UpdateEditEmployeeDetailsBox() {
+
+        for (Employee employee : allEmployees) {
+            if (employee.getId() == employeeTableSelectedId) {
+                String name = employee.getFirstName() + " " + employee.getLastName();
+                String email = employee.getEmail();
+                String mainRole = employee.getMainRole();
+                String site = employee.getSite().getSiteName();
+                String display = "<html>" +
+                        "Name: " + name + "<br>" +
+                        "Email: " + email + "<br>" +
+                        "Main Role: " + mainRole + "<br>" +
+                        "Site: " + site +
+                        "</html>";                lblEditPermissionsEmployeeDetails.setText(display);
+            }
+        }
+
     }
 
     // =================== ITEM MANAGEMENT ===================
@@ -796,9 +823,9 @@ public class DashboardForm {
         String[] columns;
         boolean isAdmin = Arrays.asList(accessPosition).contains("Administrator");
         if (isAdmin) {
-            columns = new String[]{"ID", "First Name", "Last Name", "Location", "Email", "Username", "Role(s)", "Active", "Locked"};
+            columns = new String[]{"ID", "First Name", "Last Name", "Location", "Email", "Username", "Role", "Permissions", "Active", "Locked"};
         } else {
-            columns = new String[]{"Username", "First Name", "Last Name", "Location", "Role(s)"};
+            columns = new String[]{"Username", "First Name", "Last Name", "Location", "Role"};
         }
 
         // Create a table model and add columns
@@ -841,6 +868,7 @@ public class DashboardForm {
                         employee.getSite(),
                         employee.getEmail(),
                         employee.getUsername(),
+                        employee.getMainRole(),
                         roles.toString(), // Display combined roles
                         employee.isActive() ? "Yes" : "No",
                         employee.getLocked() ? "Yes" : "No"
@@ -854,7 +882,7 @@ public class DashboardForm {
                         employee.getFirstName(),
                         employee.getLastName(),
                         employee.getSite(),
-                        roles.toString(),
+                        employee.getMainRole(),
                 };
             }
             tableModel.addRow(rowData);
@@ -911,7 +939,7 @@ public class DashboardForm {
                 "Retail Price",
                 "Notes",
                 "Active",
-                "Image Location",
+                "Image?",
                 "Supplier"
         };
 
@@ -937,7 +965,7 @@ public class DashboardForm {
                     item.getRetailPrice(),
                     item.getNotes(),
                     item.getActive() ? "Yes" : "No", // Convert active status to Yes/No
-                    item.getImageLocation(),
+                    item.getImageLocation() == null ? "No" : "Yes",
                     item.getSupplier().getName() // Get supplier name
             };
             tableModel.addRow(rowData);
@@ -1135,24 +1163,6 @@ public class DashboardForm {
             return label;
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 

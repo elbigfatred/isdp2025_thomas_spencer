@@ -195,6 +195,8 @@ public class EmployeeController {
             employee.setEmail((String) employeeData.get("email"));
             employee.setActive((Byte) ((Boolean) employeeData.get("active") ? (byte) 1 : (byte) 0));
             employee.setLocked((Byte) ((Boolean) employeeData.get("locked") ? (byte) 1 : (byte) 0));
+            employee.setMainRole((String) employeeData.get("mainrole"));
+
 
             // Update password if provided
             if (employeeData.containsKey("password")) {
