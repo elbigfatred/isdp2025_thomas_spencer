@@ -51,7 +51,7 @@ public class LoginForm {
         setupListeners();           // Add action listeners for buttons
         setupFrame(currentLocation); // Create and configure the frame
         togglePasswordRevealed();
-        setLogo("/bullseye.jpg", logoLabel, 50, 50); // Set up the Bullseye logo
+        setLogo("/bullseye.jpg", logoLabel, 100, 100); // Set up the Bullseye logo
     }
     /**
      * Sets up the frame with the main panel and basic properties.
@@ -62,7 +62,7 @@ public class LoginForm {
         frame = new JFrame("Bullseye Inventory Management System - Login");
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 350);
+        frame.setSize(475, 325);
 
         // Set frame location to either the provided location or center of the screen
         if (currentLocation != null) frame.setLocation(currentLocation);

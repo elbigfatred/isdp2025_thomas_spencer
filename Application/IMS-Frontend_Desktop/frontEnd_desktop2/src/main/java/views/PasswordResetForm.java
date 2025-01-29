@@ -79,7 +79,7 @@ public class PasswordResetForm {
         frame = new JFrame("Bullseye Inventory Management System - Password Reset"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(500, 350);                   // Set frame size
+        frame.setSize(475, 415);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -95,7 +95,7 @@ public class PasswordResetForm {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        Image scaledImage = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH); // Resize
         ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
 
 
@@ -362,7 +362,7 @@ public class PasswordResetForm {
     private void advisePasswordStrength(String password) {
 
         if(password.length() < 4){
-            lblStrengthAdvisor.setText("");
+            lblStrengthAdvisor.setText("<html><br><br><br><br></html>");
             return;
         }
 
@@ -385,11 +385,11 @@ public class PasswordResetForm {
         } else if (hasMinimumLength && hasCapitalLetter && hasSpecialCharacter) {
             // Strong Password
             if (hasNumber && password.length() >= 12) {
-                strengthMessage = "<html><div style='text-align:left;'><b>Strong:</b><br> Great password!</div></html>";
+                strengthMessage = "<html><div style='text-align:left;'><b>Strong:</b><br> Great password!<br><br><br></div></html>";
                 strengthColor = new Color(0, 100, 0); // Dark green
             } else {
                 // Medium Password
-                strengthMessage = "<html><div style='text-align:left;'><b>Medium:</b><br> Consider adding numbers or extra<br>characters to strengthen it.</div></html>";
+                strengthMessage = "<html><div style='text-align:left;'><b>Medium:</b><br> Consider adding numbers or extra<br>characters to strengthen it.<br><br></div></html>";
                 strengthColor = new Color(204, 153, 0); // Dark yellow
             }
         } else {

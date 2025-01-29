@@ -153,7 +153,7 @@ public class EditItemForm {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        Image scaledImage = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH); // Resize
         ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
 
 
@@ -179,7 +179,7 @@ public class EditItemForm {
             // Display existing image location (if available)
             if (selectedItem.getImageLocation() != null) {
                 btnAddImage.setText("Change Image");
-                lblImagePath.setText("Current Image on server: " + selectedItem.getImageLocation());
+                //lblImagePath.setText("Current Image on server: " + selectedItem.getImageLocation());
             } else {
                 btnAddImage.setText("Add Image");
             }
@@ -224,9 +224,14 @@ public class EditItemForm {
 
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
-            selectedImagePath = fileChooser.getSelectedFile().getAbsolutePath();
+
+            if (!fileChooser.getSelectedFile().getName().endsWith(".jpg") && !fileChooser.getSelectedFile().getName().endsWith(".png") && !fileChooser.getSelectedFile().getName().endsWith(".jpeg")) {
+                JOptionPane.showMessageDialog(frame, "Please select a valid image file: \n PNG, JPG or JPEG", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            selectedImagePath = fileChooser.getSelectedFile().getName();
             //JOptionPane.showMessageDialog(frame, "Selected image: " + selectedImagePath, "Image Selected", JOptionPane.INFORMATION_MESSAGE);
-            lblImagePath.setText("Current Image on server: " + selectedImagePath);
+            lblImagePath.setText("Image Ready to Save ✔\n");
         }
     }
 

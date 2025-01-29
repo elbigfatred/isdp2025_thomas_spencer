@@ -33,9 +33,13 @@ public class LoginController {
 
         try {
             // Fetch the employee by username
-            Employee employee;
+            Employee employee = null;
             try {
                 employee = employeeService.findByUsername(loginRequest.getUsername());
+                if (employee == null) {
+                    System.out.println("Invalid login attempt: Username does not exist - " + loginRequest.getUsername());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+                }
             } catch (RuntimeException e) {
                 // Employee does not exist; we don't increment failed attempts in this case
                 System.out.println("Invalid login attempt: Username does not exist - " + loginRequest.getUsername());
@@ -43,11 +47,19 @@ public class LoginController {
             }
 
             // Check if the account is locked
+            if (employee.getActive() == 0) {
+                resetFailedAttempts(employee.getUsername());
+                System.out.println("Account is locked for user: " + loginRequest.getUsername());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Invalid username and/or password. \nPlease contact your Administrator at admin@bullseye.ca for assistance.");
+            }
+
+            // Check if the account is locked
             if (employee.getLocked() == 1) {
                 resetFailedAttempts(employee.getUsername());
                 System.out.println("Account is locked for user: " + loginRequest.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Your account has been locked due to too many incorrect login attempts. " +
+                        .body("Your account has been locked due to too many incorrect login attempts. \n" +
                                 "Please contact your Administrator at admin@bullseye.ca for assistance.");
             }
 
@@ -86,7 +98,7 @@ public class LoginController {
             if (employee.getActive() == 0) {
                 System.out.println("Account is not active for user: " + loginRequest.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid username and/or password. Please contact your Administrator at admin@bullseye.ca for assistance.");
+                        .body("Invalid username and/or password. \nPlease contact your Administrator at admin@bullseye.ca for assistance.");
             }
 
             // Exclude sensitive fields like the password before sending the response

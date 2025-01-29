@@ -99,7 +99,7 @@ public class DashboardForm {
         frame = new JFrame("Bullseye IMS"); // Create the frame
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set close operation
-        frame.setSize(1600, 600);                   // Set frame size
+        frame.setSize(1400, 600);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -219,7 +219,8 @@ public class DashboardForm {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        Image scaledImage = icon.getImage().getScaledInstance(100, 100
+                , Image.SCALE_SMOOTH); // Resize
         ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
 
 

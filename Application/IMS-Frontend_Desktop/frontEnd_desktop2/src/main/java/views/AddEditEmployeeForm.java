@@ -79,12 +79,12 @@ public class AddEditEmployeeForm {
         frame = new JDialog(parentFrame, true);
         if (Objects.equals(usage, "ADD")){
             frame.setTitle("Bullseye Inventory Management System - Add New Employee"); // Create the frame
-            frame.setSize(700, 405);                   // Set frame size
+            frame.setSize(700, 445);                   // Set frame size
 
         }
         else if (Objects.equals(usage, "EDIT")){
             frame.setTitle("Bullseye Inventory Management System - Modify Employee"); // Create the frame
-            frame.setSize(700, 495);                   // Set frame size
+            frame.setSize(700, 525);                   // Set frame size
 
         }
         if (employeeToModify != null) {
@@ -376,7 +376,7 @@ public class AddEditEmployeeForm {
         String logoPath = "/bullseye.jpg"; // Classpath-relative path
         URL logoURL = getClass().getResource(logoPath);
         ImageIcon icon = new ImageIcon(logoURL); // Load the image
-        Image scaledImage = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Resize
+        Image scaledImage = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH); // Resize
         ImageIcon resizedIcon = new ImageIcon(scaledImage); // Create a new ImageIcon with the resized image
 
 
@@ -634,11 +634,11 @@ public class AddEditEmployeeForm {
         } else if (hasMinimumLength && hasCapitalLetter && hasSpecialCharacter) {
             // Strong Password
             if (hasNumber && password.length() >= 12) {
-                strengthMessage = "<html><div style='text-align:left;'><b>Strong:</b><br> Great password!</div></html>";
+                strengthMessage = "<html><div style='text-align:left;'><b>Strong:</b><br> Great password!<br><br><br></div></html>";
                 strengthColor = new Color(0, 100, 0); // Dark green
             } else {
                 // Medium Password
-                strengthMessage = "<html><div style='text-align:left;'><b>Medium:</b><br> Consider adding numbers or extra<br>characters to strengthen it.</div></html>";
+                strengthMessage = "<html><div style='text-align:left;'><b>Medium:</b><br> Consider adding numbers or extra<br>characters to strengthen it.<br><br></div></html>";
                 strengthColor = new Color(204, 153, 0); // Dark yellow
             }
         } else {
