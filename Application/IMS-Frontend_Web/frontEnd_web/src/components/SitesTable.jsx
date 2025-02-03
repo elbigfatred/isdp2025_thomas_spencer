@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
-  TableContainer,
-} from "@mui/material";
+import { Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer } from "@mui/material";
 
 const SitesTable = () => {
   const [sites, setSites] = useState([]);
@@ -33,10 +25,7 @@ const SitesTable = () => {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
-    <TableContainer
-      component={Paper}
-      style={{ maxWidth: "80%", margin: "auto", marginTop: "20px" }}
-    >
+    <TableContainer component={Paper} style={{ maxWidth: "80%", margin: "auto", marginTop: "20px" }}>
       <Table>
         <TableHead>
           <TableRow>

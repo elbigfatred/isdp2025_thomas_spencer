@@ -5,58 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Wireframes/desktop_frontend_dashboard.drawio.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/encodings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/uiDesigner.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Category.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Employee.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Item.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Posn.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Province.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Site.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Supplier.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/org/example/Main.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/EmployeeRequests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/HelpBlurbs.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/ItemRequests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/LoginRequests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/PositionRequests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/SessionManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/SiteRequests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/AddEditEmployeeForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/AddEditEmployeeForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/DashboardForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/DashboardForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/EditItemForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/EditItemForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/LoginForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/LoginForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/PasswordResetForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/PasswordResetForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/bullseye.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/bullseye1.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/hide.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/view.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_desktop.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/MainApp.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/LoginRequest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/ReadEmployeesRequest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/SessionManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/DashboardForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/DashboardForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/LoginForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/LoginForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/target/frontend_project-1.0-SNAPSHOT.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/target/maven-archiver/pom.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/ItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/ItemController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Inventory.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Inventory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/InventoryId.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/InventoryId.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Item.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txn.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnitem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnitem.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,29 +38,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;UI_DESIGNER_EDITOR_MODE.PaletteManager.SHOW&quot;: &quot;true&quot;,
-    &quot;UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.SHOW&quot;: &quot;true&quot;,
-    &quot;UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH&quot;: &quot;345&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/thomasspencer/Desktop/GithubRepos/isdp2025_thomas_spencer/Application/IMS-Frontend_Desktop/frontEnd_desktop2&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Application.Main.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "UI_DESIGNER_EDITOR_MODE.PaletteManager.SHOW": "true",
+    "UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.SHOW": "true",
+    "UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH": "345",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/thomasspencer/Desktop/GithubRepos/isdp2025_thomas_spencer/Application/IMS-Frontend_Desktop/frontEnd_desktop2",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.example.Main" />
@@ -223,6 +177,7 @@
       <workItem from="1738171738056" duration="7578000" />
       <workItem from="1738261227850" duration="75000" />
       <workItem from="1738261327124" duration="999000" />
+      <workItem from="1738611327969" duration="1406000" />
     </task>
     <servers />
   </component>

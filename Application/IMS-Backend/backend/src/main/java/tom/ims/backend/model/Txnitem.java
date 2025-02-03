@@ -28,4 +28,32 @@ public class Txnitem {
     @Column(name = "notes")
     private String notes;
 
+    public Txn gettxnID(){
+        return txnID;
+    }
+
+    public void setTxnID(Txn txnID){
+        this.txnID = txnID;
+    }
+
+    public void settxnID(Txn txnID){
+        this.txnID = txnID;
+    }
+
+    public Item getItemID(){
+        return itemID;
+    }
+
+    public void setItemID(Item itemID){
+        this.itemID = itemID;
+    }
+
+    public Integer getQuantity(){
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity){
+        this.quantity = quantity;
+    }
+
 }

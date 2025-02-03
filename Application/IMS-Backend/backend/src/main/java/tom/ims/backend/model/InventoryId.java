@@ -2,19 +2,16 @@ package tom.ims.backend.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.io.Serializable;
 import java.util.Objects;
 
-@Getter
-@Setter
 @Embeddable
 public class InventoryId implements Serializable {
     private static final long serialVersionUID = -1249911908718529760L;
+
     @Column(name = "itemID", nullable = false)
     private Integer itemID;
 
@@ -25,6 +22,33 @@ public class InventoryId implements Serializable {
     @Column(name = "itemLocation", nullable = false, length = 9)
     private String itemLocation;
 
+    // ✅ GETTERS
+    public Integer getItemID() {
+        return itemID;
+    }
+
+    public Integer getSiteID() {
+        return siteID;
+    }
+
+    public String getItemLocation() {
+        return itemLocation;
+    }
+
+    // ✅ SETTERS
+    public void setItemID(Integer itemID) {
+        this.itemID = itemID;
+    }
+
+    public void setSiteID(Integer siteID) {
+        this.siteID = siteID;
+    }
+
+    public void setItemLocation(String itemLocation) {
+        this.itemLocation = itemLocation;
+    }
+
+    // ✅ Override equals() and hashCode() for correct behavior in collections and persistence
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -39,5 +63,4 @@ public class InventoryId implements Serializable {
     public int hashCode() {
         return Objects.hash(itemID, siteID, itemLocation);
     }
-
 }

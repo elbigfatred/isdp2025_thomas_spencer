@@ -16,6 +16,7 @@ public class Item {
     @Column(name = "itemID", nullable = false)
     private Integer id;
 
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 

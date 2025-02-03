@@ -44,6 +44,20 @@ public class ItemController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Item> getItemById(@PathVariable Integer id) {
+        try {
+            Item item = itemService.getItemById(id);
+            if (item == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(item);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PutMapping("/{id}/deactivate")
     public ResponseEntity<?> deactivateItem(@PathVariable int id) {
         try {
