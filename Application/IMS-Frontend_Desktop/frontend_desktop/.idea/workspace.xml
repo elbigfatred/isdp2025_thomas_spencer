@@ -4,7 +4,60 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="" />
+    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Wireframes/desktop_frontend_dashboard.drawio.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/uiDesigner.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Category.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Employee.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Item.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Posn.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Province.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Site.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/models/Supplier.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/org/example/Main.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/EmployeeRequests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/HelpBlurbs.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/ItemRequests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/LoginRequests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/PositionRequests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/SessionManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/utils/SiteRequests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/AddEditEmployeeForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/AddEditEmployeeForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/DashboardForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/DashboardForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/EditItemForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/EditItemForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/LoginForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/LoginForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/PasswordResetForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/java/views/PasswordResetForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/bullseye.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/bullseye1.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/hide.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontEnd_desktop2/src/main/resources/view.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_desktop.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/MainApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/LoginRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/ReadEmployeesRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/utils/SessionManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/DashboardForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/DashboardForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/LoginForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/com/frontend_desktop/swingapp/views/LoginForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/target/frontend_project-1.0-SNAPSHOT.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/target/maven-archiver/pom.properties" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -169,7 +222,7 @@
       <workItem from="1738160767662" duration="10087000" />
       <workItem from="1738171738056" duration="7578000" />
       <workItem from="1738261227850" duration="75000" />
-      <workItem from="1738261327124" duration="1867000" />
+      <workItem from="1738261327124" duration="999000" />
     </task>
     <servers />
   </component>
