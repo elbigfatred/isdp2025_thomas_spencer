@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/ItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/ItemController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Inventory.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Inventory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/InventoryId.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/InventoryId.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Item.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txn.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txn.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnitem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnitem.java" afterDir="false" />
-    </list>
+    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
