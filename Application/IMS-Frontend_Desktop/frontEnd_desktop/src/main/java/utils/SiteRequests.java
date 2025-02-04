@@ -4,6 +4,7 @@ import models.Site;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,8 @@ import java.util.Scanner;
  * - Uses `HttpURLConnection` to perform API requests.
  */
 public class SiteRequests {
+
+    private static final String BASE_URL = "http://localhost:8080/api/sites";
 
     /**
      * Fetches a list of all active sites from the backend API.
@@ -72,5 +75,50 @@ public class SiteRequests {
         }
 
         return sites;
+    }
+
+    public static boolean saveOrUpdateSite(Site site) {
+        try {
+            boolean isUpdating = site.getId() > 0; // If there's an ID, it's an update
+            String endpoint = isUpdating ? BASE_URL + "/edit/" + site.getId() : BASE_URL + "/add";
+            String requestMethod = isUpdating ? "PUT" : "POST";
+
+            URL url = new URL(endpoint);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod(requestMethod);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+
+            // Convert Site object to JSON
+            JSONObject siteJson = new JSONObject();
+            if (isUpdating) siteJson.put("id", site.getId()); // Include ID only if updating
+            siteJson.put("siteName", site.getSiteName());
+            siteJson.put("address", site.getAddress());
+            siteJson.put("address2", site.getAddress2() != null ? site.getAddress2() : JSONObject.NULL);
+            siteJson.put("city", site.getCity());
+            siteJson.put("province", new JSONObject().put("provinceID", site.getProvinceID())); // Nested object
+            siteJson.put("country", site.getCountry());
+            siteJson.put("postalCode", site.getPostalCode());
+            siteJson.put("phone", site.getPhone());
+            siteJson.put("dayOfWeek", site.getDayOfWeek());
+            siteJson.put("distanceFromWH", site.getDistanceFromWH());
+            siteJson.put("notes", site.getNotes() != null ? site.getNotes() : JSONObject.NULL);
+            siteJson.put("active", site.isActive() ? 1 : 0);
+
+            // Send request body
+            connection.getOutputStream().write(siteJson.toString().getBytes(StandardCharsets.UTF_8));
+
+            // Get response code
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
+                return true; // Successfully added/updated
+            } else {
+                System.err.println("Failed to save site. HTTP Response Code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

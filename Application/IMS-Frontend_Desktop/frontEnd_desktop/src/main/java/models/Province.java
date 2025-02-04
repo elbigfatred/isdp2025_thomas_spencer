@@ -41,6 +41,6 @@ public class Province {
 
     @Override
     public String toString() {
-        return provinceName + " (" + provinceId + ")";
+        return provinceId;
     }
 }

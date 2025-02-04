@@ -4,6 +4,7 @@ package views;
 import models.Employee;
 import models.Item;
 import models.Posn;
+import models.Site;
 import utils.*;
 
 import javax.swing.*;
@@ -19,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * DashboardForm provides the main UI for the Bullseye Inventory Management System.
@@ -38,9 +40,8 @@ public class DashboardForm {
 
     private JPanel ContentPane;
     private JTabbedPane DashboardTabPane;
-    private JPanel OrdersTab;
+    private JPanel SitesTab;
     private JPanel InventoryTab;
-    private JPanel LossReturnTab;
     private JPanel ReportsTab;
     private JPanel EditPermissionsTab;
     private JButton BtnRefresh;
@@ -79,6 +80,12 @@ public class DashboardForm {
     private JButton btnItemHelp;
     private JButton btnEmployeesHelp;
     private JButton btnHelpEditPermissions;
+    private JPanel siteAdminCRUDPane;
+    private JTable tblSites;
+    private JTextField txtSiteSearch;
+    private JButton btnSitesHelp;
+    private JButton btnAddSite;
+    private JButton btnEditSite;
 
     // =================== FRAME VARIABLES ===================
 
@@ -93,6 +100,8 @@ public class DashboardForm {
     private String[] accessPosition;
     private int itemTableSelectedId = -1;
     private List<Posn> EditPermissionsSelectedItems = new ArrayList<>();
+    private List<Site> allSites;
+    private int siteTableSelectedId = -1;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -134,6 +143,7 @@ public class DashboardForm {
 
         accessPosition = roles;
         adminCRUDpane.setVisible(false);
+        siteAdminCRUDPane.setVisible(false);
         chkInactiveEmployees.setVisible(false);
 
         // Check roles and configure tabs accordingly
@@ -141,6 +151,7 @@ public class DashboardForm {
             chkInactiveEmployees.setVisible(true);
             DashboardTabPane.add("Edit Permissions", EditPermissionsTab);
             adminCRUDpane.setVisible(true);
+            siteAdminCRUDPane.setVisible(true);
 
             loadInitialData();
             populateEmployeeTable(allEmployees);
@@ -187,7 +198,9 @@ public class DashboardForm {
 
         loadInitialData();
         DashboardTabPane.add("Employees", EmployeesTab);
+        DashboardTabPane.add("Sites", SitesTab);
         populateEmployeeTable(allEmployees);
+        populateSitesTable(allSites);
 
     }
 
@@ -196,6 +209,8 @@ public class DashboardForm {
      */
     private void loadInitialData() {
         allEmployees = EmployeeRequests.fetchEmployees();
+        allSites = SiteRequests.fetchSites();
+
         lblEditPermissionsEmployeeDetails.setText("Please select an employee.");
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
@@ -205,8 +220,6 @@ public class DashboardForm {
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
         }
-
-        allEmployees = EmployeeRequests.fetchEmployees();
     }
 
     /**
@@ -375,9 +388,17 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.EMPLOYEES_HELP,"Employees Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
+        btnSitesHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.SITES_HELP,"Sites Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
         btnItemHelp.addActionListener(e -> {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.ITEMS_HELP,"Items Help",JOptionPane.INFORMATION_MESSAGE);
         });
+
+        btnAddSite.addActionListener(e -> addSite());
+
+        btnEditSite.addActionListener(e -> editSite());
 
         return ContentPane;
     }
@@ -481,6 +502,65 @@ public class DashboardForm {
                     JOptionPane.showMessageDialog(frame, "Unknown error occurred.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    // =================== SITE MANAGEMENT ===================
+
+    /**
+     * Opens the form to add a new employee.
+     */
+    private void addSite() {
+//        sessionActive = false;
+//        idleTimer.stop();
+//        countdownTimer.stop();
+
+        SwingUtilities.invokeLater(()-> new AddEditSiteForm().showAddEditSiteForm(frame, frame.getLocation(), "ADD", null,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+
+            loadInitialData();
+            populateSitesTable(allSites);
+        }));
+
+    }
+
+    /**
+     * Opens the form to edit the selected employee.
+     */
+    private void editSite() {
+        //get site
+        Site siteToEdit = null;
+
+        if (siteTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an site to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        AtomicReference<List<Site>> allSites = new AtomicReference<>(SiteRequests.fetchSites());
+        for (Site site : allSites.get()) {
+            if (site.getId() == siteTableSelectedId) {
+                siteToEdit = site;
+                break;
+            }
+        }
+
+//        sessionActive = false;
+//        idleTimer.stop();
+//        countdownTimer.stop();
+
+        Site finalSiteToEdit = siteToEdit;
+
+        SwingUtilities.invokeLater(()-> new AddEditSiteForm().showAddEditSiteForm(frame, frame.getLocation(), "EDIT", finalSiteToEdit,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+            loadInitialData();
+            allSites.set(SiteRequests.fetchSites());
+            populateSitesTable(allSites.get());
+        }));
+
     }
 
     // =================== PERMISSIONS AND ROLE MANAGEMENT ===================
@@ -1078,6 +1158,77 @@ public class DashboardForm {
                 }
                 else{
                     itemTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
+    /**
+     * Populates the sites table with provided site data.
+     *
+     * @param filteredSites List of sites to display.
+     */
+    private void populateSitesTable(List<Site> filteredSites) {
+        // Define column names for the table
+        String[] columns = {
+                "ID",
+                "Site Name",
+                "Address",
+                "City",
+                "Province",
+                "Country",
+                "Postal Code",
+                "Phone",
+                "Day of Week",
+                "Distance from WH",
+                "Active"
+        };
+
+        // Create a table model
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Prevent editing of table cells
+            }
+        };
+
+        // Populate the table model with site data
+        for (Site site : filteredSites) {
+            Object[] rowData = {
+                    site.getId(),
+                    site.getSiteName(),
+                    site.getAddress() + (site.getAddress2() != null && !site.getAddress2().isEmpty() ? " " + site.getAddress2() : ""),
+                    site.getCity(),
+                    site.getProvinceID(), // Display province name, assuming it's fetched properly
+                    site.getCountry(),
+                    site.getPostalCode(),
+                    site.getPhone(),
+                    site.getDayOfWeek(),
+                    site.getDistanceFromWH(),
+                    site.isActive() ? "Yes" : "No"
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set the table model to the JTable
+        tblSites.setModel(tableModel);
+
+        // Hide the first column (ID)
+        tblSites.getColumnModel().getColumn(0).setMinWidth(0);
+        tblSites.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblSites.getColumnModel().getColumn(0).setWidth(0);
+
+        // Allow selection of entire rows only
+        tblSites.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener to handle row selection
+        tblSites.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblSites.getSelectedRow();
+                if (selectedRow != -1) {
+                    siteTableSelectedId = (Integer) tblSites.getValueAt(selectedRow, 0); // Get site ID
+                } else {
+                    siteTableSelectedId = -1;
                 }
             }
         });

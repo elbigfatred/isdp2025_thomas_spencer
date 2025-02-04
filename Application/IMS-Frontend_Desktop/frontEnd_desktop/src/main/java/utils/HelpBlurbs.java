@@ -74,4 +74,11 @@ public class HelpBlurbs {
                     + "• 🔄 Click <b>'Add Image</b> or <b>'Change Existing Image'</b> to upload a new image.<br>"
                     + "• 💾 Be sure to <b>save</b> your changes—they apply instantly!<br><br>"
                     + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
+
+    public static final String SITES_HELP =
+            "<html><br><br>📍 <b>View and Search Sites</b><br><br>"
+                    + "• 🔍 You can <b>search</b> for sites using <b>all displayed fields</b>.<br>"
+                    + "• 📋 Click a site to <b>view its details</b> including address, phone, and distance from the Bullseye Warehouse.<br>"
+                    + "• 🚫 <b>Only administrators</b> can add or edit site information.<br><br>"
+                    + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
 }
