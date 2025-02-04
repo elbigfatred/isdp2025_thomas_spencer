@@ -2,6 +2,7 @@ package views;
 
 import models.Province;
 import models.Site;
+import utils.HelpBlurbs;
 import utils.SessionManager;
 import utils.SiteRequests;
 import utils.ProvinceRequests; // Assuming there's a utility for fetching provinces
@@ -79,6 +80,8 @@ public class AddEditSiteForm {
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
+        spnDistance.setModel(new SpinnerNumberModel(0, 0, 1000000, 1));
+
         if (currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -122,11 +125,38 @@ public class AddEditSiteForm {
 
         // Set up initial components
         lblWelcome.setText("User: " + session.getUsername());
+
         lblLocation.setText("Location: " + session.getSiteName());
 
         btnSave.addActionListener(e -> handleSubmit());
 
         btnExit.addActionListener(e -> frame.dispose());
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.ADD_EDIT_SITE_HELP,"Site Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+
+        btnExit.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnExit.doClick();
+            }
+        });
+
+        // Allow Cancel/Exit to be accessed via 'ESC' key
+        btnSave.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "cancel");
+
+        btnSave.getActionMap().put("cancel", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnSave.doClick();
+            }
+        });
 
         return ContentPane;
     }
@@ -220,8 +250,8 @@ public class AddEditSiteForm {
             site.setCity(txtCity.getText().trim());
             site.setProvinceID(((Province) cmbProvince.getSelectedItem()).getProvinceId());
             site.setCountry(txtCountry.getText().trim());
-            site.setPostalCode(txtPostalCode.getText().trim().toUpperCase());  // Normalize to uppercase
-            site.setPhone(txtPhoneNumber.getText().trim());
+            site.setPostalCode(sanitizePostalCode(txtPostalCode.getText().trim().toUpperCase()));  // Normalize to uppercase
+            site.setPhone(sanitizePhoneNumber(txtPhoneNumber.getText().trim()));
             site.setDayOfWeek((String) cmbDeliveryDay.getSelectedItem());
             site.setDistanceFromWH((Integer) spnDistance.getValue());
             site.setNotes(txtNotes.getText().trim());  // Optional field
@@ -352,5 +382,19 @@ public class AddEditSiteForm {
      */
     private boolean isValidPhoneNumber(String phoneNumber) {
         return phoneNumber.matches(".*\\d.*");  // Ensures at least one digit exists
+    }
+
+    /**
+     * Sanitizes a Canadian postal code by removing spaces (e.g., "A2A 2A2" -> "A2A2A2").
+     */
+    private String sanitizePostalCode(String postalCode) {
+        return postalCode.replaceAll("\\s+", "").toUpperCase();  // Remove spaces and enforce uppercase
+    }
+
+    /**
+     * Sanitizes a phone number by removing all non-numeric characters (e.g., "(506) 696-6228" -> "5066966228").
+     */
+    private String sanitizePhoneNumber(String phoneNumber) {
+        return phoneNumber.replaceAll("[^\\d]", "");  // Keep only digits
     }
 }

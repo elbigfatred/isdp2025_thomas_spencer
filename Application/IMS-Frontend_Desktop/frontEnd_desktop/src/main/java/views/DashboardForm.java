@@ -400,6 +400,23 @@ public class DashboardForm {
 
         btnEditSite.addActionListener(e -> editSite());
 
+        txtSiteSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateSiteTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateSiteTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateSiteTableBySearch();
+            }
+        });
+
         return ContentPane;
     }
 
@@ -1232,6 +1249,40 @@ public class DashboardForm {
                 }
             }
         });
+    }
+
+    /**
+     * Updates the site table based on the search field input.
+     */
+    private void updateSiteTableBySearch() {
+        // If the search bar is empty, populate the table with all sites
+        if (txtSiteSearch.getText().trim().isEmpty()) {
+            populateSitesTable(allSites); // Populate with the full list of sites
+            return;
+        }
+
+        String search = txtSiteSearch.getText().trim().toLowerCase(); // Get search term and convert to lowercase
+        List<Site> filteredSites = new ArrayList<>();
+
+        // Loop through all sites and filter based on search term
+        for (Site site : allSites) {
+            if (site.getSiteName().toLowerCase().contains(search) ||  // Match Site Name
+                    site.getAddress().toLowerCase().contains(search) ||   // Match Address
+                    (site.getCity() != null && site.getCity().toLowerCase().contains(search)) || // Match City
+                    (site.getProvinceID() != null && site.getProvinceID().toLowerCase().contains(search)) || // Match Province
+                    (site.getCountry() != null && site.getCountry().toLowerCase().contains(search)) || // Match Country
+                    (site.getPostalCode() != null && site.getPostalCode().toLowerCase().contains(search)) || // Match Postal Code
+                    (site.getPhone() != null && site.getPhone().toLowerCase().contains(search)) || // Match Phone
+                    (site.getDayOfWeek() != null && site.getDayOfWeek().toLowerCase().contains(search)) || // Match Day of Week
+                    String.valueOf(site.getDistanceFromWH()).contains(search) || // Match Distance from WH
+                    (site.isActive() ? "yes" : "no").contains(search)) { // Match Active status
+
+                filteredSites.add(site); // Add matching site to the filtered list
+            }
+        }
+
+        // Populate the table with the filtered sites
+        populateSitesTable(filteredSites);
     }
 
     // =================== SESSION MANAGEMENT AND LOGOUT ===================

@@ -81,4 +81,14 @@ public class HelpBlurbs {
                     + "• 📋 Click a site to <b>view its details</b> including address, phone, and distance from the Bullseye Warehouse.<br>"
                     + "• 🚫 <b>Only administrators</b> can add or edit site information.<br><br>"
                     + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
+
+    public static final String ADD_EDIT_SITE_HELP =
+            "<html><br><br>📍 <b>Add or Edit a Site</b><br><br>"
+                    + "• 🏢 <b>Adding a new site?</b> Fill in the <b>site name, address, city, and province</b>.<br>"
+                    + "• 📞 <b>Phone number</b> must include at least one digit.<br>"
+                    + "• ✉️ <b>Postal code</b> should follow the <b>A2A 2A2</b> format.<br>"
+                    + "• 📆 <b>Set a delivery day</b> and <b>distance</b> from the warehouse.<br>"
+                    + "• ✅ Toggle <b>Active</b> status to enable or disable a site.<br>"
+                    + "• 💾 Click <b>'Save'</b> to finalize changes.<br><br>"
+                    + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
 }

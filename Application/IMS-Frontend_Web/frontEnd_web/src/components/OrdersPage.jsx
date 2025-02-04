@@ -1,7 +1,21 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer, Button, Box, Typography, Select, MenuItem, TextField } from "@mui/material";
+import {
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper,
+  TableContainer,
+  Button,
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 
 const OrdersPage = ({ user }) => {
   const [sites, setSites] = useState([]);
@@ -14,7 +28,11 @@ const OrdersPage = ({ user }) => {
 
   // Fetch sites if the user is a Warehouse Manager
   useEffect(() => {
-    if (user.roles.some((role) => role.posn.permissionLevel === "Warehouse Manager")) {
+    if (
+      user.roles.some(
+        (role) => role.posn.permissionLevel === "Warehouse Manager"
+      )
+    ) {
       axios
         .get("http://localhost:8080/api/sites")
         .then((response) => setSites(response.data))
@@ -31,7 +49,9 @@ const OrdersPage = ({ user }) => {
     setLoading(true);
 
     axios
-      .get(`http://localhost:8080/api/orders/prepopulate?siteId=${selectedSite.id}`)
+      .get(
+        `http://localhost:8080/api/orders/prepopulate?siteId=${selectedSite.id}`
+      )
       .then((response) => {
         console.log(response.data);
         const items = response.data.map((item) => ({
@@ -124,8 +144,14 @@ const OrdersPage = ({ user }) => {
       </Typography>
 
       {/* Site Selection (Only for Warehouse Manager) */}
-      {user.roles.some((role) => role.posn.permissionLevel === "Warehouse Manager") && (
-        <Select value={selectedSite?.id || ""} onChange={handleSiteChange} fullWidth>
+      {user.roles.some(
+        (role) => role.posn.permissionLevel === "Warehouse Manager"
+      ) && (
+        <Select
+          value={selectedSite?.id || ""}
+          onChange={handleSiteChange}
+          fullWidth
+        >
           {sites.map((site) => (
             <MenuItem key={site.id} value={site.id}>
               {site.siteName}
@@ -139,11 +165,20 @@ const OrdersPage = ({ user }) => {
 
       <Box sx={{ display: "flex", gap: 2, marginTop: 3 }}>
         {/* Available Items Table */}
-        <TableContainer component={Paper} sx={{ flex: 1, maxHeight: "60vh", overflow: "auto" }}>
+        <TableContainer
+          component={Paper}
+          sx={{ flex: 1, maxHeight: "60vh", overflow: "auto" }}
+        >
           <Typography variant="h6" sx={{ padding: 1 }}>
             Available Items
           </Typography>
-          <TextField fullWidth placeholder="Search for an item..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} sx={{ marginBottom: 2 }} />
+          <TextField
+            fullWidth
+            placeholder="Search for an item..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ marginBottom: 2 }}
+          />
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -163,7 +198,9 @@ const OrdersPage = ({ user }) => {
             </TableHead>
             <TableBody>
               {availableItems
-                .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .filter((item) =>
+                  item.name.toLowerCase().includes(searchTerm.toLowerCase())
+                )
                 .map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.sku}</TableCell>
@@ -179,7 +216,10 @@ const OrdersPage = ({ user }) => {
         </TableContainer>
 
         {/* Order Items Table */}
-        <TableContainer component={Paper} sx={{ flex: 1, maxHeight: "60vh", overflow: "auto" }}>
+        <TableContainer
+          component={Paper}
+          sx={{ flex: 1, maxHeight: "60vh", overflow: "auto" }}
+        >
           <Typography variant="h6" sx={{ padding: 1 }}>
             Items in Order
           </Typography>
@@ -209,12 +249,17 @@ const OrdersPage = ({ user }) => {
                     <TextField
                       type="number"
                       value={isNaN(item.quantity) ? 0 : item.quantity}
-                      onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                      onChange={(e) =>
+                        handleQuantityChange(index, Number(e.target.value))
+                      }
                       inputProps={{ min: 0, step: item.item.caseSize || 1 }}
                     />
                   </TableCell>
                   <TableCell>
-                    <Button color="error" onClick={() => handleRemoveItem(index)}>
+                    <Button
+                      color="error"
+                      onClick={() => handleRemoveItem(index)}
+                    >
                       Remove
                     </Button>
                   </TableCell>
@@ -225,7 +270,13 @@ const OrdersPage = ({ user }) => {
         </TableContainer>
       </Box>
 
-      <Button variant="contained" color="primary" onClick={handleSubmitOrder} sx={{ marginTop: 2 }} disabled={orderItems.length === 0}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleSubmitOrder}
+        sx={{ marginTop: 2 }}
+        disabled={orderItems.length === 0}
+      >
         Submit Order
       </Button>
     </Box>
