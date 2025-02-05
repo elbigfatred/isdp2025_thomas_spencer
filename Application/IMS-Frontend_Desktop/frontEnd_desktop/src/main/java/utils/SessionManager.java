@@ -1,5 +1,7 @@
 package utils;
 
+import models.Site;
+
 /**
  * SessionManager manages user session data and authentication state.
  *
@@ -25,6 +27,7 @@ public class SessionManager {
     private String email;
     private String permissionLevel;
     private String siteName;
+    private Site site;
 
     // Private constructor to enforce singleton
     private SessionManager() {
@@ -55,7 +58,7 @@ public class SessionManager {
      * @param permissionLevel The user's access level or role.
      * @param siteName        The site or location associated with the user.
      */
-    public void login(String username, String firstname, String lastname, String email, String permissionLevel, String siteName) {
+    public void login(String username, String firstname, String lastname, String email, String permissionLevel, String siteName, Site site) {
         this.username = username;
         this.firstname = firstname;
         this.lastname = lastname;
@@ -63,6 +66,7 @@ public class SessionManager {
         this.permissionLevel = permissionLevel;
         this.siteName = siteName;
         this.lastActivityTime = System.currentTimeMillis();
+        this.site = site;
     }
 
     /**
@@ -77,6 +81,7 @@ public class SessionManager {
         permissionLevel = null;
         siteName = null;
         lastActivityTime = 0;
+        site = null;
     }
 
     /**
@@ -125,6 +130,10 @@ public class SessionManager {
         return siteName;
     }
 
+    public Site getSite() {
+        return site;
+    }
+
     public static long getMaxSessionTime() {
         return MAX_SESSION_TIME;
     }
@@ -144,6 +153,7 @@ public class SessionManager {
             System.out.println("Permission Level: " + session.getPermissionLevel());
             System.out.println("Site Name: " + session.getSiteName());
             System.out.println("Last Activity: " + session.getLastActivityTime());
+            System.out.println("Site: " + session.getSite().getId());
         } else {
             System.out.println("No user is currently logged in.");
         }

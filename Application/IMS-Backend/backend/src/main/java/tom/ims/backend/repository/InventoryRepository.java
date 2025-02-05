@@ -15,4 +15,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, InventoryI
     // find all inventory items that need reordering at a specific site
     @Query("SELECT i FROM Inventory i WHERE i.id.siteID = :siteId AND i.quantity < i.optimumThreshold")
     List<Inventory> findLowStockItems(@Param("siteId") Integer siteId);
+
+    List<Inventory> findById_SiteID(Integer siteID);
+
+    List<Inventory> findById_ItemID(Integer itemID);
+
+    List<Inventory> findById_SiteIDAndId_ItemID(Integer siteID, Integer itemID);
 }

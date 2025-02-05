@@ -1,6 +1,7 @@
 package views;
 
 import models.Employee;
+import models.Site;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.HelpBlurbs;
@@ -151,6 +152,27 @@ public class LoginForm {
             String email = response.optString("email", "Unknown");
             String siteName = response.getJSONObject("site").optString("siteName", "Unknown");
 
+            //Extract and parse site
+            JSONObject siteJson = response.getJSONObject("site");
+            Site siteObject = null;
+
+            if(siteJson != null) {
+                siteObject = new Site();
+                siteObject.setId(siteJson.optInt("id"));
+                siteObject.setSiteName(siteJson.optString("siteName", "Unknown"));
+                siteObject.setAddress(siteJson.optString("address", ""));
+                siteObject.setAddress2(siteJson.optString("address2", ""));
+                siteObject.setCity(siteJson.optString("city", ""));
+                siteObject.setProvinceID(siteJson.optString("provinceID", ""));
+                siteObject.setCountry(siteJson.optString("country", ""));
+                siteObject.setPostalCode(siteJson.optString("postalCode", ""));
+                siteObject.setPhone(siteJson.optString("phone", ""));
+                siteObject.setDayOfWeek(siteJson.optString("dayOfWeek", ""));
+                siteObject.setDistanceFromWH(siteJson.optInt("distanceFromWH", 0));
+                siteObject.setNotes(siteJson.optString("notes", ""));
+                siteObject.setActive(siteJson.optBoolean("active", true));
+            }
+
             // Extract roles (permission levels)
             JSONArray rolesArray = response.optJSONArray("roles");
             StringBuilder permissionLevels = new StringBuilder();
@@ -175,7 +197,8 @@ public class LoginForm {
                     lastname,
                     email,
                     permissionLevels.toString(),
-                    siteName
+                    siteName,
+                    siteObject
             );
 
             // Proceed to the dashboard

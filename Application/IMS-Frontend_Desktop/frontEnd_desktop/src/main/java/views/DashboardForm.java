@@ -1,10 +1,7 @@
 package views;
 
 
-import models.Employee;
-import models.Item;
-import models.Posn;
-import models.Site;
+import models.*;
 import utils.*;
 
 import javax.swing.*;
@@ -50,7 +47,6 @@ public class DashboardForm {
     private JLabel SPACER1;
     private JLabel SPACER2;
     private JLabel SPACER3;
-    private JButton someButtonButton;
     private JLabel LblWelcome;
     private JLabel LblLocation;
     private JLabel logoLabel;
@@ -86,6 +82,13 @@ public class DashboardForm {
     private JButton btnSitesHelp;
     private JButton btnAddSite;
     private JButton btnEditSite;
+    private JPanel InventoryCRUDPane;
+    private JTable tblInventory;
+    private JButton btnInventoryEdit;
+    private JPanel pnlInventoryAdminSelectSite;
+    private JComboBox cmbInventoryAdminSiteSelect;
+    private JTextField txtInventorySearch;
+    private JButton btnInventoryHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -102,6 +105,9 @@ public class DashboardForm {
     private List<Posn> EditPermissionsSelectedItems = new ArrayList<>();
     private List<Site> allSites;
     private int siteTableSelectedId = -1;
+    private Site inventorySite;
+    private int inventoryTableSelectedId = -1;
+    private List<Inventory> allInventory;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -145,6 +151,7 @@ public class DashboardForm {
         adminCRUDpane.setVisible(false);
         siteAdminCRUDPane.setVisible(false);
         chkInactiveEmployees.setVisible(false);
+        pnlInventoryAdminSelectSite.setVisible(false);
 
         // Check roles and configure tabs accordingly
         if (Arrays.asList(roles).contains("Administrator")) {
@@ -152,6 +159,8 @@ public class DashboardForm {
             DashboardTabPane.add("Edit Permissions", EditPermissionsTab);
             adminCRUDpane.setVisible(true);
             siteAdminCRUDPane.setVisible(true);
+            DashboardTabPane.add("Inventory", InventoryTab);
+            pnlInventoryAdminSelectSite.setVisible(true);
 
             loadInitialData();
             populateEmployeeTable(allEmployees);
@@ -161,10 +170,18 @@ public class DashboardForm {
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
             DashboardTabPane.add("Items", ItemsTab);
+            DashboardTabPane.add("Inventory", InventoryTab);
 
             loadInitialData();
             populateEmployeeTable(allEmployees);
             populateItemsTable(allItems);
+        }
+
+        if (Arrays.asList(roles).contains("Store Manager")) {
+            DashboardTabPane.add("Inventory", InventoryTab);
+
+            loadInitialData();
+            populateEmployeeTable(allEmployees);
         }
 
         if (Arrays.asList(roles).contains("Financial Manager")) {
@@ -215,10 +232,21 @@ public class DashboardForm {
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
             allPosns = PositionRequests.fetchPositions();
+            cmbInventoryAdminSiteSelect.removeAllItems();
+            for(Site site : allSites) {
+                if(site.isActive()){
+                    cmbInventoryAdminSiteSelect.addItem(site);
+                }
+            }
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
+        }
+
+        if (Arrays.asList(accessPosition).contains("Warehouse Manager") || Arrays.asList(accessPosition).contains("Administator") || Arrays.asList(accessPosition).contains("Store Manager")) {
+            inventorySite = SessionManager.getInstance().getSite();
+            loadInventoryBySite(inventorySite.getId());
         }
     }
 
@@ -417,7 +445,48 @@ public class DashboardForm {
             }
         });
 
+        txtInventorySearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+        });
+
+        cmbInventoryAdminSiteSelect.addActionListener(e -> {
+            Site selectedSite = (Site) cmbInventoryAdminSiteSelect.getSelectedItem(); // Get selected site
+            if (selectedSite != null) {
+                inventorySite = selectedSite; // Store selected site globally
+                loadInventoryBySite(inventorySite.getId()); // Reload inventory
+                txtSiteSearch.setText("");
+            }
+        });
+
         return ContentPane;
+    }
+
+    // =================== INVENTORY MANAGEMENT ===================
+
+    private void loadInventoryBySite(int siteID) {
+        new Thread(() -> {
+            // Fetch inventory data from backend
+            List<Inventory> fetchedInventory = InventoryRequests.fetchInventoryBySite(siteID);
+
+            // Store in class-level variable
+            allInventory = fetchedInventory;
+
+            // Populate the table on the Swing UI thread
+            SwingUtilities.invokeLater(() -> populateInventoryTable(allInventory));
+        }).start();
     }
 
     // =================== EMPLOYEE MANAGEMENT ===================
@@ -1285,6 +1354,89 @@ public class DashboardForm {
         populateSitesTable(filteredSites);
     }
 
+    private void populateInventoryTable(List<Inventory> inventoryList) {
+        // Define the column headers
+        String[] columns = {
+                "Item ID",
+                "Item Name",
+                "SKU",
+                "Quantity in Stock",
+                "Reorder Threshold",
+                "Optimum Threshold",
+                "Notes"
+        };
+
+        // Create a table model
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Makes the table read-only
+            }
+        };
+
+        // Populate the table with inventory data
+        for (Inventory inv : inventoryList) {
+            Object[] rowData = {
+                    inv.getItemID(),
+                    inv.getItem().getName(),  // ✅ Now using the actual item object
+                    inv.getItem().getSku(),   // ✅ Added SKU
+                    inv.getQuantity(),
+                    inv.getReorderThreshold(),
+                    inv.getOptimumThreshold(),
+                    inv.getNotes()
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set the model on the JTable
+        tblInventory.setModel(tableModel);
+
+        // Hide the first column (Item ID)
+        tblInventory.getColumnModel().getColumn(0).setMinWidth(0);
+        tblInventory.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblInventory.getColumnModel().getColumn(0).setWidth(0);
+
+        // Enable single row selection
+        tblInventory.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener for row selection
+        tblInventory.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblInventory.getSelectedRow();
+                if (selectedRow != -1) {
+                    inventoryTableSelectedId = (Integer) tblInventory.getValueAt(selectedRow, 0); // Get Item ID
+                } else {
+                    inventoryTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
+    private void updateInventoryTableBySearch() {
+        String searchQuery = txtInventorySearch.getText().trim().toLowerCase();
+
+        if (searchQuery.isEmpty()) {
+            populateInventoryTable(allInventory);
+            return;
+        }
+
+        List<Inventory> filteredList = new ArrayList<>();
+
+        for (Inventory inv : allInventory) {
+            if (String.valueOf(inv.getItemID()).contains(searchQuery) ||  // Match Item ID
+                    inv.getItem().getName().toLowerCase().contains(searchQuery) ||  // ✅ Match Item Name
+                    inv.getItem().getSku().toLowerCase().contains(searchQuery) ||  // ✅ Match SKU
+                    String.valueOf(inv.getQuantity()).contains(searchQuery) ||  // Match Quantity
+                    String.valueOf(inv.getReorderThreshold()).contains(searchQuery) ||  // Match Reorder Threshold
+                    String.valueOf(inv.getOptimumThreshold()).contains(searchQuery) ||  // Match Optimum Threshold
+                    (inv.getNotes() != null && inv.getNotes().toLowerCase().contains(searchQuery))) {  // Match Notes
+                filteredList.add(inv);
+            }
+        }
+
+        populateInventoryTable(filteredList);
+    }
+
     // =================== SESSION MANAGEMENT AND LOGOUT ===================
 
     /**
@@ -1324,6 +1476,7 @@ public class DashboardForm {
     private void RefreshButtonEvent() {
 //        idleTimer.stop();
 //        countdownTimer.stop();
+
 
         // get selected tab if available
         int selectedTab = -1;
