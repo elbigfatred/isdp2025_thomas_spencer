@@ -3,6 +3,7 @@ package models;
 public class Inventory {
     private int itemID;
     private int siteID;
+    private String itemLocation;
     private Item item;
     private int quantity;
     private int reorderThreshold;
@@ -11,7 +12,7 @@ public class Inventory {
 
     // ✅ Constructor
     public Inventory(int itemID, int siteID, Item item,
-                     int quantity, int reorderThreshold, int optimumThreshold, String notes) {
+                     int quantity, int reorderThreshold, int optimumThreshold, String notes, String itemLocation) {
         this.itemID = itemID;
         this.siteID = siteID;
         this.item = item;
@@ -19,6 +20,7 @@ public class Inventory {
         this.reorderThreshold = reorderThreshold;
         this.optimumThreshold = optimumThreshold;
         this.notes = notes;
+        this.itemLocation = itemLocation;
     }
 
     // ✅ Empty constructor for JSON parsing
@@ -35,6 +37,10 @@ public class Inventory {
 
     public Item getItem() {
         return item;
+    }
+
+    public String getItemLocation() {
+        return itemLocation;
     }
 
 
@@ -71,6 +77,10 @@ public class Inventory {
         this.quantity = quantity;
     }
 
+    public void setItemLocation(String itemLocation) {
+        this.itemLocation = itemLocation;
+    }
+
     public void setReorderThreshold(int reorderThreshold) {
         this.reorderThreshold = reorderThreshold;
     }
@@ -93,6 +103,7 @@ public class Inventory {
                 ", reorderThreshold=" + reorderThreshold +
                 ", optimumThreshold=" + optimumThreshold +
                 ", notes='" + notes + '\'' +
+                ", itemLocation='" + itemLocation + '\'' +
                 '}';
     }
 }

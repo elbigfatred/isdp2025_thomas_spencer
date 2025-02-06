@@ -42,6 +42,7 @@ public class InventoryRequests {
                     Inventory inventory = new Inventory();
                     inventory.setItemID(obj.getJSONObject("id").getInt("itemID"));
                     inventory.setSiteID(obj.getJSONObject("id").getInt("siteID"));
+                    inventory.setItemLocation(obj.getJSONObject("id").getString("itemLocation"));
                     inventory.setQuantity(obj.getInt("quantity"));
                     inventory.setReorderThreshold(obj.optInt("reorderThreshold", 0));
                     inventory.setOptimumThreshold(obj.optInt("optimumThreshold", 0));
@@ -77,7 +78,15 @@ public class InventoryRequests {
      */
     public static boolean updateInventory(Inventory inventory) {
         try {
-            URL url = new URL(BASE_URL + "/update");
+
+            System.out.println("[DEBUG] itemLocation being sent: " + inventory.getItemLocation());
+            // ✅ Construct the URL with path variables
+            String urlString = String.format("%s/edit/%d/%d/%s",
+                    BASE_URL, inventory.getItemID(), inventory.getSiteID(), inventory.getItemLocation());
+
+            System.out.println("[DEBUG] Sending PUT request to: " + urlString);
+
+            URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PUT");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -85,15 +94,11 @@ public class InventoryRequests {
 
             // ✅ Create JSON payload with only required fields
             JSONObject payload = new JSONObject();
-            JSONObject idObject = new JSONObject();
-
-            idObject.put("itemID", inventory.getItemID());
-            idObject.put("siteID", inventory.getSiteID());
-
-            payload.put("id", idObject);
             payload.put("reorderThreshold", inventory.getReorderThreshold());
             payload.put("optimumThreshold", inventory.getOptimumThreshold());
             payload.put("notes", inventory.getNotes());
+
+            System.out.println("[DEBUG] JSON Payload to send: " + payload.toString(4)); // Pretty print JSON
 
             // ✅ Send JSON payload
             try (OutputStream os = conn.getOutputStream()) {
@@ -102,14 +107,24 @@ public class InventoryRequests {
             }
 
             int responseCode = conn.getResponseCode();
+            System.out.println("[DEBUG] Response Code: " + responseCode);
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                System.out.println("[ERROR] Server responded with: " + responseCode);
+            } else {
+                System.out.println("[SUCCESS] Inventory updated successfully.");
+            }
+
             conn.disconnect();
             return responseCode == HttpURLConnection.HTTP_OK;
 
         } catch (Exception e) {
+            System.out.println("[ERROR] Exception occurred while updating inventory:");
             e.printStackTrace();
             return false;
         }
     }
+
     /**
      * Reads an InputStream and converts it to a String.
      */

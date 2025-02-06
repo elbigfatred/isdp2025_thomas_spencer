@@ -66,15 +66,56 @@ public class InventoryController {
             @PathVariable String itemLocation,
             @RequestBody Inventory updatedInventory) {
 
+        System.out.println("[DEBUG] Received PUT request to update inventory.");
+        System.out.println("[DEBUG] Path Variables -> itemID: " + itemID + ", siteID: " + siteID + ", itemLocation: " + itemLocation);
+
+        // Log incoming JSON payload details
+        System.out.println("[DEBUG] Received Inventory Object:");
+        System.out.println("  - Reorder Threshold: " + updatedInventory.getReorderThreshold());
+        System.out.println("  - Optimum Threshold: " + updatedInventory.getOptimumThreshold());
+        System.out.println("  - Notes: " + updatedInventory.getNotes());
+        System.out.println("  - Inventory ID Object: " + updatedInventory.getId());
+
         InventoryId id = new InventoryId();
         id.setItemID(itemID);
         id.setSiteID(siteID);
         id.setItemLocation(itemLocation);
 
+        System.out.println("[DEBUG] Constructed InventoryId Object -> " + id.toString());
+
+        // ✅ Fetch inventory by composite key
+        List<Inventory> inventoryList = inventoryService.getInventoryBySiteAndItem(siteID, itemID);
+
+        Inventory inventoryToUpdate = null;
+
+        // ✅ Find the correct inventory entry by matching itemLocation
+        for (Inventory inventoryItem : inventoryList) {
+            if (inventoryItem.getId().getItemLocation().equals(itemLocation)) {
+                inventoryToUpdate = inventoryItem;
+                break;
+            }
+        }
+
+        // ❌ If no matching inventory item is found, return 404
+        if (inventoryToUpdate == null) {
+            System.out.println("[ERROR] No inventory record found for itemID: " + itemID + ", siteID: " + siteID + ", itemLocation: " + itemLocation);
+            return ResponseEntity.notFound().build();
+        }
+
+        System.out.println("[INFO] Found Inventory Entry -> ID: " + inventoryToUpdate.getId());
+
+        // ✅ Update fields with new values
+        inventoryToUpdate.setReorderThreshold(updatedInventory.getReorderThreshold());
+        inventoryToUpdate.setOptimumThreshold(updatedInventory.getOptimumThreshold());
+        inventoryToUpdate.setNotes(updatedInventory.getNotes());
+
+        // ✅ Save the updated inventory
         try {
-            Inventory inventory = inventoryService.updateInventory(id, updatedInventory);
-            return inventory != null ? ResponseEntity.ok(inventory) : ResponseEntity.notFound().build();
+            inventoryService.saveInventory(inventoryToUpdate);
+            System.out.println("[SUCCESS] Inventory updated.");
+            return ResponseEntity.ok(inventoryToUpdate);
         } catch (Exception e) {
+            System.out.println("[ERROR] Exception occurred while updating inventory:");
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }

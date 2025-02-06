@@ -130,7 +130,7 @@ public class EditItemForm {
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(600, 550);                   // Set frame size
+        frame.setSize(600, 570);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }

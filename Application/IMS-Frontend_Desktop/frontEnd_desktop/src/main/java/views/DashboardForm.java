@@ -471,6 +471,8 @@ public class DashboardForm {
             }
         });
 
+        btnInventoryEdit.addActionListener(e -> editInventory());
+
         return ContentPane;
     }
 
@@ -488,6 +490,47 @@ public class DashboardForm {
             SwingUtilities.invokeLater(() -> populateInventoryTable(allInventory));
         }).start();
     }
+
+    /**
+     * Opens the form to edit the selected inventory item.
+     */
+    private void editInventory() {
+        // Ensure an inventory item is selected
+        if (inventoryTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an inventory item to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Find the selected inventory item from allInventory
+        Inventory selectedInventory = null;
+        for (Inventory inventory : allInventory) {
+            if (inventory.getItemID() == inventoryTableSelectedId) {
+                selectedInventory = inventory;
+                break;
+            }
+        }
+
+        if (selectedInventory == null) {
+            JOptionPane.showMessageDialog(frame, "Selected inventory item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Open the EditInventoryForm
+        Inventory finalSelectedInventory = selectedInventory;
+        SwingUtilities.invokeLater(() ->
+                new EditInventoryForm().showItemEditForm(
+                        frame,
+                        frame.getLocation(),
+                        finalSelectedInventory,
+                        inventorySite,  // Pass the currently selected site
+                        () -> {
+                            // Refresh inventory data when the dialog closes
+                            loadInventoryBySite(inventorySite.getId());
+                        }
+                )
+        );
+    }
+
 
     // =================== EMPLOYEE MANAGEMENT ===================
 

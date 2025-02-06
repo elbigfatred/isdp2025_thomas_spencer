@@ -27,37 +27,45 @@ public class OrderService {
         return !activeOrders.isEmpty();
     }
 
-    // ✅ Create a new transaction record in `txn`
     public Txn createOrderTransaction(OrderRequest orderRequest) {
-        Txn newOrder = new Txn();
+        if (hasActiveStoreOrder(orderRequest.getSiteIDTo())) {
+            throw new RuntimeException("An active order already exists for this site.");
+        }
+
         EmployeeService employeeService = new EmployeeService();
         SiteService siteService = new SiteService();
         TxnStatusService txnStatusService = new TxnStatusService();
         TxnTypeService txnTypeService = new TxnTypeService();
-        ItemService itemService = new ItemService();
-        // ✅ Ensure LocalDateTime is used for DATETIME fields
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        InventoryService inventoryService = new InventoryService();
 
-        newOrder.setEmployeeID(employeeService.getEmployeeById(orderRequest.getEmployeeID())); // Who placed the order
-        newOrder.setSiteIDTo(siteService.getSiteById(orderRequest.getSiteIDTo())); // Store receiving the order
-        newOrder.setSiteIDFrom(siteService.getSiteById(orderRequest.getSiteIDFrom())); // Default: Warehouse
-        newOrder.setTxnStatus(txnStatusService.findByName("NEW")); // Default status
-        newOrder.setTxnType(txnTypeService.getbyTxnType("Store Order")); // Order type
-        newOrder.setShipDate(LocalDateTime.parse(orderRequest.getShipDate(), formatter)); // Delivery date
-        newOrder.setCreatedDate(LocalDateTime.now()); // Today’s date
+        Employee employee = employeeService.getEmployeeById(orderRequest.getEmployeeID());
+        Site siteTo = siteService.getSiteById(orderRequest.getSiteIDTo());
+        Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        Txnstatus status = txnStatusService.findByName("NEW");
+        Txntype type = txnTypeService.getbyTxnType("Store Order");
+
+        Txn newOrder = new Txn();
+        newOrder.setEmployeeID(employee);
+        newOrder.setSiteIDTo(siteTo);
+        newOrder.setSiteIDFrom(siteFrom);
+        newOrder.setTxnStatus(status);
+        newOrder.setTxnType(type);
+        newOrder.setCreatedDate(LocalDateTime.now());
+        newOrder.setShipDate(LocalDateTime.now().plusDays(7)); // Placeholder for delivery logic
         newOrder.setNotes(orderRequest.getNotes());
 
-        // Save order in txn table
         Txn savedOrder = txnRepository.save(newOrder);
+        ItemService itemService = new ItemService();
 
-        // Add items to txnitems table
-        orderRequest.getItems().forEach(item -> {
+        // ✅ Auto-populate order with low stock items
+        List<Inventory> lowStockItems = inventoryService.getItemsBelowThreshold(siteTo.getId());
+        for (Inventory inv : lowStockItems) {
             Txnitem txnItem = new Txnitem();
             txnItem.settxnID(savedOrder);
-            txnItem.setItemID(itemService.getItemById(item.getItemID()));
-            txnItem.setQuantity(item.getQuantity());
+            txnItem.setItemID(itemService.getItemById(inv.getId().getItemID()));
+            txnItem.setQuantity(inv.getOptimumThreshold() - inv.getQuantity());
             txnItemsRepository.save(txnItem);
-        });
+        }
 
         return savedOrder;
     }

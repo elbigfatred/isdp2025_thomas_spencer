@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import UsersTable from "../components/UsersTable";
 import SitesTable from "../components/SitesTable";
-import OrdersPage from "../components/OrdersPage";
+import OrdersPage from "../components/OrdersPage/OrdersPage";
 import { Button, Box, Typography, Switch, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
 
 const Dashboard = ({ user, onLogout }) => {

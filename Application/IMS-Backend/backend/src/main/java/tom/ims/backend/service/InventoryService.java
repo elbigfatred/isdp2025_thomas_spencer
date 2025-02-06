@@ -58,4 +58,9 @@ public class InventoryService {
         return false;
     }
 
+
+    public List<Inventory> getInventoryBySiteAndItem(Integer siteID, Integer itemID) {
+        System.out.println("[DEBUG] Looking up inventory in database for siteID: " + siteID + ", itemID: " + itemID);
+        return inventoryRepository.findById_SiteIDAndId_ItemID(siteID, itemID);
+    }
 }
