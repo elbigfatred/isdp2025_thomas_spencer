@@ -11,15 +11,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
 
-    @Autowired
-    private TxnRepository txnRepository;
 
-    @Autowired
-    private TxnItemsRepository txnItemsRepository;
+
+    @Autowired private TxnRepository txnRepository;
+    @Autowired private TxnItemsRepository txnItemsRepository;
+    @Autowired private EmployeeService employeeService;
+    @Autowired private SiteService siteService;
+    @Autowired private TxnStatusService txnStatusService;
+    @Autowired private TxnTypeService txnTypeService;
+    @Autowired private InventoryService inventoryService;
+    @Autowired private ItemService itemService;
 
     // ✅ Check if an active order exists
     public boolean hasActiveStoreOrder(Integer siteId) {
@@ -31,12 +38,6 @@ public class OrderService {
         if (hasActiveStoreOrder(orderRequest.getSiteIDTo())) {
             throw new RuntimeException("An active order already exists for this site.");
         }
-
-        EmployeeService employeeService = new EmployeeService();
-        SiteService siteService = new SiteService();
-        TxnStatusService txnStatusService = new TxnStatusService();
-        TxnTypeService txnTypeService = new TxnTypeService();
-        InventoryService inventoryService = new InventoryService();
 
         Employee employee = employeeService.getEmployeeById(orderRequest.getEmployeeID());
         Site siteTo = siteService.getSiteById(orderRequest.getSiteIDTo());
@@ -54,19 +55,132 @@ public class OrderService {
         newOrder.setShipDate(LocalDateTime.now().plusDays(7)); // Placeholder for delivery logic
         newOrder.setNotes(orderRequest.getNotes());
 
+        // ✅ Generate and set barcode
+        String generatedBarcode = "TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
+        newOrder.setBarCode(generatedBarcode);
+
         Txn savedOrder = txnRepository.save(newOrder);
-        ItemService itemService = new ItemService();
 
         // ✅ Auto-populate order with low stock items
         List<Inventory> lowStockItems = inventoryService.getItemsBelowThreshold(siteTo.getId());
+        System.out.println("[DEBUG] Found " + lowStockItems.size() + " items below reorder threshold for site " + siteTo.getId());
+
         for (Inventory inv : lowStockItems) {
-            Txnitem txnItem = new Txnitem();
-            txnItem.settxnID(savedOrder);
-            txnItem.setItemID(itemService.getItemById(inv.getId().getItemID()));
-            txnItem.setQuantity(inv.getOptimumThreshold() - inv.getQuantity());
-            txnItemsRepository.save(txnItem);
+            try {
+                Txnitem txnItem = new Txnitem();
+                Item item = itemService.getItemById(inv.getId().getItemID());
+
+                if (item == null) {
+                    System.out.println("[ERROR] Item not found for ID: " + inv.getId().getItemID());
+                    continue; // Skip this item if it's missing
+                }
+
+                // ✅ Adjust quantity to match case size
+                int caseSize = item.getCaseSize();
+                int currentQty = inv.getQuantity();
+                int neededQty = inv.getOptimumThreshold() - currentQty;
+
+                System.out.println("[DEBUG] Processing item: " + item.getName() + " (Item ID: " + item.getId() + ")");
+                System.out.println("  - Current Stock: " + currentQty);
+                System.out.println("  - Case Size: " + caseSize);
+                System.out.println("  - Needed Quantity (before case adjustment): " + neededQty);
+
+                if (caseSize > 0) { // Avoid division by zero
+                    int adjustedQty = (int) Math.ceil((double) neededQty / caseSize) * caseSize;
+                    System.out.println("  - Adjusted Quantity (rounded to case size): " + adjustedQty);
+                    txnItem.setQuantity(adjustedQty);
+                } else {
+                    System.out.println("[WARNING] Item " + item.getId() + " has an invalid case size (" + caseSize + ")");
+                    txnItem.setQuantity(neededQty); // Fallback to raw quantity
+                }
+
+                // ✅ Set transaction and item details
+                txnItem.setTxnAndItem(savedOrder, item);
+
+                txnItemsRepository.save(txnItem);
+                System.out.println("[INFO] Added txnItem: Item ID = " + inv.getId().getItemID() + ", Quantity = " + txnItem.getQuantity());
+
+            } catch (Exception e) {
+                System.out.println("[ERROR] Failed to save txnItem: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
 
         return savedOrder;
     }
+
+    public List<Txn> getOrdersBySite(Integer siteId) {
+        return txnRepository.findBySiteIDTo_Id(siteId);
+    }
+
+    public List<Txnitem> getTxnItemsByTxnId(Integer txnId) {
+        return txnItemsRepository.findById_TxnID(txnId);
+    }
+
+    public void updateOrderItems(OrderUpdateRequest orderUpdateRequest) {
+        Txn txn = txnRepository.findById(orderUpdateRequest.getTxnID())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Remove all existing txn items for this order before adding new ones
+        txnItemsRepository.deleteByTxnID(txn);
+
+        for (OrderUpdateRequest.OrderItemUpdate itemUpdate : orderUpdateRequest.getItems()) {
+            Item item = itemService.getItemById(itemUpdate.getItemID());
+
+            if (item == null) {
+                throw new RuntimeException("Item not found: " + itemUpdate.getItemID());
+            }
+
+            // ✅ Properly construct the composite key
+            TxnitemId txnitemId = new TxnitemId();
+            txnitemId.setTxnID(txn.getId());
+            txnitemId.setItemID(item.getId());
+
+            // ✅ Create the transaction item
+            Txnitem txnItem = new Txnitem();
+            txnItem.setId(txnitemId); // ✅ Set composite key properly
+            txnItem.setTxnID(txn);
+            txnItem.setItemID(item);
+            txnItem.setQuantity(itemUpdate.getQuantity());
+
+            // ✅ Save the updated txn item
+            txnItemsRepository.save(txnItem);
+        }
+    }
+
+
+    // ✅ Fetch an Order by ID
+    public Txn getOrderById(Integer txnId) {
+        System.out.println("[DEBUG] Fetching order ID: " + txnId);
+        return txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + txnId));
+    }
+
+    public Txn submitOrder(Integer txnId) {
+        // ✅ Retrieve the order
+        Txn txn = txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Ensure order is in 'NEW' status
+        if (!"NEW".equals(txn.getTxnStatus().getStatusName())) {
+            throw new RuntimeException("Only NEW orders can be submitted");
+        }
+
+        // ✅ Fetch 'SUBMITTED' status from the database
+        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
+        if (submittedStatus == null) {
+            throw new RuntimeException("SUBMITTED status not found in database");
+        }
+
+        // ✅ Update order status
+        txn.setTxnStatus(submittedStatus);
+        Txn savedTxn = txnRepository.save(txn);
+
+        System.out.println("[INFO] Order " + txnId + " submitted successfully.");
+
+        return savedTxn;
+    }
+
+
+
 }

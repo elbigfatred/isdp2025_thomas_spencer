@@ -1,5 +1,6 @@
 package tom.ims.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -47,10 +48,12 @@ public class Txn {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "txnType")
+    @JsonManagedReference
     private Txntype txnType;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "txnStatus")
+    @JsonManagedReference
     private Txnstatus txnStatus;
 
     // ✅ GETTERS

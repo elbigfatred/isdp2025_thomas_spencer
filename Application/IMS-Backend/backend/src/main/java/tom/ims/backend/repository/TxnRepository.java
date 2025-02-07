@@ -12,6 +12,9 @@ import java.util.Optional;
 @Repository
 public interface TxnRepository extends JpaRepository<Txn, Integer> {
     // ✅ Fetch active orders for a given site
-    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Store Order' AND t.txnStatus.statusName IN ('NEW', 'SUBMITTED')")
+    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Store Order' AND t.txnStatus.statusName IN ('NEW')")
     List<Txn> findActiveOrdersBySite(Integer siteId);
+
+    // ✅ Fetch all transactions (store orders) for a given site
+    List<Txn> findBySiteIDTo_Id(Integer siteId);
 }

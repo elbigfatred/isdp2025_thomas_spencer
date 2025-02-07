@@ -21,4 +21,21 @@ public class Txntype {
     @Column(name = "active", nullable = false)
     private Byte active;
 
+    // ✅ Explicit Getters & Setters
+    public String getTxnType() {
+        return txnType;
+    }
+
+    public void setTxnType(String txnType) {
+        this.txnType = txnType;
+    }
+
+    public Byte getActive() {
+        return active;
+    }
+
+    public void setActive(Byte active) {
+        this.active = active;
+    }
+
 }

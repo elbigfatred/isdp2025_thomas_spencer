@@ -14,11 +14,41 @@ import java.util.Objects;
 @Embeddable
 public class TxnitemId implements Serializable {
     private static final long serialVersionUID = -3493836387010733693L;
+
     @Column(name = "txnID", nullable = false)
     private Integer txnID;
 
     @Column(name = "ItemID", nullable = false)
     private Integer itemID;
+
+    // ✅ Explicit Getter & Setter for ID
+    public Integer getId() {
+        return txnID;
+    }
+
+    public void setId(Integer id) {
+        this.txnID = id;
+    }
+
+    // ✅ Explicit Getter for txnID
+    public Integer getTxnID() {
+        return txnID;
+    }
+
+    // ✅ Explicit Setter for txnID
+    public void setTxnID(Integer txnID) {
+        this.txnID = txnID;
+    }
+
+    // ✅ Explicit Getter for itemID
+    public Integer getItemID() {
+        return itemID;
+    }
+
+    // ✅ Explicit Setter for itemID
+    public void setItemID(Integer itemID) {
+        this.itemID = itemID;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -33,5 +63,4 @@ public class TxnitemId implements Serializable {
     public int hashCode() {
         return Objects.hash(itemID, txnID);
     }
-
 }

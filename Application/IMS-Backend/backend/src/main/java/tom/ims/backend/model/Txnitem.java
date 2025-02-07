@@ -13,12 +13,12 @@ public class Txnitem {
     private TxnitemId id;
 
     @MapsId("txnID")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "txnID", nullable = false)
     private Txn txnID;
 
     @MapsId("itemID")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "ItemID", nullable = false)
     private Item itemID;
 
@@ -27,6 +27,14 @@ public class Txnitem {
 
     @Column(name = "notes")
     private String notes;
+
+    public void setId(TxnitemId id) {
+        this.id = id;
+    }
+
+    public TxnitemId getId() {
+        return id;
+    }
 
     public Txn gettxnID(){
         return txnID;
@@ -54,6 +62,17 @@ public class Txnitem {
 
     public void setQuantity(Integer quantity){
         this.quantity = quantity;
+    }
+
+
+    // ✅ Explicitly set the composite key
+    public void setTxnAndItem(Txn txn, Item item) {
+        this.txnID = txn;
+        this.itemID = item;
+
+        this.id = new TxnitemId();
+        this.id.setTxnID(txn.getId());
+        this.id.setItemID(item.getId());
     }
 
 }

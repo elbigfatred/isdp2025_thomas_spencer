@@ -41,13 +41,10 @@ public class Inventory {
         return id;
     }
 
-//    public Item getItem() {
-//        return item;
-//    }
-//
-//    public Site getSite() {
-//        return site;
-//    }
+    public Item getItem() {
+        return item;
+    }
+
 
     public Integer getQuantity() {
         return quantity;

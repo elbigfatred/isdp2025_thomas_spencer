@@ -24,4 +24,29 @@ public class Txnstatus {
     @Column(name = "active", nullable = false)
     private Byte active;
 
+    // ✅ Explicit Getters & Setters
+    public String getStatusName() {
+        return statusName;
+    }
+
+    public void setStatusName(String statusName) {
+        this.statusName = statusName;
+    }
+
+    public String getStatusDescription() {
+        return statusDescription;
+    }
+
+    public void setStatusDescription(String statusDescription) {
+        this.statusDescription = statusDescription;
+    }
+
+    public Byte getActive() {
+        return active;
+    }
+
+    public void setActive(Byte active) {
+        this.active = active;
+    }
+
 }
