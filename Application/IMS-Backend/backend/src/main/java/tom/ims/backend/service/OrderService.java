@@ -181,6 +181,10 @@ public class OrderService {
         return savedTxn;
     }
 
+    public List<Txn> getOrdersByStatus(String status) {
+        return txnRepository.findByTxnStatus_StatusName(status);
+    }
+
 
 
 }

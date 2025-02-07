@@ -17,4 +17,7 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
 
     // ✅ Fetch all transactions (store orders) for a given site
     List<Txn> findBySiteIDTo_Id(Integer siteId);
+
+    // ✅ Fetch all orders with a specific status
+    List<Txn> findByTxnStatus_StatusName(String status);
 }

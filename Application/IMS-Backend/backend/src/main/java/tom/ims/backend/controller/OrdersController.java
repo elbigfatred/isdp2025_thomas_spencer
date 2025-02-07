@@ -3,6 +3,8 @@ package tom.ims.backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.*;
 import tom.ims.backend.service.InventoryService;
@@ -161,6 +163,35 @@ public class OrdersController {
             System.out.println("[ERROR] Failed to submit order: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error submitting order: " + e.getMessage());
+        }
+    }
+
+    //  Automatically submit all outstanding "NEW" orders every Tuesday at 11:59 PM
+    @Scheduled(cron = "59 59 23 ? * TUE") // Runs every Tuesday at 11:59 PM
+    @Transactional
+    public void autoSubmitOrders() {
+        try {
+            System.out.println("[AUTO-SUBMIT] Checking for outstanding NEW orders...");
+
+            // ✅ Fetch all NEW orders
+            List<Txn> newOrders = orderService.getOrdersByStatus("NEW");
+
+            if (newOrders.isEmpty()) {
+                System.out.println("[AUTO-SUBMIT] No outstanding NEW orders found.");
+                return;
+            }
+
+            // ✅ Submit each order
+            for (Txn order : newOrders) {
+                orderService.submitOrder(order.getId());
+                System.out.println("[AUTO-SUBMIT] Submitted Order ID: " + order.getId());
+            }
+
+            System.out.println("[AUTO-SUBMIT] Successfully submitted " + newOrders.size() + " orders.");
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] Auto-submitting orders failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
