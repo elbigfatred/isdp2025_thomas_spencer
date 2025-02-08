@@ -43,7 +43,13 @@ const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
         setActiveOrder(response.data);
         refreshOrders();
       })
-      .catch(() => alert("Failed to create order"));
+      .catch((error) => {
+        if (error.response && error.response.status === 409) {
+          alert("An active order is ongoing for this store!");
+        } else {
+          alert("Failed to create order. Please try again.");
+        }
+      });
   };
 
   const clearActiveOrder = () => {

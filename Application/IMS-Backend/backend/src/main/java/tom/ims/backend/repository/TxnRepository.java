@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface TxnRepository extends JpaRepository<Txn, Integer> {
     // ✅ Fetch active orders for a given site
-    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Store Order' AND t.txnStatus.statusName IN ('NEW')")
+    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Store Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
     List<Txn> findActiveOrdersBySite(Integer siteId);
 
     // ✅ Fetch all transactions (store orders) for a given site
@@ -20,4 +20,7 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
 
     // ✅ Fetch all orders with a specific status
     List<Txn> findByTxnStatus_StatusName(String status);
+
+    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Emergency Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
+    List<Txn> findActiveEmergencyOrdersBySite(Integer siteId);
 }

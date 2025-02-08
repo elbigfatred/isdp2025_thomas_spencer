@@ -7,9 +7,11 @@ import tom.ims.backend.repository.TxnRepository;
 import tom.ims.backend.repository.TxnItemsRepository;
 import tom.ims.backend.repository.TxnTypeRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,6 +47,9 @@ public class OrderService {
         Txnstatus status = txnStatusService.findByName("NEW");
         Txntype type = txnTypeService.getbyTxnType("Store Order");
 
+        // ✅ Calculate the correct Ship Date based on the store's assigned dayOfWeek
+        LocalDate shipDate = calculateNextDeliveryDate(siteTo.getDayOfWeek());
+
         Txn newOrder = new Txn();
         newOrder.setEmployeeID(employee);
         newOrder.setSiteIDTo(siteTo);
@@ -52,8 +57,9 @@ public class OrderService {
         newOrder.setTxnStatus(status);
         newOrder.setTxnType(type);
         newOrder.setCreatedDate(LocalDateTime.now());
-        newOrder.setShipDate(LocalDateTime.now().plusDays(7)); // Placeholder for delivery logic
+        newOrder.setShipDate(shipDate.atStartOfDay()); // Placeholder for delivery logic
         newOrder.setNotes(orderRequest.getNotes());
+        newOrder.setEmergencyDelivery((byte) 0);
 
         // ✅ Generate and set barcode
         String generatedBarcode = "TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
@@ -186,5 +192,83 @@ public class OrderService {
     }
 
 
+    public LocalDate calculateNextDeliveryDate(String dayOfWeek) {
+        DayOfWeek deliveryDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
+        LocalDate today = LocalDate.now();
+
+        // ✅ Step 1: Find the next Tuesday at 11:59 PM dynamically
+        LocalDate nextTuesday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
+
+        // ✅ If today is already Tuesday, move to next week's Tuesday
+        if (today.getDayOfWeek() == DayOfWeek.TUESDAY && today.isAfter(nextTuesday.minusDays(1))) {
+            nextTuesday = nextTuesday.plusWeeks(1);
+        }
+
+        // ✅ Step 2: Find the Monday AFTER the next Tuesday
+        LocalDate nextMonday = nextTuesday.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+
+        // ✅ Step 3: Assign the ship date based on nextMonday's week
+        LocalDate nextWeekDeliveryDay = nextMonday.with(TemporalAdjusters.nextOrSame(deliveryDay));
+
+        return nextWeekDeliveryDay;
+    }
+
+
+
+    public boolean hasActiveEmergencyOrder(Integer siteId) {
+        List<Txn> activeOrders = txnRepository.findActiveEmergencyOrdersBySite(siteId);
+        return !activeOrders.isEmpty();
+    }
+
+    public Txn createEmergencyOrderTransaction(OrderRequest orderRequest) {
+        if (hasActiveEmergencyOrder(orderRequest.getSiteIDTo())) {
+            throw new RuntimeException("An active emergency order already exists for this site.");
+        }
+
+        Employee employee = employeeService.getEmployeeById(orderRequest.getEmployeeID());
+        Site siteTo = siteService.getSiteById(orderRequest.getSiteIDTo());
+        Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        Txnstatus status = txnStatusService.findByName("NEW");
+        Txntype type = txnTypeService.getbyTxnType("Emergency Order");
+
+        // ✅ Emergency orders should ship the next day in theory
+        LocalDate shipDate = LocalDate.now().plusDays(1);
+
+        Txn newOrder = new Txn();
+        newOrder.setEmployeeID(employee);
+        newOrder.setSiteIDTo(siteTo);
+        newOrder.setSiteIDFrom(siteFrom);
+        newOrder.setTxnStatus(status);
+        newOrder.setTxnType(type);
+        newOrder.setCreatedDate(LocalDateTime.now());
+        newOrder.setShipDate(shipDate.atStartOfDay());
+        newOrder.setNotes(orderRequest.getNotes());
+        newOrder.setEmergencyDelivery((byte) 1);
+
+        // ✅ Generate a distinct emergency barcode
+        String generatedBarcode = "EM-TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
+        newOrder.setBarCode(generatedBarcode);
+
+        return txnRepository.save(newOrder);
+    }
+
+    public Txn submitEmergencyOrder(Integer txnId) {
+        Txn emergencyOrder = txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Emergency Order not found"));
+
+        if (!"Emergency Order".equals(emergencyOrder.getTxnType().getTxnType())) {
+            throw new RuntimeException("Txn ID " + txnId + " is not an emergency order.");
+        }
+
+        // ✅ Set ship date to the next day upon submission
+        LocalDateTime shipDate = LocalDateTime.now().plusDays(1);
+        emergencyOrder.setShipDate(shipDate);
+
+        // ✅ Update status to SUBMITTED
+        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
+        emergencyOrder.setTxnStatus(submittedStatus);
+
+        return txnRepository.save(emergencyOrder);
+    }
 
 }

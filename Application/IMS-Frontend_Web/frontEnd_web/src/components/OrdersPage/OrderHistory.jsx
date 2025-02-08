@@ -49,6 +49,7 @@ const OrderHistory = ({ user, refreshTrigger }) => {
       ? orders.filter(
           (order) =>
             order.id.toString().includes(searchQuery.trim()) ||
+            (order.txnType?.txnType || "Unknown").toLowerCase().includes(searchQuery.toLowerCase().trim()) || // ✅ Include txnType in search
             (order.txnStatus?.statusName || "Unknown").toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
             new Date(order.createdDate).toLocaleDateString().includes(searchQuery.trim())
         )
@@ -71,7 +72,7 @@ const OrderHistory = ({ user, refreshTrigger }) => {
           {/* ✅ Search Bar */}
           <TextField
             label="Search Order History"
-            placeholder="Search by ID, Status, or Date..."
+            placeholder="Search by ID, Type, Status, or Date..."
             variant="outlined"
             fullWidth
             margin="normal"
@@ -85,6 +86,9 @@ const OrderHistory = ({ user, refreshTrigger }) => {
                 <TableRow>
                   <TableCell>
                     <strong>Order ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Type</strong> {/* ✅ Added txnType Column */}
                   </TableCell>
                   <TableCell>
                     <strong>Status</strong>
@@ -103,7 +107,7 @@ const OrderHistory = ({ user, refreshTrigger }) => {
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       No matching orders found.
                     </TableCell>
                   </TableRow>
@@ -111,9 +115,10 @@ const OrderHistory = ({ user, refreshTrigger }) => {
                   filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{order.id}</TableCell>
+                      <TableCell>{order.txnType?.txnType || "Unknown"}</TableCell> {/* ✅ Display txnType */}
                       <TableCell>{order.txnStatus?.statusName || "Unknown"}</TableCell>
                       <TableCell>{new Date(order.createdDate).toLocaleString()}</TableCell>
-                      <TableCell>{new Date(order.shipDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{order.shipDate ? new Date(order.shipDate).toLocaleDateString() : "N/A"}</TableCell> {/* ✅ Handle NULL ship date */}
                       <TableCell>
                         <Button variant="contained" size="small" onClick={() => handleViewOrder(order)}>
                           View Order

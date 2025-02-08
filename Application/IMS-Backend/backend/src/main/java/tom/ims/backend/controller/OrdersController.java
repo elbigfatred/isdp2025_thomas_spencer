@@ -34,13 +34,6 @@ public class OrdersController {
         return ResponseEntity.ok(hasActiveOrder);
     }
 
-//    // ✅ Get items below reorder threshold (Prepopulate Order)
-//    @GetMapping("/prepopulate")
-//    public ResponseEntity<List<Inventory>> prepopulateOrder(@RequestParam Integer siteId) {
-//        List<Inventory> reorderItems = inventoryService.getItemsBelowThreshold(siteId);
-//        return ResponseEntity.ok(reorderItems);
-//    }
-
     // ✅ Get items below reorder threshold (Prepopulate Order)
     @GetMapping("/prepopulate")
     public ResponseEntity<List<Inventory>> prepopulateOrder(@RequestParam Integer siteId) {
@@ -194,4 +187,73 @@ public class OrdersController {
             e.printStackTrace();
         }
     }
+
+    // == EMERGENCY ORDERS ==
+
+    // ✅ Check if an active Emergency Order exists for this site
+    @GetMapping("/check-active-emergency")
+    public ResponseEntity<Boolean> checkActiveEmergencyOrder(@RequestParam Integer siteId) {
+        boolean hasActiveEmergencyOrder = orderService.hasActiveEmergencyOrder(siteId);
+        return ResponseEntity.ok(hasActiveEmergencyOrder);
+    }
+
+    // ✅ Create a new Emergency Order transaction
+    @PostMapping("/emergency")
+    public ResponseEntity<?> createEmergencyOrder(@RequestBody OrderRequest orderRequest) {
+        try {
+            if (orderService.hasActiveEmergencyOrder(orderRequest.getSiteIDTo())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("An active emergency order already exists for this site.");
+            }
+
+            Txn newEmergencyOrder = orderService.createEmergencyOrderTransaction(orderRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newEmergencyOrder);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating emergency order: " + e.getMessage());
+        }
+    }
+
+
+    // ✅ Update an existing Emergency Order with new item quantities
+    @PutMapping("/emergency/{txnId}/update-items")
+    public ResponseEntity<?> updateEmergencyOrderItems(@PathVariable Integer txnId, @RequestBody OrderUpdateRequest updateRequest) {
+        try {
+            System.out.println("[DEBUG] Updating emergency order ID: " + txnId);
+
+            // ✅ Validate transaction ID in request
+            if (!txnId.equals(updateRequest.getTxnID())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Transaction ID mismatch in request");
+            }
+
+            // ✅ Call service method to update items
+            orderService.updateOrderItems(updateRequest);
+
+            // ✅ Fetch updated transaction and return it
+            Txn updatedTxn = orderService.getOrderById(txnId);
+            return ResponseEntity.ok(updatedTxn);
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to update emergency order: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating emergency order: " + e.getMessage());
+        }
+    }
+
+    // ✅ Submit an Emergency Order (change status to SUBMITTED)
+    @PutMapping("/emergency/{txnId}/submit")
+    public ResponseEntity<?> submitEmergencyOrder(@PathVariable Integer txnId) {
+        try {
+            System.out.println("[DEBUG] Submitting emergency order ID: " + txnId);
+            Txn submittedTxn = orderService.submitEmergencyOrder(txnId); // ✅ Using the same method as store orders
+            return ResponseEntity.ok(submittedTxn);
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to submit emergency order: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error submitting emergency order: " + e.getMessage());
+        }
+    }
+
 }

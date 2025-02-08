@@ -6,8 +6,15 @@ const OrderItemTable = ({ items }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // ✅ Filter items based on search input
-  const filteredItems = items.filter((item) => item.itemID?.sku.toLowerCase().includes(searchQuery.toLowerCase()) || item.itemID?.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredItems = (Array.isArray(items) ? items : []).filter((item) => {
+    if (!item || !item.itemID) return false;
 
+    const sku = item.itemID.sku ? item.itemID.sku.toLowerCase() : "";
+    const name = item.itemID.name ? item.itemID.name.toLowerCase() : "";
+    const search = searchQuery.toLowerCase();
+
+    return sku.includes(search) || name.includes(search);
+  });
   return (
     <Box>
       {/* ✅ Search Input */}
