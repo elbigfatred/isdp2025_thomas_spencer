@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/OrdersController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/OrdersController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
