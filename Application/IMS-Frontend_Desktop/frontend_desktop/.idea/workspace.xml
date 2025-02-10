@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" afterDir="false" />
-    </list>
+    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
