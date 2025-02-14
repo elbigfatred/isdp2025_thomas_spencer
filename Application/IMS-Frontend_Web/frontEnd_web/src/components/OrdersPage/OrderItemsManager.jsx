@@ -12,6 +12,10 @@ const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // ✅ Check if the order is an emergency order
+  const isEmergencyOrder = order.txnType?.txnType === "Emergency Order";
+  const maxEmergencyItems = 5; // ✅ Max items for emergency orders
+
   useEffect(() => {
     if (!order?.id) return;
 
@@ -56,6 +60,11 @@ const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
       if (currentItems.some((i) => i.itemID.id === item.id)) {
         alert("Item already in order.");
         return currentItems; // Prevent duplicates
+      }
+
+      if (isEmergencyOrder && currentItems.length >= maxEmergencyItems) {
+        alert("Emergency orders can only contain up to 5 line items.");
+        return currentItems; // Prevent adding more
       }
 
       setHasUnsavedChanges(true);
@@ -124,8 +133,15 @@ const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
         </Alert>
       )}
 
+      {/* ✅ Show emergency order restriction message */}
+      {isEmergencyOrder && (
+        <Alert severity="info" sx={{ marginBottom: 2 }}>
+          Emergency orders are limited to {maxEmergencyItems} line items.
+        </Alert>
+      )}
+
       <Box sx={{ display: "flex", gap: 2, marginTop: 3 }}>
-        <InventoryList availableItems={availableItems} onAddItem={handleAddItem} />
+        <InventoryList availableItems={availableItems} onAddItem={handleAddItem} isEmergencyOrder={isEmergencyOrder} maxEmergencyItems={maxEmergencyItems} orderItems={orderItems} />
         <OrderItemsList orderItems={orderItems} onQuantityChange={handleQuantityChange} onRemoveItem={handleRemoveItem} />
       </Box>
 

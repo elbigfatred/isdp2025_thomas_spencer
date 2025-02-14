@@ -1,31 +1,32 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer, Button, Box, Typography, TextField } from "@mui/material";
-import OrderDetailsModal from "./OrderDetailsModal"; // ✅ Import the modal component
+import OrderDetailsModal from "./OrderDetailsModal"; // ✅ Import modal component
 
-const OrderHistory = ({ user, refreshTrigger }) => {
+const OrderHistory = ({ user, siteId, refreshTrigger }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // ✅ Add search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!user?.site?.id) return;
+    if (!siteId) return; // ✅ Prevent fetching if no site is selected
 
     setLoading(true);
     axios
-      .get(`http://localhost:8080/api/orders/site/${user.site.id}`)
+      .get(`http://localhost:8080/api/orders/site/${siteId}`)
       .then((response) => {
         console.log("[DEBUG] Fetched Orders JSON:", response.data);
         setOrders(response.data);
       })
       .catch(() => setError("Failed to load orders"))
       .finally(() => setLoading(false));
-  }, [user, refreshTrigger]);
+  }, [siteId, refreshTrigger]); // ✅ Orders now reload when site changes
 
   // ✅ Handle "View Order" button click
   const handleViewOrder = async (order) => {
@@ -49,11 +50,11 @@ const OrderHistory = ({ user, refreshTrigger }) => {
       ? orders.filter(
           (order) =>
             order.id.toString().includes(searchQuery.trim()) ||
-            (order.txnType?.txnType || "Unknown").toLowerCase().includes(searchQuery.toLowerCase().trim()) || // ✅ Include txnType in search
+            (order.txnType?.txnType || "Unknown").toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
             (order.txnStatus?.statusName || "Unknown").toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
             new Date(order.createdDate).toLocaleDateString().includes(searchQuery.trim())
         )
-      : []; // If no orders exist, filteredOrders remains an empty array
+      : [];
 
   return (
     <Box>
@@ -62,7 +63,6 @@ const OrderHistory = ({ user, refreshTrigger }) => {
       {error && <Typography color="error">{error}</Typography>}
       {loading && <Typography>Loading orders...</Typography>}
 
-      {/* ✅ If there are no orders at all, show a message instead of the search bar */}
       {orders.length === 0 && !loading ? (
         <Typography variant="body1" align="center" sx={{ marginTop: 2 }}>
           No orders found for this site.
@@ -88,7 +88,7 @@ const OrderHistory = ({ user, refreshTrigger }) => {
                     <strong>Order ID</strong>
                   </TableCell>
                   <TableCell>
-                    <strong>Type</strong> {/* ✅ Added txnType Column */}
+                    <strong>Type</strong>
                   </TableCell>
                   <TableCell>
                     <strong>Status</strong>
@@ -115,10 +115,10 @@ const OrderHistory = ({ user, refreshTrigger }) => {
                   filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{order.id}</TableCell>
-                      <TableCell>{order.txnType?.txnType || "Unknown"}</TableCell> {/* ✅ Display txnType */}
+                      <TableCell>{order.txnType?.txnType || "Unknown"}</TableCell>
                       <TableCell>{order.txnStatus?.statusName || "Unknown"}</TableCell>
                       <TableCell>{new Date(order.createdDate).toLocaleString()}</TableCell>
-                      <TableCell>{order.shipDate ? new Date(order.shipDate).toLocaleDateString() : "N/A"}</TableCell> {/* ✅ Handle NULL ship date */}
+                      <TableCell>{order.shipDate ? new Date(order.shipDate).toLocaleDateString() : "N/A"}</TableCell>
                       <TableCell>
                         <Button variant="contained" size="small" onClick={() => handleViewOrder(order)}>
                           View Order

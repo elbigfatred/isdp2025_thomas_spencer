@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Button, TextField, Box, Typography } from "@mui/material";
 
-const InventoryList = ({ availableItems, onAddItem }) => {
+const InventoryList = ({ availableItems, onAddItem, isEmergencyOrder, maxEmergencyItems, orderItems }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // ✅ Filter items based on search input (by SKU or name)
@@ -45,23 +45,29 @@ const InventoryList = ({ availableItems, onAddItem }) => {
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="textSecondary">
-                    Loading inventory...
+                    No matching items found.
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((inventory) => (
-                <TableRow key={inventory.id.itemID}>
-                  <TableCell>{inventory.item.sku}</TableCell>
-                  <TableCell>{inventory.item.name}</TableCell>
-                  <TableCell>{inventory.item.caseSize}</TableCell>
-                  <TableCell>{inventory.quantity}</TableCell>
-                  <TableCell>{inventory.optimumThreshold}</TableCell>
-                  <TableCell>
-                    <Button onClick={() => onAddItem(inventory.item)}>Add Item</Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredItems.map((inventory) => {
+                const isDisabled = isEmergencyOrder && orderItems.length >= maxEmergencyItems;
+
+                return (
+                  <TableRow key={inventory.id.itemID}>
+                    <TableCell>{inventory.item.sku}</TableCell>
+                    <TableCell>{inventory.item.name}</TableCell>
+                    <TableCell>{inventory.item.caseSize}</TableCell>
+                    <TableCell>{inventory.quantity}</TableCell>
+                    <TableCell>{inventory.optimumThreshold}</TableCell>
+                    <TableCell>
+                      <Button onClick={() => onAddItem(inventory.item)} disabled={isDisabled}>
+                        {isDisabled ? "Limit Reached" : "Add Item"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

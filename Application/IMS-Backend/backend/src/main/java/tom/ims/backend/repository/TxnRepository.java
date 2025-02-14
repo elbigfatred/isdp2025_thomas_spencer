@@ -1,7 +1,10 @@
 package tom.ims.backend.repository;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tom.ims.backend.model.Site;
 import tom.ims.backend.model.Txn;
@@ -23,4 +26,10 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
 
     @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Emergency Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
     List<Txn> findActiveEmergencyOrdersBySite(Integer siteId);
+
+    @Query("SELECT t FROM Txn t WHERE t.txnType.txnType IN ('Store Order', 'Emergency Order')")
+    List<Txn> findAllStoreAndEmergencyOrders();
+
+    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = :siteID AND t.txnType.txnType = 'Back Order' AND t.txnStatus.statusName = 'NEW'")
+    Txn findNewBackorderBySite(@Param("siteID") Integer siteID);
 }

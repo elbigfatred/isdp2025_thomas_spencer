@@ -7,12 +7,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.*;
+import tom.ims.backend.repository.TxnRepository;
 import tom.ims.backend.service.InventoryService;
 import tom.ims.backend.service.OrderService;
 import tom.ims.backend.service.ItemService;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -26,6 +28,24 @@ public class OrdersController {
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private TxnRepository txnRepository;
+
+    // ✅ Get all store and emergency orders (for filtering on frontend)
+    @GetMapping("/all")
+    public ResponseEntity<List<Txn>> getAllStoreAndEmergencyOrders() {
+        try {
+            List<Txn> orders = txnRepository.findAllStoreAndEmergencyOrders();
+            if (orders.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
 
     // ✅ Check if an active Store Order exists for this site
     @GetMapping("/check-active")
@@ -174,10 +194,12 @@ public class OrdersController {
                 return;
             }
 
-            // ✅ Submit each order
+            // ✅ Submit each order (Store Orders only)
             for (Txn order : newOrders) {
-                orderService.submitOrder(order.getId());
-                System.out.println("[AUTO-SUBMIT] Submitted Order ID: " + order.getId());
+                if(Objects.equals(order.getTxnType().getTxnType(), "Store Order")) {
+                    orderService.submitOrder(order.getId());
+                    System.out.println("[AUTO-SUBMIT] Submitted Order ID: " + order.getId());
+                }
             }
 
             System.out.println("[AUTO-SUBMIT] Successfully submitted " + newOrders.size() + " orders.");
@@ -256,4 +278,29 @@ public class OrdersController {
         }
     }
 
+    @PutMapping("/{txnId}/update-status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Integer txnId, @RequestParam String status) {
+        try {
+            System.out.println("[DEBUG] Updating order ID " + txnId + " to status: " + status);
+            Txn updatedTxn = orderService.updateOrderStatus(txnId, status);
+            return ResponseEntity.ok(updatedTxn);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating order status: " + e.getMessage());
+        }
+    }
+
+    // == BACK ORDERS ==
+
+    @PostMapping("/backorder")
+    public ResponseEntity<?> createOrUpdateBackorder(@RequestBody BackorderRequest backorderRequest) {
+        try {
+            Txn backorderTxn = orderService.createOrUpdateBackorderTransaction(backorderRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(backorderTxn);
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to create/update backorder: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating or updating backorder: " + e.getMessage());
+        }
+    }
 }

@@ -28,23 +28,12 @@ public class Txnitem {
     @Column(name = "notes")
     private String notes;
 
-    public void setId(TxnitemId id) {
-        this.id = id;
-    }
-
-    public TxnitemId getId() {
-        return id;
-    }
-
-    public Txn gettxnID(){
+    // ✅ Remove duplicate setter and ensure consistency
+    public Txn getTxnID(){
         return txnID;
     }
 
     public void setTxnID(Txn txnID){
-        this.txnID = txnID;
-    }
-
-    public void settxnID(Txn txnID){
         this.txnID = txnID;
     }
 
@@ -64,6 +53,13 @@ public class Txnitem {
         this.quantity = quantity;
     }
 
+    public void setId(TxnitemId id) {
+        this.id = id;
+    }
+
+    public TxnitemId getId() {
+        return id;
+    }
 
     // ✅ Explicitly set the composite key
     public void setTxnAndItem(Txn txn, Item item) {
@@ -74,5 +70,4 @@ public class Txnitem {
         this.id.setTxnID(txn.getId());
         this.id.setItemID(item.getId());
     }
-
 }

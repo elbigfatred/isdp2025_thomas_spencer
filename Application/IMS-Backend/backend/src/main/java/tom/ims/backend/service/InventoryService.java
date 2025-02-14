@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tom.ims.backend.model.Inventory;
 import tom.ims.backend.model.InventoryId;
+import tom.ims.backend.model.InventoryUpdateRequest;
 import tom.ims.backend.model.OrderItem;
 import tom.ims.backend.repository.InventoryRepository;
 
@@ -62,5 +63,44 @@ public class InventoryService {
     public List<Inventory> getInventoryBySiteAndItem(Integer siteID, Integer itemID) {
         System.out.println("[DEBUG] Looking up inventory in database for siteID: " + siteID + ", itemID: " + itemID);
         return inventoryRepository.findById_SiteIDAndId_ItemID(siteID, itemID);
+    }
+
+
+    public void decrementInventory(InventoryUpdateRequest request) {
+        for (InventoryUpdateRequest.InventoryUpdateItem item : request.getItems()) {
+            Inventory inventory = inventoryRepository.findBySiteIdAndItemId(request.getSiteID(), item.getItemID());
+            if (inventory != null) {
+                inventory.setQuantity(Math.max(0, inventory.getQuantity() - item.getQuantity()));
+                inventoryRepository.save(inventory);
+            }
+        }
+    }
+
+
+    public void incrementInventory(InventoryUpdateRequest request) {
+        for (InventoryUpdateRequest.InventoryUpdateItem item : request.getItems()) {
+            InventoryId inventoryId = new InventoryId();
+            inventoryId.setSiteID(request.getSiteID());
+            inventoryId.setItemID(item.getItemID());
+            inventoryId.setItemLocation("Stock"); // Default location
+
+            Inventory inventory = inventoryRepository.findById(inventoryId).orElse(null);
+
+            if (inventory != null) {
+                // ✅ Existing inventory, just increase quantity
+                inventory.setQuantity(inventory.getQuantity() + item.getQuantity());
+            } else {
+                // ✅ Inventory doesn't exist—create a new entry
+                inventory = new Inventory();
+                inventory.setId(inventoryId); // ✅ Set the composite key
+                inventory.setQuantity(item.getQuantity());
+                inventory.setOptimumThreshold(0);
+                inventory.setReorderThreshold(0);
+                inventory.setNotes(""); // Optional: Set default notes if needed
+            }
+
+            // ✅ Save the updated or new inventory entry
+            inventoryRepository.save(inventory);
+        }
     }
 }

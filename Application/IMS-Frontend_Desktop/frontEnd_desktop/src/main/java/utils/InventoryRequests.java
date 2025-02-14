@@ -138,4 +138,81 @@ public class InventoryRequests {
         in.close();
         return response.toString();
     }
+
+    /**
+     * Sends a POST request to increment inventory at a given site.
+     *
+     * @param siteID The site where inventory should be increased.
+     * @param items  The list of inventory items to increment.
+     * @return True if successful, false otherwise.
+     */
+    public static boolean incrementInventory(int siteID, List<Inventory> items) {
+        return sendInventoryUpdateRequest(siteID, items, "/increment");
+    }
+
+    /**
+     * Sends a POST request to decrement inventory at a given site.
+     *
+     * @param siteID The site where inventory should be decreased.
+     * @param items  The list of inventory items to decrement.
+     * @return True if successful, false otherwise.
+     */
+    public static boolean decrementInventory(int siteID, List<Inventory> items) {
+        return sendInventoryUpdateRequest(siteID, items, "/decrement");
+    }
+
+    /**
+     * Helper method to send an inventory update request.
+     *
+     * @param siteID The site ID.
+     * @param items  The inventory items.
+     * @param endpoint The API endpoint ("/increment" or "/decrement").
+     * @return True if successful, false otherwise.
+     */
+    private static boolean sendInventoryUpdateRequest(int siteID, List<Inventory> items, String endpoint) {
+        try {
+            String urlString = BASE_URL + endpoint;
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            // ✅ Build JSON request payload
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("siteID", siteID);
+
+            JSONArray itemsArray = new JSONArray();
+            for (Inventory item : items) {
+                JSONObject itemObj = new JSONObject();
+                itemObj.put("itemID", item.getItemID());
+                itemObj.put("quantity", item.getQuantity());
+                itemsArray.put(itemObj);
+            }
+            requestBody.put("items", itemsArray);
+
+            // ✅ Send JSON payload
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(requestBody.toString().getBytes("utf-8"));
+                os.flush();
+            }
+
+            // ✅ Handle response
+            int responseCode = conn.getResponseCode();
+            System.out.println("[DEBUG] Response Code from " + endpoint + ": " + responseCode);
+
+            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
+                System.out.println("[SUCCESS] Inventory update successful.");
+                return true;
+            } else {
+                System.out.println("[ERROR] Inventory update failed: " + responseCode);
+                return false;
+            }
+        } catch (Exception e) {
+            System.out.println("[ERROR] Exception in sendInventoryUpdateRequest: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

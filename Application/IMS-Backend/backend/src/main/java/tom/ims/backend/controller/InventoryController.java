@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.Inventory;
 import tom.ims.backend.model.InventoryId;
+import tom.ims.backend.model.InventoryUpdateRequest;
+import tom.ims.backend.repository.InventoryRepository;
 import tom.ims.backend.service.InventoryService;
 
 import java.util.List;
@@ -16,6 +18,8 @@ public class InventoryController {
 
     @Autowired
     private InventoryService inventoryService;
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
     // ✅ Get all inventory
     @GetMapping
@@ -134,5 +138,19 @@ public class InventoryController {
         id.setItemLocation(itemLocation);
 
         return inventoryService.deleteInventory(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    // ✅ Decrement inventory at a site
+    @PostMapping("/decrement")
+    public ResponseEntity<?> decrementInventory(@RequestBody InventoryUpdateRequest request) {
+        inventoryService.decrementInventory(request);
+        return ResponseEntity.ok("Inventory decremented successfully.");
+    }
+
+    // ✅ Increment inventory at a site
+    @PostMapping("/increment")
+    public ResponseEntity<?> incrementInventory(@RequestBody InventoryUpdateRequest request) {
+        inventoryService.incrementInventory(request);
+        return ResponseEntity.ok("Inventory incremented successfully.");
     }
 }

@@ -14,6 +14,12 @@ public class SiteService {
     @Autowired
     private SiteRepository siteRepository;
 
+    // ✅ Fetch warehouse site (Assumes warehouse is always site ID 1)
+    public Site getWarehouseSite() {
+        return siteRepository.findById(2)
+                .orElseThrow(() -> new RuntimeException("Warehouse site not found"));
+    }
+
     public List<Site> getAllSites() {
         return siteRepository.findAll();
     }

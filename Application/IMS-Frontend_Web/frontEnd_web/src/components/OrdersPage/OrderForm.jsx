@@ -40,7 +40,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
           setActiveOrder(null);
         }
       })
-      .catch(() => alert("Failed to check active order"))
+      .catch(() => console.log("Failed to check active order"))
       .finally(() => setCheckingActiveOrder(false));
   }, [user, selectedOrder, isEmergencyMode]); // ✅ Refresh when toggling emergency mode
 

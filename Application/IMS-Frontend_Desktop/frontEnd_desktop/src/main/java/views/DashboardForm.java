@@ -89,6 +89,12 @@ public class DashboardForm {
     private JComboBox cmbInventoryAdminSiteSelect;
     private JTextField txtInventorySearch;
     private JButton btnInventoryHelp;
+    private JPanel OrdersTab;
+    private JTextField txtOrdersSearch;
+    private JCheckBox chkNewOrdersOnly;
+    private JButton btnOrdersHelp;
+    private JTable tblOrders;
+    private JButton btnOrdersViewReceive;
 
     // =================== FRAME VARIABLES ===================
 
@@ -108,6 +114,9 @@ public class DashboardForm {
     private Site inventorySite;
     private int inventoryTableSelectedId = -1;
     private List<Inventory> allInventory;
+    private List<Txn> allTxns;
+    private int ordersTableSelectedId = -1;
+    private String orderViewReceiveMode;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -142,6 +151,10 @@ public class DashboardForm {
 
         txtEmployeeSearch.setText("");
         txtItemSearch.setText("");
+        txtOrdersSearch.setText("");
+        txtSiteSearch.setText("");
+        txtInventorySearch.setText("");
+
 
         // Fetch roles as a single string and split into an array
         String permissionLevels = SessionManager.getInstance().getPermissionLevel(); // Example: "Administrator, Warehouse Manager"
@@ -161,33 +174,40 @@ public class DashboardForm {
             siteAdminCRUDPane.setVisible(true);
             DashboardTabPane.add("Inventory", InventoryTab);
             pnlInventoryAdminSelectSite.setVisible(true);
+            DashboardTabPane.add("Orders", OrdersTab);
 
             loadInitialData();
-            populateEmployeeTable(allEmployees);
             populateEditPermissionsEmployeesTable(allEmployees);
             populateEditPermissionsPositionList(allPosns, null);
+            populateOrdersTable(allTxns);
+            updateOrdersTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
             DashboardTabPane.add("Items", ItemsTab);
             DashboardTabPane.add("Inventory", InventoryTab);
+            DashboardTabPane.add("Orders", OrdersTab);
 
             loadInitialData();
-            populateEmployeeTable(allEmployees);
             populateItemsTable(allItems);
+            populateOrdersTable(allTxns);
+            updateOrdersTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Store Manager")) {
             DashboardTabPane.add("Inventory", InventoryTab);
+            DashboardTabPane.add("Orders", OrdersTab);
 
             loadInitialData();
-            populateEmployeeTable(allEmployees);
+            //populateEmployeeTable(allEmployees);
+            populateOrdersTable(allTxns);
+            updateOrdersTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Financial Manager")) {
             DashboardTabPane.add("Reports", ReportsTab);
 
-            loadInitialData();
+            //loadInitialData();
             // Add any additional logic for Financial Manager
         }
 
@@ -238,15 +258,31 @@ public class DashboardForm {
                     cmbInventoryAdminSiteSelect.addItem(site);
                 }
             }
+            allTxns = TxnRequests.fetchAllOrders();
+            btnOrdersViewReceive.setText("View/Receive Order");
+            orderViewReceiveMode = "RECEIVE";
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
+            allTxns = TxnRequests.fetchAllOrders();
+            btnOrdersViewReceive.setText("View/Receive Order");
+            orderViewReceiveMode = "RECEIVE";
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager") || Arrays.asList(accessPosition).contains("Administator") || Arrays.asList(accessPosition).contains("Store Manager")) {
             inventorySite = SessionManager.getInstance().getSite();
             loadInventoryBySite(inventorySite.getId());
+        }
+
+        if (Arrays.asList(accessPosition).contains("Store Manager") && !Arrays.asList(accessPosition).contains("Warehouse Manager") && !Arrays.asList(accessPosition).contains("Administrator")) {
+            inventorySite = SessionManager.getInstance().getSite();
+            loadInventoryBySite(inventorySite.getId());
+
+            // ✅ Fetch only orders for this site
+            allTxns = TxnRequests.fetchOrdersBySite(inventorySite.getId());
+            btnOrdersViewReceive.setText("View Order");
+            orderViewReceiveMode = "VIEW";
         }
     }
 
@@ -473,6 +509,27 @@ public class DashboardForm {
 
         btnInventoryEdit.addActionListener(e -> editInventory());
 
+        txtOrdersSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateOrdersTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateOrdersTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateOrdersTableBySearch();
+            }
+        });
+
+        btnOrdersViewReceive.addActionListener(e -> {
+            handleOrderAction();
+        });
+
         return ContentPane;
     }
 
@@ -530,7 +587,6 @@ public class DashboardForm {
                 )
         );
     }
-
 
     // =================== EMPLOYEE MANAGEMENT ===================
 
@@ -896,6 +952,38 @@ public class DashboardForm {
                 lblEditPermissionsEmployeeDetails.setText(display);
             }
         }
+
+    }
+
+    // =================== ORDER MANAGEMENT ===================
+
+    private void handleOrderAction(){
+
+        //get site
+        Txn txnToViewReceive = null;
+
+        if (ordersTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select an order.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        for (Txn txn : allTxns) {
+            if (txn.getId() == ordersTableSelectedId) {
+                txnToViewReceive = txn;
+                break;
+            }
+        }
+
+        Txn finalTxnToViewReceive = txnToViewReceive;
+
+
+        SwingUtilities.invokeLater(()-> new ViewReceiveOrder().showViewReceveOrderForm(frame, frame.getLocation(), orderViewReceiveMode, finalTxnToViewReceive,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+            loadInitialData();;
+            updateOrdersTableBySearch();
+        }));
 
     }
 
@@ -1480,6 +1568,107 @@ public class DashboardForm {
         populateInventoryTable(filteredList);
     }
 
+    /**
+     * Updates the orders table based on the search field input.
+     */
+    private void updateOrdersTableBySearch() {
+        boolean showActiveOnly = chkNewOrdersOnly.isSelected();
+
+        List<Txn> filteredOrders = new ArrayList<>();
+
+        String search = txtOrdersSearch.getText().trim().toLowerCase();
+
+        for (Txn order : allTxns) {
+            if (showActiveOnly && order.getTxnStatus().getStatusName().equalsIgnoreCase("CANCELLED")) {
+                continue; // Skip cancelled orders when active filter is ON
+            }
+
+            if (search.isEmpty() ||
+                    String.valueOf(order.getId()).contains(search) ||
+                    order.getTxnType().getTxnType().toLowerCase().contains(search) ||
+                    order.getTxnStatus().getStatusName().toLowerCase().contains(search) ||
+                    order.getSiteTo().getSiteName().toLowerCase().contains(search) ||
+                    (order.getEmployee() != null && order.getEmployee().getUsername().toLowerCase().contains(search)) ||
+                    order.getBarCode().toLowerCase().contains(search)) {
+
+                filteredOrders.add(order);
+            }
+        }
+
+        // ✅ Sort orders with NEW Emergency Orders first, then NEW Store Orders, then by creation date
+        filteredOrders.sort((o1, o2) -> {
+            boolean o1Emergency = o1.getTxnType().getTxnType().equalsIgnoreCase("Emergency Order");
+            boolean o2Emergency = o2.getTxnType().getTxnType().equalsIgnoreCase("Emergency Order");
+            boolean o1New = o1.getTxnStatus().getStatusName().equalsIgnoreCase("NEW");
+            boolean o2New = o2.getTxnStatus().getStatusName().equalsIgnoreCase("NEW");
+
+            if (o1New && o2New) {
+                if (o1Emergency && !o2Emergency) return -1;
+                if (!o1Emergency && o2Emergency) return 1;
+            } else if (o1New) {
+                return -1;
+            } else if (o2New) {
+                return 1;
+            }
+
+            return o2.getCreatedDate().compareTo(o1.getCreatedDate()); // Latest first
+        });
+
+        populateOrdersTable(filteredOrders);
+    }
+
+    /**
+     * Populates the orders table with provided order data.
+     *
+     * @param filteredOrders List of orders to display.
+     */
+    private void populateOrdersTable(List<Txn> filteredOrders) {
+        String[] columns = {"ID", "Type", "Status", "Site", "Created Date", "Ship Date", "Employee", "Barcode"};
+
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // ✅ Make all cells non-editable
+            }
+        };
+
+        for (Txn order : filteredOrders) {
+            Object[] rowData = new Object[]{
+                    order.getId(),
+                    order.getTxnType().getTxnType(),
+                    order.getTxnStatus().getStatusName(),
+                    order.getSiteTo().getSiteName(),
+                    order.getCreatedDate(),
+                    order.getShipDate() != null ? order.getShipDate() : "N/A",
+                    order.getEmployee().getId() != null ? order.getEmployee().getUsername() : "N/A",
+                    order.getBarCode()
+            };
+            tableModel.addRow(rowData);
+        }
+
+        tblOrders.setModel(tableModel);
+
+        // ✅ Hide txnID column (first column)
+        tblOrders.getColumnModel().getColumn(0).setMinWidth(0);
+        tblOrders.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblOrders.getColumnModel().getColumn(0).setWidth(0);
+
+        // ✅ Allow selection of entire rows only
+        tblOrders.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // ✅ Listen for row selection and update selectedTxnID
+        tblOrders.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblOrders.getSelectedRow();
+                if (selectedRow != -1) {
+                    ordersTableSelectedId = (Integer) tblOrders.getValueAt(selectedRow, 0);
+                } else {
+                    ordersTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
     // =================== SESSION MANAGEMENT AND LOGOUT ===================
 
     /**
@@ -1644,6 +1833,3 @@ public class DashboardForm {
         }
     }
 }
-
-
-

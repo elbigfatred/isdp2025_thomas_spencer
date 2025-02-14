@@ -116,19 +116,16 @@ CREATE TABLE `employee` (
   `FirstName` varchar(20) NOT NULL,
   `LastName` varchar(20) NOT NULL,
   `Email` varchar(100) DEFAULT NULL,
-  /* `PositionID` int NOT NULL, */
+  `PositionID` int NOT NULL,
   `siteID` int NOT NULL,
   `username` varchar(255) NOT NULL,  
   `notes` varchar(255) DEFAULT NULL,  
   `locked` tinyint DEFAULT 0,
   `active` tinyint DEFAULT 1 NOT NULL,
-  /* FOREIGN KEY(`PositionID`) REFERENCES posn(`PositionID`), */
+  FOREIGN KEY(`PositionID`) REFERENCES posn(`PositionID`),
   FOREIGN KEY(`siteID`) REFERENCES site(`siteID`),
   CONSTRAINT username_constraint UNIQUE (`username`)
 );
-
---  add main_role to employee...
-ALTER TABLE employee ADD COLUMN main_role VARCHAR(255) NOT NULL DEFAULT 'Unassigned';
 
 --
 -- Create table `supplier`
@@ -274,18 +271,6 @@ CREATE TABLE `inventory` (
   FOREIGN KEY (`siteID`) REFERENCES `site` (`siteID`)
 ); 
 
--- *MODIFICATION TO ORIGINAL*
--- Create table `user_posn`
---
-
-CREATE TABLE `user_posn` (
-  `userID` INT NOT NULL,
-  `posnID` INT NOT NULL,
-  PRIMARY KEY (`userID`, `posnID`),
-  FOREIGN KEY (`userID`) REFERENCES employee(`employeeID`) ON DELETE CASCADE,
-  FOREIGN KEY (`posnID`) REFERENCES posn(`positionID`) ON DELETE CASCADE
-);
-
 -- 
 -- ********************************************
 -- ****       Insert Data                  ****
@@ -353,8 +338,8 @@ INSERT INTO `site` (`siteID`, `siteName`, `provinceID`, `address`, `address2`, `
 --
 -- Insert data for table `employee`
 --
-/* INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Email`, `active`, `siteID`, `username`, `PositionID`) VALUES
-(1000, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'admin', 'admin', 'admin@bullseye.com', 1, 1, 'admin', 9999),
+INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Email`, `active`, `siteID`, `username`, `PositionID`) VALUES
+(1000, 'P@ssw0rd-', 'admin', 'admin', 'admin@bullseye.com', 1, 1, 'admin', 9999),
 (1001, 'P@ssw0rd-', 'Eduardo', 'Concepcion', 'econcepcion@bullseye.ca', 1, 1,'econcepcion',  1),
 (1002, 'P@ssw0rd-', 'Monica', 'Munoz', 'mmunoz@bullseye.ca', 1, 1, 'mmunoz', 2),
 (1003, 'P@ssw0rd-', 'Chris', 'Patstone', 'cpatstone@bullseye.ca', 1, 2, 'cpatstone', 3),
@@ -370,47 +355,7 @@ INSERT INTO `site` (`siteID`, `siteName`, `provinceID`, `address`, `address2`, `
 (1013, 'P@ssw0rd-', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton', 5),
 (1014, 'P@ssw0rd-', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones', 5),
 (9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999,'acadia',  6),
-(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1,'online', 10000); */
-
--- Insert employees with main roles
-INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Email`, `active`, `siteID`, `username`, `main_role`) VALUES
-(1000, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'admin', 'admin', 'admin@bullseye.com', 1, 1, 'admin', 'Administrator'),
-(1001, 'P@ssw0rd-', 'Eduardo', 'Concepcion', 'econcepcion@bullseye.ca', 1, 1, 'econcepcion', 'Regional Manager'),
-(1002, 'P@ssw0rd-', 'Monica', 'Munoz', 'mmunoz@bullseye.ca', 1, 1, 'mmunoz', 'Financial Manager'),
-(1003, 'P@ssw0rd-', 'Chris', 'Patstone', 'cpatstone@bullseye.ca', 1, 2, 'cpatstone', 'Warehouse Manager'),
-(1004, 'P@ssw0rd-', 'Jose', 'Perez', 'jperez@bullseye.ca', 1, 4, 'jperez', 'Store Manager'),
-(1005, 'P@ssw0rd-', 'Kevin', 'Blanche', 'kblanche@bullseye.ca', 1, 5, 'kblanche', 'Store Manager'),
-(1006, 'P@ssw0rd-', 'Willow', 'Bray', 'wbray@bullseye.ca', 1, 6, 'wbray', 'Store Manager'),
-(1007, 'P@ssw0rd-', 'Tansy', 'Graupel', 'tgraupel@bullseye.ca', 1, 7, 'tgraupel', 'Store Manager'),
-(1008, 'P@ssw0rd-', 'Shuncho', 'Yuasa', 'syuasa@bullseye.ca', 1, 8, 'syuasa', 'Store Manager'),
-(1009, 'P@ssw0rd-', 'Emi', 'Byron', 'ebyron@bullseye.ca', 1, 9, 'ebyron', 'Store Manager'),
-(1010, 'P@ssw0rd-', 'Arabella', 'Bean', 'abean@bullseye.ca', 1, 10, 'abean', 'Store Manager'),
-(1011, 'P@ssw0rd-', 'Hattie', 'Trent', 'htrent@bullseye.ca', 1, 2, 'htrent', 'Warehouse Worker'),
-(1012, 'P@ssw0rd-', 'Berniece', 'Callan', 'bcallan@bullseye.ca', 1, 2, 'bcallan', 'Warehouse Worker'),
-(1013, 'P@ssw0rd-', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton', 'Warehouse Worker'),
-(1014, 'P@ssw0rd-', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones', 'Warehouse Worker'),
-(9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999, 'acadia', 'Delivery'),
-(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1, 'online', 'Online Customer');
-
--- Insert relationships into the user_posn table
-INSERT INTO `user_posn` (`userID`, `posnID`) VALUES
-(1000, 9999),
-(1001, 1),
-(1002, 2),
-(1003, 3),
-(1004, 4),
-(1005, 4),
-(1006, 4),
-(1007, 4),
-(1008, 4),
-(1009, 4),
-(1010, 4),
-(1011, 5),
-(1012, 5),
-(1013, 5),
-(1014, 5),
-(9999, 6),
-(10000, 10000);
+(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1,'online', 10000);
 
 --
 -- Insert data for table `txntype`

@@ -16,6 +16,12 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    // ✅ Fetch system user for auto-generated backorders
+    public Employee getSystemUser() {
+        return employeeRepository.findByUsername("admin")
+                .orElseThrow(() -> new RuntimeException("System user not found"));
+    }
+
     public List<Employee> getAllEmployees() {
         return employeeRepository.findAll();
     }

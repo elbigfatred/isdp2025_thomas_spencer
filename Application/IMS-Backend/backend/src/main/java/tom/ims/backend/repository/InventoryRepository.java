@@ -21,4 +21,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, InventoryI
     List<Inventory> findById_ItemID(Integer itemID);
 
     List<Inventory> findById_SiteIDAndId_ItemID(Integer siteID, Integer itemID);
+
+    // ✅ Use `id.siteId` and `id.itemId` when dealing with composite keys
+    @Query("SELECT i FROM Inventory i WHERE i.id.siteID = :siteId AND i.id.itemID = :itemId")
+    Inventory findBySiteIdAndItemId(@Param("siteId") Integer siteId, @Param("itemId") Integer itemId);
 }
