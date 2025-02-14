@@ -26,4 +26,7 @@ public interface TxnItemsRepository extends JpaRepository<Txnitem, Integer> {
 
     @Query("SELECT t FROM Txnitem t WHERE t.txnID = :txn AND t.itemID = :item")
     Txnitem findByTxnIDAndItemID(@Param("txn") Txn txn, @Param("item") Item item);
+
+    @Query("SELECT COUNT(t) FROM Txnitem t WHERE t.txnID.id = :txnID")
+    int countByTxnID(Integer txnID);
 }

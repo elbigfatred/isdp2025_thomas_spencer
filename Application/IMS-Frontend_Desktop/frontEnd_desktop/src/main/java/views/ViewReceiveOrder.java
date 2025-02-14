@@ -118,7 +118,8 @@ public class ViewReceiveOrder {
         });
 
         btnFulfillOrder.addActionListener(e -> {
-            boolean success = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLING");
+            String empUsername = SessionManager.getInstance().getUsername();
+            boolean success = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLING", empUsername);
 
             if (success) {
                 JOptionPane.showMessageDialog(frame, "Order is now being assembled.");
@@ -191,7 +192,8 @@ public class ViewReceiveOrder {
         // ✅ Step 1: Update the original transaction if items were fulfilled
         if (!fulfilledItems.isEmpty()) {
             System.out.println("Updating original transaction...");
-            updateSuccess = TxnRequests.updateOrderItems(selectedtxn.getId(), fulfilledItems);
+            String empUsername = SessionManager.getInstance().getUsername();
+            updateSuccess = TxnRequests.updateOrderItems(selectedtxn.getId(), fulfilledItems, empUsername);
             System.out.println("[DEBUG] updateOrderItems Success: " + updateSuccess);
         }
 
@@ -214,8 +216,10 @@ public class ViewReceiveOrder {
 
         System.out.println("[NEW ORDER STATUS] " + newStatus);
 
+        String empUsername = SessionManager.getInstance().getUsername();
+
         // ✅ Step 4: Update order status
-        boolean statusUpdated = TxnRequests.updateOrderStatus(selectedtxn.getId(), newStatus);
+        boolean statusUpdated = TxnRequests.updateOrderStatus(selectedtxn.getId(), newStatus, empUsername);
         System.out.println("[DEBUG] updateOrderStatus Success: " + statusUpdated);
 
         if (updateSuccess && backorderSuccess && statusUpdated) {
@@ -381,8 +385,9 @@ public class ViewReceiveOrder {
             return;
         }
 
+        String empUsername = SessionManager.getInstance().getUsername();
         // ✅ Update order status to "ASSEMBLED"
-        boolean statusUpdated = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLED");
+        boolean statusUpdated = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLED", empUsername);
 
         if (statusUpdated) {
             JOptionPane.showMessageDialog(frame, "Order successfully assembled!", "Success", JOptionPane.INFORMATION_MESSAGE);

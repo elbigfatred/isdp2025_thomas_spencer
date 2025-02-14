@@ -14,12 +14,11 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
-
-
 
     @Autowired private TxnRepository txnRepository;
     @Autowired private TxnItemsRepository txnItemsRepository;
@@ -30,15 +29,11 @@ public class OrderService {
     @Autowired private TxnTypeService txnTypeService;
     @Autowired private InventoryService inventoryService;
     @Autowired private ItemService itemService;
+    @Autowired private TxnauditService txnauditService;
     @Autowired private EmployeeRepository employeeRepository;
     @Autowired private SiteRepository siteRepository;
 
-
-    // ✅ Check if an active order exists
-    public boolean hasActiveStoreOrder(Integer siteId) {
-        List<Txn> activeOrders = txnRepository.findActiveOrdersBySite(siteId);
-        return !activeOrders.isEmpty();
-    }
+    // === ORDER CREATION ===
 
     public Txn createOrderTransaction(OrderRequest orderRequest) {
         if (hasActiveStoreOrder(orderRequest.getSiteIDTo())) {
@@ -73,6 +68,8 @@ public class OrderService {
 
         // ✅ Auto-populate order with low stock items
         List<Inventory> lowStockItems = inventoryService.getItemsBelowThreshold(siteTo.getId());
+        int addedItemCount = 0;
+
         System.out.println("[DEBUG] Found " + lowStockItems.size() + " items below reorder threshold for site " + siteTo.getId());
 
         for (Inventory inv : lowStockItems) {
@@ -89,6 +86,7 @@ public class OrderService {
                 int caseSize = item.getCaseSize();
                 int currentQty = inv.getQuantity();
                 int neededQty = inv.getOptimumThreshold() - currentQty;
+                int adjustedQty = 0;
 
                 System.out.println("[DEBUG] Processing item: " + item.getName() + " (Item ID: " + item.getId() + ")");
                 System.out.println("  - Current Stock: " + currentQty);
@@ -96,7 +94,7 @@ public class OrderService {
                 System.out.println("  - Needed Quantity (before case adjustment): " + neededQty);
 
                 if (caseSize > 0) { // Avoid division by zero
-                    int adjustedQty = (int) Math.ceil((double) neededQty / caseSize) * caseSize;
+                    adjustedQty = (int) Math.ceil((double) neededQty / caseSize) * caseSize;
                     System.out.println("  - Adjusted Quantity (rounded to case size): " + adjustedQty);
                     txnItem.setQuantity(adjustedQty);
                 } else {
@@ -108,6 +106,7 @@ public class OrderService {
                 txnItem.setTxnAndItem(savedOrder, item);
 
                 txnItemsRepository.save(txnItem);
+                addedItemCount++; // ✅ Track number of items added
                 System.out.println("[INFO] Added txnItem: Item ID = " + inv.getId().getItemID() + ", Quantity = " + txnItem.getQuantity());
 
             } catch (Exception e) {
@@ -116,110 +115,17 @@ public class OrderService {
             }
         }
 
+        // ✅ Build audit log
+        String auditMessage = "Store order created by " + employee.getFirstName() + " " + employee.getLastName() +
+                " at " + siteTo.getSiteName() + " on " + LocalDateTime.now() +
+                ". Scheduled for delivery on " + shipDate +
+                ". " + addedItemCount + " items were automatically added due to low stock.";
+
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(savedOrder, employee, auditMessage);
+
         return savedOrder;
     }
-
-    public List<Txn> getOrdersBySite(Integer siteId) {
-        return txnRepository.findBySiteIDTo_Id(siteId);
-    }
-
-    public List<Txnitem> getTxnItemsByTxnId(Integer txnId) {
-        return txnItemsRepository.findById_TxnID(txnId);
-    }
-
-    public void updateOrderItems(OrderUpdateRequest orderUpdateRequest) {
-        Txn txn = txnRepository.findById(orderUpdateRequest.getTxnID())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        // ✅ Remove all existing txn items for this order before adding new ones
-        txnItemsRepository.deleteByTxnID(txn);
-
-        for (OrderUpdateRequest.OrderItemUpdate itemUpdate : orderUpdateRequest.getItems()) {
-            Item item = itemService.getItemById(itemUpdate.getItemID());
-
-            if (item == null) {
-                throw new RuntimeException("Item not found: " + itemUpdate.getItemID());
-            }
-
-            // ✅ Properly construct the composite key
-            TxnitemId txnitemId = new TxnitemId();
-            txnitemId.setTxnID(txn.getId());
-            txnitemId.setItemID(item.getId());
-
-            // ✅ Create the transaction item
-            Txnitem txnItem = new Txnitem();
-            txnItem.setId(txnitemId); // ✅ Set composite key properly
-            txnItem.setTxnID(txn);
-            txnItem.setItemID(item);
-            txnItem.setQuantity(itemUpdate.getQuantity());
-
-            // ✅ Save the updated txn item
-            txnItemsRepository.save(txnItem);
-        }
-    }
-
-    // ✅ Fetch an Order by ID
-    public Txn getOrderById(Integer txnId) {
-        System.out.println("[DEBUG] Fetching order ID: " + txnId);
-        return txnRepository.findById(txnId)
-                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + txnId));
-    }
-
-    public Txn submitOrder(Integer txnId) {
-        // ✅ Retrieve the order
-        Txn txn = txnRepository.findById(txnId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        // ✅ Ensure order is in 'NEW' status
-        if (!"NEW".equals(txn.getTxnStatus().getStatusName())) {
-            throw new RuntimeException("Only NEW orders can be submitted");
-        }
-
-        // ✅ Fetch 'SUBMITTED' status from the database
-        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
-        if (submittedStatus == null) {
-            throw new RuntimeException("SUBMITTED status not found in database");
-        }
-
-        // ✅ Update order status
-        txn.setTxnStatus(submittedStatus);
-        Txn savedTxn = txnRepository.save(txn);
-
-        System.out.println("[INFO] Order " + txnId + " submitted successfully.");
-
-        return savedTxn;
-    }
-
-    public List<Txn> getOrdersByStatus(String status) {
-        return txnRepository.findByTxnStatus_StatusName(status);
-    }
-
-    public LocalDate calculateNextDeliveryDate(String dayOfWeek) {
-        DayOfWeek deliveryDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
-        LocalDate today = LocalDate.now();
-
-        // ✅ Step 1: Find the next Tuesday at 11:59 PM dynamically
-        LocalDate nextTuesday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
-
-        // ✅ If today is already Tuesday, move to next week's Tuesday
-        if (today.getDayOfWeek() == DayOfWeek.TUESDAY && today.isAfter(nextTuesday.minusDays(1))) {
-            nextTuesday = nextTuesday.plusWeeks(1);
-        }
-
-        // ✅ Step 2: Find the Monday AFTER the next Tuesday
-        LocalDate nextMonday = nextTuesday.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-
-        // ✅ Step 3: Assign the ship date based on nextMonday's week
-        LocalDate nextWeekDeliveryDay = nextMonday.with(TemporalAdjusters.nextOrSame(deliveryDay));
-
-        return nextWeekDeliveryDay;
-    }
-
-    public boolean hasActiveEmergencyOrder(Integer siteId) {
-        List<Txn> activeOrders = txnRepository.findActiveEmergencyOrdersBySite(siteId);
-        return !activeOrders.isEmpty();
-    }
-
     public Txn createEmergencyOrderTransaction(OrderRequest orderRequest) {
         if (hasActiveEmergencyOrder(orderRequest.getSiteIDTo())) {
             throw new RuntimeException("An active emergency order already exists for this site.");
@@ -248,95 +154,116 @@ public class OrderService {
         // ✅ Generate a distinct emergency barcode
         String generatedBarcode = "EM-TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
         newOrder.setBarCode(generatedBarcode);
+        Txn savedOrder = txnRepository.save(newOrder);
 
-        return txnRepository.save(newOrder);
+        // ✅ Build audit entry
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Emergency order created by ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" at ").append(siteTo.getSiteName())
+                .append(" on ").append(LocalDateTime.now())
+                .append(". Scheduled for delivery on ").append(shipDate);
+
+        // ✅ Save audit log
+        txnauditService.createAuditEntry(savedOrder, employee, auditLog.toString());
+
+        return savedOrder;
     }
 
-    public Txn submitEmergencyOrder(Integer txnId) {
-        Txn emergencyOrder = txnRepository.findById(txnId)
-                .orElseThrow(() -> new RuntimeException("Emergency Order not found"));
+    // === ORDER/ORDERITEM RETRIEVAL ===
+    public List<Txn> getOrdersByStatus(String status) {
+        return txnRepository.findByTxnStatus_StatusName(status);
+    }
+    public List<Txn> getOrdersBySite(Integer siteId) {
+        return txnRepository.findBySiteIDTo_Id(siteId);
+    }
+    public List<Txnitem> getTxnItemsByTxnId(Integer txnId) {
+        return txnItemsRepository.findById_TxnID(txnId);
+    }
+    public Txn getOrderById(Integer txnId) {
+        System.out.println("[DEBUG] Fetching order ID: " + txnId);
+        return txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + txnId));
+    }
 
-        if (!"Emergency Order".equals(emergencyOrder.getTxnType().getTxnType())) {
-            throw new RuntimeException("Txn ID " + txnId + " is not an emergency order.");
+    // === ORDER UPDATING ===
+    public void updateOrderItems(OrderUpdateRequest orderUpdateRequest, String empUsername) {
+        Txn txn = txnRepository.findById(orderUpdateRequest.getTxnID())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        Employee employee = employeeRepository.findByUsername(empUsername).get();
+
+        // ✅ Get count of items before update
+        int previousItemCount = txnItemsRepository.countByTxnID(txn.getId());
+
+        // ✅ Remove all existing txn items for this order before adding new ones
+        txnItemsRepository.deleteByTxnID(txn);
+
+
+        // ✅ Add new items
+        int newItemCount = 0;
+        for (OrderUpdateRequest.OrderItemUpdate itemUpdate : orderUpdateRequest.getItems()) {
+            Item item = itemService.getItemById(itemUpdate.getItemID());
+
+            if (item == null) {
+                throw new RuntimeException("Item not found: " + itemUpdate.getItemID());
+            }
+
+            // ✅ Properly construct the composite key
+            TxnitemId txnitemId = new TxnitemId();
+            txnitemId.setTxnID(txn.getId());
+            txnitemId.setItemID(item.getId());
+
+            // ✅ Create the transaction item
+            Txnitem txnItem = new Txnitem();
+            txnItem.setId(txnitemId); // ✅ Set composite key properly
+            txnItem.setTxnID(txn);
+            txnItem.setItemID(item);
+            txnItem.setQuantity(itemUpdate.getQuantity());
+
+            // ✅ Save the updated txn item
+            txnItemsRepository.save(txnItem);
+
+            newItemCount++;
         }
 
-        // ✅ Set ship date to the next day upon submission
-        LocalDateTime shipDate = LocalDateTime.now().plusDays(1);
-        emergencyOrder.setShipDate(shipDate);
+        // ✅ Build concise audit log
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Order items updated by ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" on ").append(LocalDateTime.now()).append(" for Order ID: ").append(txn.getId())
+                .append(". Items before update: ").append(previousItemCount)
+                .append(", Items after update: ").append(newItemCount).append(".");
 
-        // ✅ Update status to SUBMITTED
-        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
-        emergencyOrder.setTxnStatus(submittedStatus);
-
-        return txnRepository.save(emergencyOrder);
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(txn, employee, auditLog.toString());
     }
-
-    public Txn updateOrderStatus(int txnId, String status) {
+    public Txn updateOrderStatus(int txnId, String status, String empUsername) {
         Txn order = getOrderById(txnId);
         if (order == null) {
             throw new RuntimeException("Order not found");
         }
 
+        String oldStatus = order.getTxnStatus().getStatusName();
+
+
         Txnstatus newStatus = txnStatusService.findByName(status);
         order.setTxnStatus(newStatus);
-        return txnRepository.save(order);
+        Txn savedOrder = txnRepository.save(order);
+
+        Employee employee = employeeRepository.findByUsername(empUsername).get();
+
+        // ✅ Build audit log
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Order ID ").append(txnId)
+                .append(" status updated from '").append(oldStatus)
+                .append("' to '").append(status)
+                .append("' by ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" on ").append(LocalDateTime.now());
+
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(savedOrder, employee, auditLog.toString());
+        return savedOrder;
     }
-
-    public Txn createOrUpdateBackorderTransaction(BackorderRequest backorderRequest) {
-        Integer siteID = backorderRequest.getSiteID();
-        List<Txnitem> itemsToAdd = backorderRequest.getItems().stream()
-                .map(backorderItem -> {
-                    Txnitem txnItem = new Txnitem();
-
-                    // ✅ Set TxnitemId (composite key)
-                    TxnitemId txnItemId = new TxnitemId();
-                    txnItemId.setItemID(backorderItem.getItemID());
-
-                    // ✅ Set fields
-                    txnItem.setId(txnItemId);
-                    txnItem.setItemID(itemService.getItemById(backorderItem.getItemID())); // Fetch Item entity
-                    txnItem.setQuantity(backorderItem.getQuantity());
-
-                    return txnItem;
-                })
-                .collect(Collectors.toList());
-
-        // ✅ Step 1: Check for existing "NEW" backorder
-        Txn existingBackorder = txnRepository.findNewBackorderBySite(siteID);
-
-        if (existingBackorder != null) {
-            System.out.println("[INFO] Existing backorder found for site " + siteID + ", adding items...");
-            addItemsToExistingTxn(existingBackorder.getId(), itemsToAdd);
-            return existingBackorder;
-        }
-
-        // ✅ Step 2: Create a new backorder transaction
-        System.out.println("[INFO] No existing backorder found for site " + siteID + ", creating a new one...");
-
-        Txn backorder = new Txn();
-        backorder.setSiteIDTo(siteService.getSiteById(siteID));
-        backorder.setSiteIDFrom(siteService.getWarehouseSite()); // Warehouse as source
-        backorder.setEmployeeID(employeeService.getSystemUser()); // System-generated backorder
-        backorder.setTxnStatus(txnStatusService.findByName("NEW"));
-        backorder.setTxnType(txnTypeRepository.findByTypeName("Back Order"));
-        // ✅ Generate a distinct barcode for the backorder
-        String generatedBarcode = "BO-TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
-        backorder.setBarCode(generatedBarcode);
-        backorder.setNotes("System-generated backorder");
-        backorder.setCreatedDate(LocalDateTime.now()); // ✅ Set creation date to now
-
-        // ✅ Set ship date (default: next available warehouse processing day)
-        backorder.setShipDate(LocalDateTime.now().plusDays(1)); // Adjust as needed
-
-        Txn savedBackorder = txnRepository.save(backorder);
-
-        // ✅ Step 3: Add items to the new backorder
-        addItemsToExistingTxn(savedBackorder.getId(), itemsToAdd);
-
-        return savedBackorder;
-    }
-
-    public void addItemsToExistingTxn(Integer txnId, List<Txnitem> itemsToAdd) {
+    public void addItemsToExistingBackorderTxn(Integer txnId, List<Txnitem> itemsToAdd) {
         Txn txn = txnRepository.findById(txnId)
                 .orElseThrow(() -> new RuntimeException("Backorder not found with ID: " + txnId));
 
@@ -370,4 +297,179 @@ public class OrderService {
             }
         }
     }
+
+    // === ORDER SUBMISSION & AUTO-PROCESSING ===
+    public Txn submitOrder(Integer txnId) {
+        // ✅ Retrieve the order
+        Txn txn = txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Ensure order is in 'NEW' status
+        if (!"NEW".equals(txn.getTxnStatus().getStatusName())) {
+            throw new RuntimeException("Only NEW orders can be submitted");
+        }
+
+        // ✅ Fetch 'SUBMITTED' status from the database
+        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
+        if (submittedStatus == null) {
+            throw new RuntimeException("SUBMITTED status not found in database");
+        }
+
+        // ✅ Update order status
+        txn.setTxnStatus(submittedStatus);
+        Txn savedTxn = txnRepository.save(txn);
+
+        Employee employee = txn.getEmployeeID();
+        // ✅ Build audit log
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Order ID ").append(txnId).append(" submitted by ")
+                .append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" on ").append(LocalDateTime.now());
+
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(savedTxn, employee, auditLog.toString());
+
+
+        System.out.println("[INFO] Order " + txnId + " submitted successfully.");
+
+        return savedTxn;
+    }
+    public Txn submitEmergencyOrder(Integer txnId) {
+        Txn emergencyOrder = txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Emergency Order not found"));
+
+        if (!"Emergency Order".equals(emergencyOrder.getTxnType().getTxnType())) {
+            throw new RuntimeException("Txn ID " + txnId + " is not an emergency order.");
+        }
+
+        // ✅ Set ship date to the next day upon submission
+        LocalDateTime shipDate = LocalDateTime.now().plusDays(1);
+        emergencyOrder.setShipDate(shipDate);
+
+        // ✅ Update status to SUBMITTED
+        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
+        emergencyOrder.setTxnStatus(submittedStatus);
+
+        Txn savedTxn = txnRepository.save(emergencyOrder);
+
+        // ✅ Get the employee who submitted the order
+        Employee employee = emergencyOrder.getEmployeeID();
+        // ✅ Build audit log
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Emergency Order ID ").append(txnId).append(" submitted by ")
+                .append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" on ").append(LocalDateTime.now())
+                .append(". Ship date set to ").append(shipDate.toLocalDate());
+
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(savedTxn, employee, auditLog.toString());
+
+        return savedTxn;
+    }
+
+    // === ORDER VALIDATION HELPERS ===
+    public boolean hasActiveStoreOrder(Integer siteId) {
+        List<Txn> activeOrders = txnRepository.findActiveOrdersBySite(siteId);
+        return !activeOrders.isEmpty();
+    }
+    public boolean hasActiveEmergencyOrder(Integer siteId) {
+        List<Txn> activeOrders = txnRepository.findActiveEmergencyOrdersBySite(siteId);
+        return !activeOrders.isEmpty();
+    }
+
+    // === BACKORDER PROCESSING ===
+    public Txn createOrUpdateBackorderTransaction(BackorderRequest backorderRequest) {
+        Integer siteID = backorderRequest.getSiteID();
+        List<Txnitem> itemsToAdd = backorderRequest.getItems().stream()
+                .map(backorderItem -> {
+                    Txnitem txnItem = new Txnitem();
+
+                    // ✅ Set TxnitemId (composite key)
+                    TxnitemId txnItemId = new TxnitemId();
+                    txnItemId.setItemID(backorderItem.getItemID());
+
+                    // ✅ Set fields
+                    txnItem.setId(txnItemId);
+                    txnItem.setItemID(itemService.getItemById(backorderItem.getItemID())); // Fetch Item entity
+                    txnItem.setQuantity(backorderItem.getQuantity());
+
+                    return txnItem;
+                })
+                .collect(Collectors.toList());
+
+        // ✅ Step 1: Check for existing "NEW" backorder
+        Txn existingBackorder = txnRepository.findNewBackorderBySite(siteID);
+        Employee systemUser = employeeService.getEmployeeById(1000);
+        StringBuilder auditLog = new StringBuilder();
+
+        auditLog.append("Backorder updated by system user ")
+                .append(" on ").append(LocalDateTime.now());
+
+        if (existingBackorder != null) {
+            System.out.println("[INFO] Existing backorder found for site " + siteID + ", adding items...");
+            // ✅ Log old item count
+            int oldItemCount = txnItemsRepository.countByTxnID(existingBackorder.getId());
+            addItemsToExistingBackorderTxn(existingBackorder.getId(), itemsToAdd);
+            int newItemCount = txnItemsRepository.countByTxnID(existingBackorder.getId());
+
+            auditLog.append(". Previously contained ").append(oldItemCount).append(" items. Now contains ")
+                    .append(newItemCount).append(" items.");
+
+            // ✅ Save audit log **LAST**
+            txnauditService.createAuditEntry(existingBackorder,systemUser, auditLog.toString());
+            return existingBackorder;
+        }
+
+        // ✅ Step 2: Create a new backorder transaction
+        System.out.println("[INFO] No existing backorder found for site " + siteID + ", creating a new one...");
+
+        Txn backorder = new Txn();
+        backorder.setSiteIDTo(siteService.getSiteById(siteID));
+        backorder.setSiteIDFrom(siteService.getWarehouseSite()); // Warehouse as source
+        backorder.setEmployeeID(employeeService.getSystemUser()); // System-generated backorder
+        backorder.setTxnStatus(txnStatusService.findByName("NEW"));
+        backorder.setTxnType(txnTypeRepository.findByTypeName("Back Order"));
+        // ✅ Generate a distinct barcode for the backorder
+        String generatedBarcode = "BO-TXN-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
+        backorder.setBarCode(generatedBarcode);
+        backorder.setNotes("System-generated backorder");
+        backorder.setCreatedDate(LocalDateTime.now()); // ✅ Set creation date to now
+
+        // ✅ Set ship date (default: next available warehouse processing day)
+        backorder.setShipDate(LocalDateTime.now().plusDays(1)); // Adjust as needed
+
+        Txn savedBackorder = txnRepository.save(backorder);
+
+        // ✅ Step 3: Add items to the new backorder
+        addItemsToExistingBackorderTxn(savedBackorder.getId(), itemsToAdd);
+
+        // ✅ Save audit log **LAST**
+        auditLog.append(". Created a new backorder with ").append(itemsToAdd.size()).append(" items.");
+        txnauditService.createAuditEntry(savedBackorder, systemUser, auditLog.toString());
+
+        return savedBackorder;
+    }
+
+    // === DELIVERY SCHEDULING ===
+    public LocalDate calculateNextDeliveryDate(String dayOfWeek) {
+        DayOfWeek deliveryDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
+        LocalDate today = LocalDate.now();
+
+        // ✅ Step 1: Find the next Tuesday at 11:59 PM dynamically
+        LocalDate nextTuesday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
+
+        // ✅ If today is already Tuesday, move to next week's Tuesday
+        if (today.getDayOfWeek() == DayOfWeek.TUESDAY && today.isAfter(nextTuesday.minusDays(1))) {
+            nextTuesday = nextTuesday.plusWeeks(1);
+        }
+
+        // ✅ Step 2: Find the Monday AFTER the next Tuesday
+        LocalDate nextMonday = nextTuesday.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+
+        // ✅ Step 3: Assign the ship date based on nextMonday's week
+        LocalDate nextWeekDeliveryDay = nextMonday.with(TemporalAdjusters.nextOrSame(deliveryDay));
+
+        return nextWeekDeliveryDay;
+    }
+
 }

@@ -121,7 +121,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
           {isEmergencyMode ? "Create Emergency Order" : "Create Store Order"}
         </Button>
       ) : (
-        <OrderItemsManager order={activeOrder} setHasUnsavedChanges={setHasUnsavedChanges} refreshOrders={refreshOrders} clearActiveOrder={() => setActiveOrder(null)} />
+        <OrderItemsManager user={user} order={activeOrder} setHasUnsavedChanges={setHasUnsavedChanges} refreshOrders={refreshOrders} clearActiveOrder={() => setActiveOrder(null)} />
       )}
     </Box>
   );

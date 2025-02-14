@@ -5,7 +5,7 @@ import { Box, Typography, Button, Alert } from "@mui/material";
 import InventoryList from "./InventoryList";
 import OrderItemsList from "./OrderItemsList";
 
-const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
+const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => {
   const [orderItems, setOrderItems] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -82,6 +82,8 @@ const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
   // ✅ Handle saving order changes
   const handleSaveChanges = () => {
     const savePayload = {
+      empUsername: user.username,
+      employeeID: user.id,
       txnID: order.id,
       items: orderItems.map((item) => ({
         itemID: item.itemID.id,
@@ -92,7 +94,7 @@ const OrderItemsManager = ({ order, refreshOrders, clearActiveOrder }) => {
     console.log("[DEBUG] Saving Order Changes:", savePayload);
 
     axios
-      .put(`http://localhost:8080/api/orders/${order.id}/update-items`, savePayload)
+      .put(`http://localhost:8080/api/orders/${order.id}/update-items?empUsername=${user.username}`, savePayload)
       .then((response) => {
         console.log("[DEBUG] Save Success, Response:", response.data);
         setHasUnsavedChanges(false);

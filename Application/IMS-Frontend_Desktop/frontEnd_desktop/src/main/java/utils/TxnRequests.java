@@ -270,9 +270,9 @@ public class TxnRequests {
         }
     }
 
-    public static boolean updateOrderItems(int txnId, List<TxnItem> fulfilledItems) {
+    public static boolean updateOrderItems(int txnId, List<TxnItem> fulfilledItems, String empUsername) {
         try {
-            String urlString = BASE_URL + "/" + txnId + "/update-items";
+            String urlString = BASE_URL + "/" + txnId + "/update-items" + "?empUsername=" + empUsername;
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PUT");
@@ -312,9 +312,9 @@ public class TxnRequests {
         }
     }
 
-    public static boolean updateOrderStatus(int txnId, String newStatus) {
+    public static boolean updateOrderStatus(int txnId, String newStatus, String empUsername) {
         try {
-            String urlString = BASE_URL + "/" + txnId + "/update-status?status=" + newStatus;
+            String urlString = BASE_URL + "/" + txnId + "/update-status?status=" + newStatus + "&empUsername=" + empUsername;
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PUT");

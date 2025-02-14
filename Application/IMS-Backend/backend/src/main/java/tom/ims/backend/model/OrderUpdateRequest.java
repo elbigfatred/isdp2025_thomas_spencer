@@ -3,8 +3,17 @@ package tom.ims.backend.model;
 import java.util.List;
 
 public class OrderUpdateRequest {
+    private Integer EmployeeID;
     private Integer txnID;
     private List<OrderItemUpdate> items;
+
+    public Integer getEmployeeID() {
+        return EmployeeID;
+    }
+
+    public void setEmployeeID(Integer employeeID) {
+        EmployeeID = employeeID;
+    }
 
     // Explicit Getter for txnID
     public Integer getTxnID() {
