@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/OrdersController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/controller/OrdersController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/OrderUpdateRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/OrderUpdateRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnaudit.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Txnaudit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnItemsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnItemsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/utils/TxnRequests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/utils/TxnRequests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/views/ViewReceiveOrder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/views/ViewReceiveOrder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderForm.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderItemsManager.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/components/OrdersPage/OrderItemsManager.jsx" afterDir="false" />
-    </list>
+    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -192,7 +182,7 @@
       <workItem from="1739024751186" duration="1135000" />
       <workItem from="1739370320979" duration="5348000" />
       <workItem from="1739375691332" duration="16889000" />
-      <workItem from="1739545447096" duration="3759000" />
+      <workItem from="1739545447096" duration="4331000" />
     </task>
     <servers />
   </component>
