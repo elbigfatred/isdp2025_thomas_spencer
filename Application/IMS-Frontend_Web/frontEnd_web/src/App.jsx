@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -12,6 +12,14 @@ function App() {
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("user")) || null
   );
+
+  const [darkMode, setDarkMode] = useState(
+    JSON.parse(localStorage.getItem("darkMode")) || false
+  );
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+  }, [darkMode]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -27,7 +35,11 @@ function App() {
             user ? (
               <Navigate to="/dashboard" />
             ) : (
-              <LoginPage onLogin={setUser} />
+              <LoginPage
+                onLogin={setUser}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+              />
             )
           }
         />
@@ -35,7 +47,12 @@ function App() {
           path="/dashboard"
           element={
             user ? (
-              <Dashboard user={user} onLogout={handleLogout} />
+              <Dashboard
+                user={user}
+                onLogout={handleLogout}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+              />
             ) : (
               <Navigate to="/" />
             )

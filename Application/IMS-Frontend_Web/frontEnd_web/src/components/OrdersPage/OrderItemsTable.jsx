@@ -1,6 +1,17 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
-import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Typography, TextField, Box } from "@mui/material";
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper,
+  Typography,
+  TextField,
+  Box,
+} from "@mui/material";
 
 const OrderItemTable = ({ items }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,7 +29,14 @@ const OrderItemTable = ({ items }) => {
   return (
     <Box>
       {/* ✅ Search Input */}
-      <TextField label="Search Current Order" variant="outlined" fullWidth margin="normal" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+      <TextField
+        label="Search Current Orderz"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
 
       {/* ✅ Order Items Table */}
       <TableContainer component={Paper} sx={{ marginTop: 1 }}>

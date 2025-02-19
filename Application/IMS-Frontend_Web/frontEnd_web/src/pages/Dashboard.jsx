@@ -1,16 +1,27 @@
 /* eslint-disable react/prop-types */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import UsersTable from "../components/UsersTable";
 import SitesTable from "../components/SitesTable";
 import OrdersPage from "../components/OrdersPage/OrdersDashboard";
-import { Button, Box, Typography, Switch, FormControlLabel, createTheme, ThemeProvider } from "@mui/material";
+import {
+  Button,
+  Box,
+  Typography,
+  Switch,
+  FormControlLabel,
+  createTheme,
+  ThemeProvider,
+} from "@mui/material";
 
-const Dashboard = ({ user, onLogout }) => {
+import bullseyeLogo from "../assets/bullseye1.png";
+
+const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
   const [activePage, setActivePage] = useState("sites");
-  const [darkMode, setDarkMode] = useState(false);
 
   const userRoles = user.roles.map((role) => role.posn.permissionLevel);
-  const hasOrdersAccess = userRoles.includes("Warehouse Manager") || userRoles.includes("Store Manager");
+  const hasOrdersAccess =
+    userRoles.includes("Warehouse Manager") ||
+    userRoles.includes("Store Manager");
 
   const theme = useMemo(
     () =>
@@ -21,12 +32,6 @@ const Dashboard = ({ user, onLogout }) => {
       }),
     [darkMode]
   );
-
-  const pages = {
-    sites: <SitesTable />,
-    users: <UsersTable />,
-    orders: hasOrdersAccess ? <OrdersPage user={user} /> : <p>Access Denied</p>,
-  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -45,30 +50,69 @@ const Dashboard = ({ user, onLogout }) => {
             boxShadow: "2px 0 5px rgba(0,0,0,0.2)",
           }}
         >
+          {/* Logo */}
+          <Box sx={{ width: "80%", marginBottom: 2 }}>
+            <img
+              src={bullseyeLogo}
+              alt="Bullseye Logo"
+              style={{ width: "100%" }}
+            />
+          </Box>
+
           <Typography variant="h6" sx={{ marginBottom: 2 }}>
             Dashboard
           </Typography>
 
           {/* Dark Mode Toggle */}
-          <FormControlLabel control={<Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />} label="Dark Mode" sx={{ marginBottom: 2 }} />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={darkMode}
+                onChange={() => {
+                  setDarkMode(!darkMode);
+                  localStorage.setItem("darkMode", JSON.stringify(!darkMode)); // Persist dark mode setting
+                }}
+              />
+            }
+            label="Dark Mode"
+            sx={{ marginBottom: 2 }}
+          />
 
-          <Button variant={activePage === "sites" ? "contained" : "outlined"} onClick={() => setActivePage("sites")} sx={{ width: "100%", marginBottom: 1 }}>
+          {/* Navigation Buttons */}
+          <Button
+            variant={activePage === "sites" ? "contained" : "outlined"}
+            onClick={() => setActivePage("sites")}
+            sx={{ width: "100%", marginBottom: 1 }}
+          >
             Sites
           </Button>
 
-          <Button variant={activePage === "users" ? "contained" : "outlined"} onClick={() => setActivePage("users")} sx={{ width: "100%", marginBottom: 1 }}>
+          <Button
+            variant={activePage === "users" ? "contained" : "outlined"}
+            onClick={() => setActivePage("users")}
+            sx={{ width: "100%", marginBottom: 1 }}
+          >
             Users
           </Button>
 
           {hasOrdersAccess && (
-            <Button variant={activePage === "orders" ? "contained" : "outlined"} onClick={() => setActivePage("orders")} sx={{ width: "100%", marginBottom: 1 }}>
-              Orders
+            <Button
+              variant={activePage === "orders" ? "contained" : "outlined"}
+              onClick={() => setActivePage("orders")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Store Orders
             </Button>
           )}
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Button variant="contained" color="error" onClick={onLogout} sx={{ width: "100%", marginBottom: 2 }}>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={onLogout}
+            sx={{ width: "100%", marginBottom: 2 }}
+          >
             Logout
           </Button>
         </Box>
@@ -98,7 +142,14 @@ const Dashboard = ({ user, onLogout }) => {
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             }}
           >
-            {pages[activePage]}
+            {/* Dynamic Page Rendering */}
+            {activePage === "sites" && <SitesTable />}
+            {activePage === "users" && <UsersTable />}
+            {activePage === "orders" && hasOrdersAccess ? (
+              <OrdersPage user={user} />
+            ) : (
+              activePage === "orders" && <Typography>Access Denied</Typography>
+            )}
           </Box>
         </Box>
       </Box>

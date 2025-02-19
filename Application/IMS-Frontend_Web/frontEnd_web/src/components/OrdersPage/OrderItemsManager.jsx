@@ -5,9 +5,15 @@ import { Box, Typography, Button, Alert } from "@mui/material";
 import InventoryList from "./InventoryList";
 import OrderItemsList from "./OrderItemsList";
 
-const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => {
+const OrderItemsManager = ({
+  user,
+  order,
+  refreshOrders,
+  clearActiveOrder,
+  inventory,
+}) => {
   const [orderItems, setOrderItems] = useState([]);
-  const [availableItems, setAvailableItems] = useState([]);
+  //const [availableItems, setAvailableItems] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,7 +25,7 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
   useEffect(() => {
     if (!order?.id) return;
 
-    setLoading(true);
+    //setLoading(true);
 
     // ✅ Fetch order items
     axios
@@ -29,16 +35,6 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
         setOrderItems(response.data);
       })
       .catch(() => setError("Failed to load order items"));
-
-    // ✅ Fetch available inventory
-    axios
-      .get(`http://localhost:8080/api/inventory/site/${order.siteIDTo.id}`)
-      .then((response) => {
-        console.log("[DEBUG] Fetched store inventory:", response.data);
-        setAvailableItems(response.data);
-      })
-      .catch(() => setError("Failed to load available items"))
-      .finally(() => setLoading(false));
   }, [order]);
 
   // ✅ Handle quantity changes (increments by case size)
@@ -46,7 +42,8 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
     setOrderItems((prevItems) => {
       const updatedItems = [...prevItems];
       const caseSize = updatedItems[index].itemID.caseSize || 1;
-      updatedItems[index].quantity = Math.ceil(newQuantity / caseSize) * caseSize;
+      updatedItems[index].quantity =
+        Math.ceil(newQuantity / caseSize) * caseSize;
       setHasUnsavedChanges(true);
       return updatedItems;
     });
@@ -69,7 +66,10 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
 
       setHasUnsavedChanges(true);
 
-      return [...currentItems, { txnID: order.id, itemID: item, quantity: item.caseSize || 1 }];
+      return [
+        ...currentItems,
+        { txnID: order.id, itemID: item, quantity: item.caseSize || 1 },
+      ];
     });
   };
 
@@ -94,7 +94,10 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
     console.log("[DEBUG] Saving Order Changes:", savePayload);
 
     axios
-      .put(`http://localhost:8080/api/orders/${order.id}/update-items?empUsername=${user.username}`, savePayload)
+      .put(
+        `http://localhost:8080/api/orders/${order.id}/update-items?empUsername=${user.username}`,
+        savePayload
+      )
       .then((response) => {
         console.log("[DEBUG] Save Success, Response:", response.data);
         setHasUnsavedChanges(false);
@@ -143,17 +146,37 @@ const OrderItemsManager = ({ user, order, refreshOrders, clearActiveOrder }) => 
       )}
 
       <Box sx={{ display: "flex", gap: 2, marginTop: 3 }}>
-        <InventoryList availableItems={availableItems} onAddItem={handleAddItem} isEmergencyOrder={isEmergencyOrder} maxEmergencyItems={maxEmergencyItems} orderItems={orderItems} />
-        <OrderItemsList orderItems={orderItems} onQuantityChange={handleQuantityChange} onRemoveItem={handleRemoveItem} />
+        <InventoryList
+          availableItems={inventory}
+          onAddItem={handleAddItem}
+          isEmergencyOrder={isEmergencyOrder}
+          maxEmergencyItems={maxEmergencyItems}
+          orderItems={orderItems}
+        />
+        <OrderItemsList
+          orderItems={orderItems}
+          onQuantityChange={handleQuantityChange}
+          onRemoveItem={handleRemoveItem}
+        />
       </Box>
 
       {/* ✅ Buttons for Saving and Submitting */}
       <Box sx={{ marginTop: 2, display: "flex", gap: 2 }}>
-        <Button variant="contained" color="primary" onClick={handleSaveChanges} disabled={orderItems.length === 0 || !hasUnsavedChanges}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSaveChanges}
+          disabled={orderItems.length === 0 || !hasUnsavedChanges}
+        >
           Save Changes
         </Button>
 
-        <Button variant="contained" color="secondary" onClick={handleSubmitOrder} disabled={orderItems.length === 0 || hasUnsavedChanges}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleSubmitOrder}
+          disabled={orderItems.length === 0 || hasUnsavedChanges}
+        >
           Submit Order
         </Button>
       </Box>

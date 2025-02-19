@@ -316,6 +316,7 @@ public class TxnRequests {
         try {
             String urlString = BASE_URL + "/" + txnId + "/update-status?status=" + newStatus + "&empUsername=" + empUsername;
             URL url = new URL(urlString);
+            System.out.println("[DEBUG] JSON Payload for updateOrderStatus: " + urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PUT");
             conn.setRequestProperty("Content-Type", "application/json");

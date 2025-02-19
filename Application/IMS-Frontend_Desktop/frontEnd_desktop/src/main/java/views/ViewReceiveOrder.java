@@ -27,6 +27,10 @@ public class ViewReceiveOrder {
     private JLabel SPACER3;
     private JButton btnFulfillOrder;
     private JButton btnConfirmAssembled;
+    private JProgressBar pbarFulfillItems;
+    private JButton btnScanItem;
+    private JLabel lblFullfillItemDesc;
+    private JPanel fullfillPanel;
 
     // =================== FRAME VARIABLES ===================
 
@@ -37,6 +41,8 @@ public class ViewReceiveOrder {
     private String mode;
     private List<TxnItem> txnItems;
     private Map<Integer, Integer> warehouseStock;
+    private int currentItemIndex = 0; // Tracks current item in fulfillment
+    private List<TxnItem> assemblingItems; // Local list of items for assembly
 
     // =================== FRAME VARIABLES ===================
 
@@ -55,11 +61,35 @@ public class ViewReceiveOrder {
         // ✅ Hide the submit button if we're not in RECEIVE mode
         btnConfirmReceived.setVisible(Objects.equals(mode, "RECEIVE"));
 
+        btnConfirmReceived.addActionListener(e -> {
+            handleSubmit();
+        });
+
+        btnFulfillOrder.addActionListener(e -> {
+            String empUsername = SessionManager.getInstance().getUsername();
+            boolean success = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLING", empUsername);
+
+            if (success) {
+                TxnStatus txnStatus = new TxnStatus();
+                txnStatus.setStatusName("ASSEMBLING");
+                selectedtxn.setTxnStatus(txnStatus);
+                JOptionPane.showMessageDialog(frame, "Order is now being assembled.");
+                checkAndSetupFulfillment(); // Refresh UI
+            } else {
+                JOptionPane.showMessageDialog(frame, "Error updating order status.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnConfirmAssembled.addActionListener(e -> {
+            confirmAssembledTransaction();
+        });
+
         if (currentLocation != null) {
             frame.setLocation(currentLocation);
         }
 
         SwingUtilities.invokeLater(() -> {
+            fullfillPanel.setVisible(false);
             SetupBullseyeLogo();
             loadTxnItems();
 
@@ -71,9 +101,9 @@ public class ViewReceiveOrder {
             updateTableDisplay();
             checkAndSetupFulfillment();  // ✅ NEW: Check roles + status and adjust UI
 
+            frame.setVisible(true);
         });
 
-        frame.setVisible(true);
 
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
@@ -106,7 +136,7 @@ public class ViewReceiveOrder {
         lblWelcome.setText("User: " + session.getUsername());
         lblLocation.setText("Location: " + session.getSiteName());
 
-        btnConfirmReceived.addActionListener(e -> handleSubmit());
+        //btnConfirmReceived.addActionListener(e -> handleSubmit());
         btnExit.addActionListener(e -> frame.dispose());
 
         btnExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
@@ -116,26 +146,6 @@ public class ViewReceiveOrder {
                 btnExit.doClick();
             }
         });
-
-        btnFulfillOrder.addActionListener(e -> {
-            String empUsername = SessionManager.getInstance().getUsername();
-            boolean success = TxnRequests.updateOrderStatus(selectedtxn.getId(), "ASSEMBLING", empUsername);
-
-            if (success) {
-                JOptionPane.showMessageDialog(frame, "Order is now being assembled.");
-                btnFulfillOrder.setEnabled(false);
-                btnConfirmAssembled.setVisible(true); // Enable next step
-            } else {
-                JOptionPane.showMessageDialog(frame, "Error updating order status.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        btnConfirmAssembled.addActionListener(e -> {
-            confirmAssembledTransaction();
-        });
-
-
-
         return contentPane;
     }
 
@@ -223,7 +233,7 @@ public class ViewReceiveOrder {
         System.out.println("[DEBUG] updateOrderStatus Success: " + statusUpdated);
 
         if (updateSuccess && backorderSuccess && statusUpdated) {
-            JOptionPane.showMessageDialog(frame, "Order processed successfully.");
+            JOptionPane.showMessageDialog(frame, "Order has been received and is ready to be fulfilled.");
             frame.dispose();
         } else {
             JOptionPane.showMessageDialog(frame, "Error processing order.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -327,23 +337,81 @@ public class ViewReceiveOrder {
         tblTxnItems.setModel(tableModel);
     }
 
+
     private void checkAndSetupFulfillment() {
         String txnStatus = selectedtxn.getTxnStatus().getStatusName();
 
         boolean isWarehouseRole = Arrays.stream(accessPosition)
                 .anyMatch(role -> role.equalsIgnoreCase("Warehouse Employee")
                         || role.equalsIgnoreCase("Warehouse Manager")
-                        || role.equalsIgnoreCase("Admin"));
+                        || role.equalsIgnoreCase("Administrator"));
 
-        if (isWarehouseRole && (txnStatus.equalsIgnoreCase("RECEIVED") || txnStatus.equalsIgnoreCase("ASSEMBLING"))) {
-            btnFulfillOrder.setVisible(true);
-            btnFulfillOrder.setEnabled(txnStatus.equalsIgnoreCase("RECEIVED")); // Enable only if RECEIVED
-            btnConfirmAssembled.setVisible(txnStatus.equalsIgnoreCase("ASSEMBLING")); // Show next step if assembling
-        } else {
-            btnFulfillOrder.setVisible(false);
-            btnConfirmAssembled.setVisible(false);
+        // Hide everything by default
+        btnConfirmReceived.setVisible(false);
+        btnFulfillOrder.setVisible(false);
+        btnConfirmAssembled.setVisible(false);
+        fullfillPanel.setVisible(false);
+
+        if (!isWarehouseRole) return; // ✅ Ignore if user has no warehouse access
+
+        switch (txnStatus.toUpperCase()) {
+            case "SUBMITTED":
+                btnConfirmReceived.setVisible(true);
+                btnConfirmReceived.setEnabled(true);
+                break;
+
+            case "RECEIVED":
+                btnFulfillOrder.setVisible(true);
+                btnFulfillOrder.setEnabled(true);
+                btnConfirmAssembled.setVisible(true);
+                btnConfirmAssembled.setEnabled(false); // Locked until all items scanned
+                break;
+
+            case "ASSEMBLING":
+                btnConfirmAssembled.setVisible(true);
+                btnFulfillOrder.setVisible(true);
+                btnConfirmAssembled.setEnabled(false);
+                btnFulfillOrder.setEnabled(false);
+                startAssemblyProcess();
+                break;
         }
     }
+
+    private void startAssemblyProcess() {
+        assemblingItems = new ArrayList<>(txnItems);
+        currentItemIndex = 0;
+        fullfillPanel.setVisible(true);
+        btnScanItem.setEnabled(true);
+        btnScanItem.addActionListener(e -> handleScanItem());
+        updateFulfillmentPanel();
+    }
+
+    private void handleScanItem() {
+        if (currentItemIndex < assemblingItems.size()) {
+            TxnItem currentItem = assemblingItems.get(currentItemIndex);
+            System.out.println("[SCANNING ITEM] " + currentItem.getItemName() + " | Qty: " + currentItem.getQuantity());
+
+            int progress = (int) (((double) (currentItemIndex + 1) / assemblingItems.size()) * 100);
+            pbarFulfillItems.setValue(progress);
+
+            currentItemIndex++;
+            if (currentItemIndex < assemblingItems.size()) {
+                updateFulfillmentPanel();
+            } else {
+                lblFullfillItemDesc.setText("Scanning Complete");
+                btnScanItem.setEnabled(false);
+                btnConfirmAssembled.setEnabled(true); // ✅ Enable confirm button
+            }
+        }
+    }
+
+    private void updateFulfillmentPanel() {
+        if (currentItemIndex < assemblingItems.size()) {
+            TxnItem item = assemblingItems.get(currentItemIndex);
+            lblFullfillItemDesc.setText("Scanning: " + item.getItemName() + " (Qty: " + item.getQuantity() + ")");
+        }
+    }
+
 
     private void confirmAssembledTransaction() {
         System.out.println("[INFO] Confirming assembly for order ID: " + selectedtxn.getId());
@@ -391,6 +459,7 @@ public class ViewReceiveOrder {
 
         if (statusUpdated) {
             JOptionPane.showMessageDialog(frame, "Order successfully assembled!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            frame.dispose();
             System.out.println("[SUCCESS] Order " + selectedtxn.getId() + " successfully assembled!");
         } else {
             JOptionPane.showMessageDialog(frame, "Failed to update order status!", "Error", JOptionPane.ERROR_MESSAGE);

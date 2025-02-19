@@ -2,10 +2,16 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Box, Typography, Button, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 import OrderItemsManager from "./OrderItemsManager";
 
-const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
+const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
   const [activeOrder, setActiveOrder] = useState(null);
   const [checkingActiveOrder, setCheckingActiveOrder] = useState(false);
   const [isEmergencyMode, setIsEmergencyMode] = useState(false); // ✅ NEW: Emergency Order Toggle
@@ -23,14 +29,22 @@ const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
         console.log("[DEBUG] All Active Orders:", ordersResponse.data);
 
         // ✅ Separate STORE and EMERGENCY orders
-        const storeOrders = ordersResponse.data.filter((order) => order.txnType?.txnType === "Store Order");
-        const emergencyOrders = ordersResponse.data.filter((order) => order.txnType?.txnType === "Emergency Order");
+        const storeOrders = ordersResponse.data.filter(
+          (order) => order.txnType?.txnType === "Store Order"
+        );
+        const emergencyOrders = ordersResponse.data.filter(
+          (order) => order.txnType?.txnType === "Emergency Order"
+        );
 
         console.log("[DEBUG] Filtered Store Orders:", storeOrders);
         console.log("[DEBUG] Filtered Emergency Orders:", emergencyOrders);
 
         // ✅ Select active order based on mode
-        const newOrder = isEmergencyMode ? emergencyOrders.find((order) => order.txnStatus?.statusName === "NEW") : storeOrders.find((order) => order.txnStatus?.statusName === "NEW");
+        const newOrder = isEmergencyMode
+          ? emergencyOrders.find(
+              (order) => order.txnStatus?.statusName === "NEW"
+            )
+          : storeOrders.find((order) => order.txnStatus?.statusName === "NEW");
 
         if (newOrder) {
           console.log("[DEBUG] Selected Active Order:", newOrder);
@@ -107,21 +121,46 @@ const OrderForm = ({ user, selectedOrder, refreshOrders }) => {
     <Box sx={{ marginTop: 3 }}>
       <Typography variant="h6">Order Editor</Typography>
 
-      {checkingActiveOrder && <Typography>Checking for active orders...</Typography>}
+      {checkingActiveOrder && (
+        <Typography>Checking for active orders...</Typography>
+      )}
 
       {/* ✅ Toggle for Order Type */}
-      <ToggleButtonGroup value={isEmergencyMode ? "emergency" : "store"} exclusive onChange={handleToggleMode} sx={{ marginBottom: 2 }}>
+      <ToggleButtonGroup
+        value={isEmergencyMode ? "emergency" : "store"}
+        exclusive
+        onChange={handleToggleMode}
+        sx={{ marginBottom: 2 }}
+      >
         <ToggleButton value="store">Store Order</ToggleButton>
         <ToggleButton value="emergency">Emergency Order</ToggleButton>
       </ToggleButtonGroup>
 
       {/* ✅ Show Create Order Button if no active order */}
       {!activeOrder ? (
-        <Button variant="contained" color="primary" onClick={isEmergencyMode ? handleCreateEmergencyOrder : handleCreateStoreOrder}>
+        <Button
+          variant="contained"
+          // red?
+          color="primary"
+          // margin left
+          sx={{ marginLeft: 2 }}
+          onClick={
+            isEmergencyMode
+              ? handleCreateEmergencyOrder
+              : handleCreateStoreOrder
+          }
+        >
           {isEmergencyMode ? "Create Emergency Order" : "Create Store Order"}
         </Button>
       ) : (
-        <OrderItemsManager user={user} order={activeOrder} setHasUnsavedChanges={setHasUnsavedChanges} refreshOrders={refreshOrders} clearActiveOrder={() => setActiveOrder(null)} />
+        <OrderItemsManager
+          user={user}
+          order={activeOrder}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+          refreshOrders={refreshOrders}
+          clearActiveOrder={() => setActiveOrder(null)}
+          inventory={inventory} // ✅ Pass inventory down
+        />
       )}
     </Box>
   );

@@ -126,6 +126,7 @@ public class OrderService {
 
         return savedOrder;
     }
+
     public Txn createEmergencyOrderTransaction(OrderRequest orderRequest) {
         if (hasActiveEmergencyOrder(orderRequest.getSiteIDTo())) {
             throw new RuntimeException("An active emergency order already exists for this site.");
@@ -173,12 +174,15 @@ public class OrderService {
     public List<Txn> getOrdersByStatus(String status) {
         return txnRepository.findByTxnStatus_StatusName(status);
     }
+
     public List<Txn> getOrdersBySite(Integer siteId) {
         return txnRepository.findBySiteIDTo_Id(siteId);
     }
+
     public List<Txnitem> getTxnItemsByTxnId(Integer txnId) {
         return txnItemsRepository.findById_TxnID(txnId);
     }
+
     public Txn getOrderById(Integer txnId) {
         System.out.println("[DEBUG] Fetching order ID: " + txnId);
         return txnRepository.findById(txnId)
@@ -238,14 +242,18 @@ public class OrderService {
     }
     public Txn updateOrderStatus(int txnId, String status, String empUsername) {
         Txn order = getOrderById(txnId);
+        System.out.println("[DEBUG] Updating order status from: " + order.getTxnStatus());
         if (order == null) {
             throw new RuntimeException("Order not found");
         }
 
         String oldStatus = order.getTxnStatus().getStatusName();
-
+        System.out.println("[DEBUG] Updating order status from: " + oldStatus);
+        System.out.println("[DEBUG] Looking for order status to: " + status);
 
         Txnstatus newStatus = txnStatusService.findByName(status);
+
+        System.out.println("[DEBUG] Updating order status to: " + newStatus);
         order.setTxnStatus(newStatus);
         Txn savedOrder = txnRepository.save(order);
 
@@ -263,6 +271,7 @@ public class OrderService {
         txnauditService.createAuditEntry(savedOrder, employee, auditLog.toString());
         return savedOrder;
     }
+
     public void addItemsToExistingBackorderTxn(Integer txnId, List<Txnitem> itemsToAdd) {
         Txn txn = txnRepository.findById(txnId)
                 .orElseThrow(() -> new RuntimeException("Backorder not found with ID: " + txnId));
@@ -334,6 +343,7 @@ public class OrderService {
 
         return savedTxn;
     }
+
     public Txn submitEmergencyOrder(Integer txnId) {
         Txn emergencyOrder = txnRepository.findById(txnId)
                 .orElseThrow(() -> new RuntimeException("Emergency Order not found"));
@@ -372,6 +382,7 @@ public class OrderService {
         List<Txn> activeOrders = txnRepository.findActiveOrdersBySite(siteId);
         return !activeOrders.isEmpty();
     }
+
     public boolean hasActiveEmergencyOrder(Integer siteId) {
         List<Txn> activeOrders = txnRepository.findActiveEmergencyOrdersBySite(siteId);
         return !activeOrders.isEmpty();
@@ -424,7 +435,8 @@ public class OrderService {
         System.out.println("[INFO] No existing backorder found for site " + siteID + ", creating a new one...");
 
         Txn backorder = new Txn();
-        backorder.setSiteIDTo(siteService.getSiteById(siteID));
+        Site siteTo = siteService.getSiteById(siteID);
+        backorder.setSiteIDTo(siteTo);
         backorder.setSiteIDFrom(siteService.getWarehouseSite()); // Warehouse as source
         backorder.setEmployeeID(employeeService.getSystemUser()); // System-generated backorder
         backorder.setTxnStatus(txnStatusService.findByName("NEW"));
@@ -436,7 +448,8 @@ public class OrderService {
         backorder.setCreatedDate(LocalDateTime.now()); // ✅ Set creation date to now
 
         // ✅ Set ship date (default: next available warehouse processing day)
-        backorder.setShipDate(LocalDateTime.now().plusDays(1)); // Adjust as needed
+        LocalDate shipDate = calculateNextDeliveryDate(siteTo.getDayOfWeek());
+        backorder.setShipDate(shipDate.atStartOfDay()); // Adjust as needed
 
         Txn savedBackorder = txnRepository.save(backorder);
 
@@ -455,19 +468,21 @@ public class OrderService {
         DayOfWeek deliveryDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
         LocalDate today = LocalDate.now();
 
-        // ✅ Step 1: Find the next Tuesday at 11:59 PM dynamically
+        // ✅ Step 1: Find the next Tuesday (cutoff deadline at 11:59 PM)
         LocalDate nextTuesday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
 
-        // ✅ If today is already Tuesday, move to next week's Tuesday
-        if (today.getDayOfWeek() == DayOfWeek.TUESDAY && today.isAfter(nextTuesday.minusDays(1))) {
-            nextTuesday = nextTuesday.plusWeeks(1);
-        }
+        // ✅ Check if today is AFTER the current Tuesday cutoff
+        LocalDate cutoffTime = nextTuesday.atTime(23, 59).toLocalDate();
+        boolean isPastCutoff = today.isAfter(cutoffTime);
 
-        // ✅ Step 2: Find the Monday AFTER the next Tuesday
-        LocalDate nextMonday = nextTuesday.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        // ✅ Step 2: Determine the correct cutoff Tuesday (either this or next week)
+        LocalDate referenceTuesday = isPastCutoff ? nextTuesday.plusWeeks(1) : nextTuesday;
 
-        // ✅ Step 3: Assign the ship date based on nextMonday's week
-        LocalDate nextWeekDeliveryDay = nextMonday.with(TemporalAdjusters.nextOrSame(deliveryDay));
+        // ✅ Step 3: Find the **next Sunday** after the cutoff Tuesday (start of delivery week)
+        LocalDate nextSunday = referenceTuesday.with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+
+        // ✅ Step 4: Find the delivery day within that week
+        LocalDate nextWeekDeliveryDay = nextSunday.with(TemporalAdjusters.nextOrSame(deliveryDay));
 
         return nextWeekDeliveryDay;
     }
