@@ -194,6 +194,14 @@ public class DashboardForm {
             updateOrdersTableBySearch();
         }
 
+        if (Arrays.asList(roles).contains("Warehouse Worker")) {
+            DashboardTabPane.add("Orders", OrdersTab);
+
+            loadInitialData();
+            populateOrdersTable(allTxns);
+            updateOrdersTableBySearch();
+        }
+
         if (Arrays.asList(roles).contains("Store Manager")) {
             DashboardTabPane.add("Inventory", InventoryTab);
             DashboardTabPane.add("Orders", OrdersTab);
@@ -259,14 +267,20 @@ public class DashboardForm {
                 }
             }
             allTxns = TxnRequests.fetchAllOrders();
-            btnOrdersViewReceive.setText("View/Receive Order");
+            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
             allTxns = TxnRequests.fetchAllOrders();
-            btnOrdersViewReceive.setText("View/Receive Order");
+            btnOrdersViewReceive.setText("View/Modify Order");
+            orderViewReceiveMode = "RECEIVE";
+        }
+
+        if (Arrays.asList(accessPosition).contains("Warehouse Worker")) {
+            allTxns = TxnRequests.fetchAllOrders();
+            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
         }
 
@@ -528,6 +542,10 @@ public class DashboardForm {
 
         btnOrdersViewReceive.addActionListener(e -> {
             handleOrderAction();
+        });
+
+        chkNewOrdersOnly.addActionListener(e -> {
+            updateOrdersTableBySearch();
         });
 
         return ContentPane;

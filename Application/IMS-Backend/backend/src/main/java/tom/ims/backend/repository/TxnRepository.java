@@ -14,6 +14,9 @@ import java.util.Optional;
 
 @Repository
 public interface TxnRepository extends JpaRepository<Txn, Integer> {
+
+    List<Txn> findAll();
+
     // ✅ Fetch active orders for a given site
     @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Store Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
     List<Txn> findActiveOrdersBySite(Integer siteId);

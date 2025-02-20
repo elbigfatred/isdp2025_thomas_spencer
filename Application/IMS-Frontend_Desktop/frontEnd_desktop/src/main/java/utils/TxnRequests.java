@@ -312,6 +312,33 @@ public class TxnRequests {
         }
     }
 
+    public static boolean updateTxnShipDate(int txnId, String shipDate, String empUsername) {
+        try {
+            // ✅ Construct URL with query parameters
+            String urlString = BASE_URL + "/" + txnId + "/update-shipdate"
+                    + "?shipDate=" + shipDate
+                    + "&empUsername=" + empUsername;
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("PUT");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            System.out.println("[DEBUG] Sending ship date update request: " + urlString);
+
+            // ✅ Get response code
+            int responseCode = conn.getResponseCode();
+            System.out.println("[DEBUG] Response Code from updateTxnShipDate: " + responseCode);
+
+            return responseCode == HttpURLConnection.HTTP_OK; // ✅ Success if HTTP 200
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] Exception in updateTxnShipDate:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public static boolean updateOrderStatus(int txnId, String newStatus, String empUsername) {
         try {
             String urlString = BASE_URL + "/" + txnId + "/update-status?status=" + newStatus + "&empUsername=" + empUsername;

@@ -1,18 +1,30 @@
 package views;
 
 import models.*;
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.UtilDateModel;
 import utils.InventoryRequests;
+import utils.ItemRequests;
 import utils.SessionManager;
 import utils.TxnRequests;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
+
+
 
 public class ViewReceiveOrder {
     private JPanel contentPane;
@@ -31,6 +43,13 @@ public class ViewReceiveOrder {
     private JButton btnScanItem;
     private JLabel lblFullfillItemDesc;
     private JPanel fullfillPanel;
+    private JPanel editBackOrderPanel;
+    private JLabel lblBackOrderItemLabel;
+    private JPanel calendarBackOrder;
+    private JButton btnUpdateBackorder;
+    private JSpinner spnOrderQuantity;
+    private JLabel lblOrderDate;
+    private JDatePickerImpl datePicker; // ✅ Declare the date picker
 
     // =================== FRAME VARIABLES ===================
 
@@ -43,6 +62,8 @@ public class ViewReceiveOrder {
     private Map<Integer, Integer> warehouseStock;
     private int currentItemIndex = 0; // Tracks current item in fulfillment
     private List<TxnItem> assemblingItems; // Local list of items for assembly
+    private Integer selectedItemIndex = -1;
+    private Map<Integer, Item> itemMap = new HashMap<>();
 
     // =================== FRAME VARIABLES ===================
 
@@ -50,6 +71,8 @@ public class ViewReceiveOrder {
         frame = new JDialog(parentFrame, true);
         this.selectedtxn = txnToViewReceive;
         this.mode = usage;
+
+        editBackOrderPanel.setVisible(false);
 
         frame.setTitle(Objects.equals(usage, "VIEW") ? "Bullseye Inventory Management System - View Order"
                 : "Bullseye Inventory Management System - View/Receive Order");
@@ -93,8 +116,22 @@ public class ViewReceiveOrder {
             SetupBullseyeLogo();
             loadTxnItems();
 
-            if (Objects.equals(mode, "RECEIVE")) {
+            System.out.println(selectedtxn.getTxnType().getTxnType());
+
+            if (Objects.equals(mode, "RECEIVE") &&
+                    (Objects.equals(selectedtxn.getTxnStatus().getStatusName(),"SUBMITTED")) &&
+                    (Objects.equals(selectedtxn.getTxnType().getTxnType(), "Store Order") ||
+                            Objects.equals(selectedtxn.getTxnType().getTxnType(), "Emergency Order"))) {
                 loadWarehouseStock();
+            }
+
+            if (Objects.equals(mode, "RECEIVE") &&
+                    (Objects.equals(selectedtxn.getTxnStatus().getStatusName(),"NEW")) &&
+                    (Objects.equals(selectedtxn.getTxnType().getTxnType(), "Back Order"))) {
+                setupDatePicker();
+                loadItems();
+                DisplayBackOrderItem();
+                btnUpdateBackorder.addActionListener(e -> handleBackorderUpdate());
             }
 
             // Determine how to populate the table
@@ -241,7 +278,10 @@ public class ViewReceiveOrder {
     }
 
     private void updateTableDisplay() {
-        if (Objects.equals(mode, "RECEIVE") && selectedtxn.getTxnStatus().getStatusName().equalsIgnoreCase("SUBMITTED")) {
+        if (Objects.equals(mode, "RECEIVE") &&
+                (Objects.equals(selectedtxn.getTxnStatus().getStatusName(),"SUBMITTED")) &&
+                (Objects.equals(selectedtxn.getTxnType().getTxnType(), "Store Order") ||
+                        Objects.equals(selectedtxn.getTxnType().getTxnType(), "Emergency Order"))){
             updateFulfillmentTable();
         } else {
             populateTxnItemsTable();
@@ -288,6 +328,10 @@ public class ViewReceiveOrder {
     private void populateTxnItemsTable() {
         String[] columns = {"Item ID", "Item Name", "Ordered Qty"};
 
+        // ✅ Dispose of the existing table model first
+        DefaultTableModel oldModel = (DefaultTableModel) tblTxnItems.getModel();
+        oldModel.setRowCount(0); // Clears the table
+
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -301,13 +345,37 @@ public class ViewReceiveOrder {
         }
 
         tblTxnItems.setModel(tableModel);
+        tblTxnItems.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // ✅ Add selection listener to update SelectedTableIndex
+        tblTxnItems.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) { // Ensures event fires once per selection
+                    selectedItemIndex = tblTxnItems.getSelectedRow();
+                    System.out.println("Selected Row Index: " + selectedItemIndex); // Debugging
+
+                    if (isUserWarehouseManagerOrAdmin() && Objects.equals(selectedtxn.getTxnType().getTxnType(), "Back Order")) {
+                        DisplayBackOrderItem();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Checks if the user is a Warehouse Manager or Administrator.
+     */
+    private boolean isUserWarehouseManagerOrAdmin() {
+        return Arrays.stream(accessPosition)
+                .anyMatch(role -> role.equalsIgnoreCase("Warehouse Manager")
+                        || role.equalsIgnoreCase("Administrator"));
     }
 
     /**
      * Updates the fulfillment table for RECEIVE mode.
      */
     private void updateFulfillmentTable() {
-        String[] columns = {"Item ID", "Item Name", "Ordered Qty", "Stock Available", "To Fulfill", "Backorder"};
+        String[] columns = {"Item ID", "Item Name", "Ordered Qty", "Stock Available in Warehouse", "To Fulfill", "To Backorder"};
 
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -337,13 +405,15 @@ public class ViewReceiveOrder {
         tblTxnItems.setModel(tableModel);
     }
 
-
     private void checkAndSetupFulfillment() {
         String txnStatus = selectedtxn.getTxnStatus().getStatusName();
+        String txnType = selectedtxn.getTxnType().getTxnType(); // Store Order, Emergency Order, Back Order
 
-        boolean isWarehouseRole = Arrays.stream(accessPosition)
-                .anyMatch(role -> role.equalsIgnoreCase("Warehouse Employee")
-                        || role.equalsIgnoreCase("Warehouse Manager")
+        boolean isWarehouseEmployee = Arrays.stream(accessPosition)
+                .anyMatch(role -> role.equalsIgnoreCase("Warehouse Worker"));
+
+        boolean isWarehouseManagerOrAdmin = Arrays.stream(accessPosition)
+                .anyMatch(role -> role.equalsIgnoreCase("Warehouse Manager")
                         || role.equalsIgnoreCase("Administrator"));
 
         // Hide everything by default
@@ -351,29 +421,41 @@ public class ViewReceiveOrder {
         btnFulfillOrder.setVisible(false);
         btnConfirmAssembled.setVisible(false);
         fullfillPanel.setVisible(false);
+        editBackOrderPanel.setVisible(false); // Default to hidden
 
-        if (!isWarehouseRole) return; // ✅ Ignore if user has no warehouse access
+        if (!(isWarehouseEmployee || isWarehouseManagerOrAdmin)) return; // ✅ Ignore if user has no warehouse access
+
+        // ✅ Show `backorderEditPanel` only for Back Orders in "NEW" status
+        if ("Back Order".equalsIgnoreCase(txnType) && "NEW".equalsIgnoreCase(txnStatus) && isWarehouseManagerOrAdmin) {
+            editBackOrderPanel.setVisible(true);
+        }
 
         switch (txnStatus.toUpperCase()) {
             case "SUBMITTED":
-                btnConfirmReceived.setVisible(true);
-                btnConfirmReceived.setEnabled(true);
+                if (isWarehouseManagerOrAdmin) {
+                    btnConfirmReceived.setVisible(true);
+                    btnConfirmReceived.setEnabled(true);
+                }
                 break;
 
             case "RECEIVED":
-                btnFulfillOrder.setVisible(true);
-                btnFulfillOrder.setEnabled(true);
-                btnConfirmAssembled.setVisible(true);
-                btnConfirmAssembled.setEnabled(false); // Locked until all items scanned
+                if (isWarehouseManagerOrAdmin) {
+                    btnFulfillOrder.setVisible(true);
+                    btnFulfillOrder.setEnabled(true);
+                }else {
+                    btnFulfillOrder.setVisible(true);
+                    btnFulfillOrder.setEnabled(true); // Locked until all items scanned
+                }
                 break;
 
             case "ASSEMBLING":
                 btnConfirmAssembled.setVisible(true);
-                btnFulfillOrder.setVisible(true);
-                btnConfirmAssembled.setEnabled(false);
-                btnFulfillOrder.setEnabled(false);
-                startAssemblyProcess();
-                break;
+                if (isWarehouseManagerOrAdmin || isWarehouseEmployee){
+                    btnFulfillOrder.setVisible(true);
+                    btnConfirmAssembled.setEnabled(false);
+                    btnFulfillOrder.setEnabled(false);
+                    startAssemblyProcess();
+                } else break;
         }
     }
 
@@ -411,7 +493,6 @@ public class ViewReceiveOrder {
             lblFullfillItemDesc.setText("Scanning: " + item.getItemName() + " (Qty: " + item.getQuantity() + ")");
         }
     }
-
 
     private void confirmAssembledTransaction() {
         System.out.println("[INFO] Confirming assembly for order ID: " + selectedtxn.getId());
@@ -466,4 +547,186 @@ public class ViewReceiveOrder {
         }
     }
 
+    /**
+     * Displays details of a selected backorder item and updates UI elements.
+     * Only called when an Admin or Warehouse Manager selects an item.
+     */
+    private void DisplayBackOrderItem() {
+        if (selectedItemIndex < 0 || selectedItemIndex >= txnItems.size()) {
+            // ❌ No valid item selected - Reset UI elements
+            lblBackOrderItemLabel.setText("Please select an item...");
+            spnOrderQuantity.setEnabled(false);
+            spnOrderQuantity.setValue(0);
+            btnUpdateBackorder.setEnabled(false);
+            datePicker.setVisible(false);
+            lblOrderDate.setVisible(false);
+            return;
+        }
+
+        // ✅ Valid selection - Enable UI elements and update details
+        TxnItem selectedItem = txnItems.get(selectedItemIndex);
+        int itemID = selectedItem.getItemID();
+        int orderedQty = selectedItem.getQuantity();
+
+        System.out.println("[INFO] Displaying Backorder Item: " + selectedItem.getItemName() + " (ItemID: " + itemID + ")");
+
+        lblBackOrderItemLabel.setText(selectedItem.getItemName());
+        spnOrderQuantity.setEnabled(true);
+        spnOrderQuantity.setValue(orderedQty); // Set to existing quantity
+        btnUpdateBackorder.setEnabled(true);
+        datePicker.setVisible(true);
+        lblOrderDate.setVisible(true);
+
+        // ✅ Adjust spinner step based on caseSize from itemMap
+        if (itemMap.containsKey(itemID)) {
+
+            int caseSize = itemMap.get(itemID).getCaseSize();
+            System.out.println("[INFO] Case size: " + caseSize);
+            setSpinnerStepSize(caseSize);
+        } else {
+            System.out.println("[WARN] Item not found in map, using default step size.");
+            setSpinnerStepSize(1); // Default step size
+        }
+
+        addSpinnerChangeListener();
+    }
+
+    /**
+     * Adds a listener to update TxnItem quantity in memory when spinner changes.
+     */
+    private void addSpinnerChangeListener() {
+        spnOrderQuantity.addChangeListener(e -> {
+            if (selectedItemIndex < 0 || selectedItemIndex >= txnItems.size()) {
+                return;
+            }
+
+            // ✅ Get new quantity from spinner
+            int newQuantity = (int) spnOrderQuantity.getValue();
+            TxnItem selectedItem = txnItems.get(selectedItemIndex);
+
+            // ✅ Update quantity in memory
+            selectedItem.setQuantity(newQuantity);
+            System.out.println("[INFO] Updated item quantity in memory: " + selectedItem.getItemName() + " -> " + newQuantity);
+
+            // ✅ Update the table cell directly
+            DefaultTableModel model = (DefaultTableModel) tblTxnItems.getModel();
+            model.setValueAt(newQuantity, selectedItemIndex, 2); // Column index 2 = "Ordered Qty"
+        });
+    }
+
+    /**
+     * Adjusts the step size of spnOrderQuantity.
+     */
+    private void setSpinnerStepSize(int stepSize) {
+        SpinnerNumberModel model = (SpinnerNumberModel) spnOrderQuantity.getModel();
+        model.setStepSize(stepSize);
+        model.setMinimum(stepSize);
+    }
+
+    private void setupDatePicker() {
+        UtilDateModel model = new UtilDateModel();
+
+        // ✅ Convert LocalDateTime to Date (removing time component)
+        if (selectedtxn.getShipDate() != null) {
+            Date shipDate = convertLocalDateTimeToDate(selectedtxn.getShipDate());
+            model.setValue(shipDate);
+        }
+
+        Properties p = new Properties();
+        p.put("text.today", "Today");
+        p.put("text.month", "Month");
+        p.put("text.year", "Year");
+
+        JDatePanelImpl datePanel = new JDatePanelImpl(model, p);
+        datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
+
+        // ✅ Add the date picker to `calendarBackOrder`
+        calendarBackOrder.setLayout(new java.awt.BorderLayout());
+        calendarBackOrder.add(datePicker, BorderLayout.CENTER);
+    }
+
+    /**
+     * Converts LocalDateTime to Date while removing time information.
+     */
+    private Date convertLocalDateTimeToDate(LocalDateTime localDateTime) {
+        return Date.from(localDateTime.toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+
+    private void loadItems() {
+        List<Item> itemList = ItemRequests.fetchItems(); // Fetch items from DB
+
+        // ✅ Store them in a Map where key = itemID
+        itemMap = new HashMap<>();
+        for (Item item : itemList) {
+            itemMap.put(item.getId(), item);
+        }
+
+        System.out.println("[DEBUG] Items loaded into map: " + itemMap.size());
+    }
+
+    private void handleBackorderUpdate() {
+        // ✅ Step 1: Get transaction ID
+        int txnId = selectedtxn.getId();
+
+        // ✅ Step 2: Get updated items list
+        List<TxnItem> updatedItems = new ArrayList<>();
+        for (TxnItem item : txnItems) {
+            updatedItems.add(item);
+        }
+
+        // ✅ Step 3: Get employee username
+        String empUsername = SessionManager.getInstance().getUsername();
+
+        // ✅ Step 4: Get selected date from the date picker
+        Date selectedDate = (Date) datePicker.getModel().getValue();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd"); // Format as YYYY-MM-DD
+        String formattedDate = (selectedDate != null) ? sdf.format(selectedDate) : "No date selected";
+
+        // ✅ Print all gathered data
+        System.out.println("[DEBUG] Preparing Backorder Update...");
+        System.out.println("[DEBUG] Transaction ID: " + txnId);
+        System.out.println("[DEBUG] Employee Username: " + empUsername);
+        System.out.println("[DEBUG] Selected Date: " + formattedDate);
+        System.out.println("[DEBUG] Items to Update:");
+
+        for (TxnItem item : updatedItems) {
+            System.out.println("  - Item ID: " + item.getItemID() + ", Quantity: " + item.getQuantity());
+        }
+
+        // ✅ Step 1: Update Order Items
+        boolean itemsUpdated = TxnRequests.updateOrderItems(txnId, updatedItems, empUsername);
+
+        // ✅ Step 2: Update Ship Date (if provided)
+        boolean dateUpdated = formattedDate != null && TxnRequests.updateTxnShipDate(txnId, formattedDate, empUsername);
+
+        // ✅ Show success message if both updates succeed
+        if (itemsUpdated && dateUpdated) {
+            JOptionPane.showMessageDialog(frame, "Backorder updated successfully!");
+            frame.dispose();
+        } else {
+            JOptionPane.showMessageDialog(frame, "Failed to update backorder.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    }
+
+}
+
+class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+    private final String datePattern = "yyyy-MM-dd";
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
+
+    @Override
+    public Object stringToValue(String text) throws ParseException {
+        return dateFormatter.parse(text);
+    }
+
+    @Override
+    public String valueToString(Object value) throws ParseException {
+        if (value != null) {
+            Calendar cal = (Calendar) value;
+            return dateFormatter.format(cal.getTime());
+        }
+        return "";
+    }
 }

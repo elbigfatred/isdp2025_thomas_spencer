@@ -194,6 +194,8 @@ public class OrderService {
         Txn txn = txnRepository.findById(orderUpdateRequest.getTxnID())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        System.out.println("[DEBUG] Updating order items: " + orderUpdateRequest);
+
         Employee employee = employeeRepository.findByUsername(empUsername).get();
 
         // ✅ Get count of items before update
@@ -239,7 +241,9 @@ public class OrderService {
 
         // ✅ Save audit log **LAST**
         txnauditService.createAuditEntry(txn, employee, auditLog.toString());
+        System.out.println("[DEBUG] auditLog: " + auditLog.toString());
     }
+
     public Txn updateOrderStatus(int txnId, String status, String empUsername) {
         Txn order = getOrderById(txnId);
         System.out.println("[DEBUG] Updating order status from: " + order.getTxnStatus());
@@ -273,6 +277,8 @@ public class OrderService {
     }
 
     public void addItemsToExistingBackorderTxn(Integer txnId, List<Txnitem> itemsToAdd) {
+
+        System.out.println("[DEBUG] Adding backorder txn items to: " + txnId);
         Txn txn = txnRepository.findById(txnId)
                 .orElseThrow(() -> new RuntimeException("Backorder not found with ID: " + txnId));
 
@@ -485,6 +491,28 @@ public class OrderService {
         LocalDate nextWeekDeliveryDay = nextSunday.with(TemporalAdjusters.nextOrSame(deliveryDay));
 
         return nextWeekDeliveryDay;
+    }
+
+    public void updateTxnShipDate(int txnId, String shipDate, String empUsername) {
+        try {
+            System.out.println("[DEBUG] Updating ship date for Order ID: " + txnId + " by " + empUsername);
+
+            // ✅ Fetch transaction
+            Txn txn = txnRepository.findById(txnId).orElseThrow(() ->
+                    new IllegalArgumentException("Transaction not found: " + txnId));
+
+            // ✅ Convert string to LocalDate and update
+            txn.setShipDate(LocalDate.parse(shipDate).atStartOfDay());
+
+            // ✅ Save the transaction
+            txnRepository.save(txn);
+
+            System.out.println("[SUCCESS] Ship date updated successfully for Order ID: " + txnId);
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to update ship date: " + e.getMessage());
+            throw new RuntimeException("Failed to update ship date", e);
+        }
     }
 
 }

@@ -32,7 +32,7 @@ public class OrdersController {
     @GetMapping("/all")
     public ResponseEntity<List<Txn>> getAllStoreAndEmergencyOrders() {
         try {
-            List<Txn> orders = txnRepository.findAllStoreAndEmergencyOrders();
+            List<Txn> orders = txnRepository.findAll();
             if (orders.isEmpty()) {
                 return ResponseEntity.noContent().build();
             }
@@ -129,6 +129,7 @@ public class OrdersController {
             }
 
             // ✅ Call service method to update items
+            System.out.println("[DEBUG] Updating order ID: " + txnId);
             orderService.updateOrderItems(updateRequest, empUsername);
 
             // ✅ Fetch updated transaction and return it
@@ -277,6 +278,29 @@ public class OrdersController {
     // ======================================================
     // 6️⃣ BACKORDER-SPECIFIC ENDPOINTS
     // ======================================================
+
+    @PutMapping("/{txnId}/update-shipdate")
+    public ResponseEntity<?> updateTxnShipDate(
+            @PathVariable Integer txnId,
+            @RequestParam String shipDate,
+            @RequestParam String empUsername) {
+
+        try {
+            System.out.println("[DEBUG] Updating ship date for transaction ID: " + txnId + " to " + shipDate);
+
+            // ✅ Call service method to update ship date
+            orderService.updateTxnShipDate(txnId, shipDate, empUsername);
+
+            // ✅ Fetch updated transaction
+            Txn updatedTxn = orderService.getOrderById(txnId);
+            return ResponseEntity.ok(updatedTxn);
+
+        } catch (Exception e) {
+            System.out.println("[ERROR] Failed to update ship date: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating ship date: " + e.getMessage());
+        }
+    }
 
 
     // ======================================================
