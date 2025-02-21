@@ -21,6 +21,7 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
   const userRoles = user.roles.map((role) => role.posn.permissionLevel);
   const hasOrdersAccess =
     userRoles.includes("Warehouse Manager") ||
+    userRoles.includes("Administrator") ||
     userRoles.includes("Store Manager");
 
   const theme = useMemo(

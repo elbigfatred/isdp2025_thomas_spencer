@@ -11,20 +11,27 @@ import {
 } from "@mui/material";
 import OrderItemsManager from "./OrderItemsManager";
 
-const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
+const OrderForm = ({
+  user,
+  selectedOrder, // ✅ Passed down from parent component
+  refreshOrders,
+  inventory,
+  selectedSite,
+}) => {
   const [activeOrder, setActiveOrder] = useState(null);
   const [checkingActiveOrder, setCheckingActiveOrder] = useState(false);
-  const [isEmergencyMode, setIsEmergencyMode] = useState(false); // ✅ NEW: Emergency Order Toggle
+  const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // ✅ Fetch Active Order when `selectedSite` or `isEmergencyMode` changes
   useEffect(() => {
-    if (!user?.site?.id) return;
+    if (!selectedSite) return;
 
+    console.log("[DEBUG] Fetching active orders for site ID:", selectedSite);
     setCheckingActiveOrder(true);
-    console.log("[DEBUG] Fetching active orders for site ID:", user.site.id);
 
     axios
-      .get(`http://localhost:8080/api/orders/site/${user.site.id}`)
+      .get(`http://localhost:8080/api/orders/site/${selectedSite}`)
       .then((ordersResponse) => {
         console.log("[DEBUG] All Active Orders:", ordersResponse.data);
 
@@ -50,13 +57,28 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
           console.log("[DEBUG] Selected Active Order:", newOrder);
           setActiveOrder(newOrder);
         } else {
-          console.log("[DEBUG] No active order found.");
+          console.log(
+            "[DEBUG] No active order found. Setting activeOrder to null."
+          );
           setActiveOrder(null);
         }
       })
-      .catch(() => console.log("Failed to check active order"))
+      .catch(() => {
+        console.log(
+          "[ERROR] Failed to check active order. Setting activeOrder to null."
+        );
+        setActiveOrder(null); // ✅ Ensure we reset activeOrder if API call fails
+      })
       .finally(() => setCheckingActiveOrder(false));
-  }, [user, selectedOrder, isEmergencyMode]); // ✅ Refresh when toggling emergency mode
+  }, [selectedSite, isEmergencyMode, refreshOrders]); // ✅ Trigger refresh when orders are refreshed
+
+  // ✅ Keep `activeOrder` in sync with `selectedOrder`
+  useEffect(() => {
+    console.log("[DEBUG] Selected Order Changed:", selectedOrder);
+    if (selectedOrder) {
+      setActiveOrder(selectedOrder);
+    }
+  }, [selectedOrder]);
 
   // ✅ Create Store Order
   const handleCreateStoreOrder = () => {
@@ -65,7 +87,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
     axios
       .post(`http://localhost:8080/api/orders`, {
         employeeID: user.id,
-        siteIDTo: user.site.id,
+        siteIDTo: selectedSite, // ✅ Use selected site
         siteIDFrom: 1, // Default warehouse
         notes: "New store order created",
       })
@@ -90,7 +112,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
     axios
       .post(`http://localhost:8080/api/orders/emergency`, {
         employeeID: user.id,
-        siteIDTo: user.site.id,
+        siteIDTo: selectedSite, // ✅ Use selected site
         siteIDFrom: 1, // Default warehouse
         notes: "New emergency order created",
       })
@@ -113,7 +135,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
     if (newMode !== null) {
       console.log("[DEBUG] Switching Order Mode:", newMode);
       setIsEmergencyMode(newMode === "emergency");
-      setActiveOrder(null); // Reset active order on switch
+      setActiveOrder(null); // ✅ Reset active order on switch
     }
   };
 
@@ -140,9 +162,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
       {!activeOrder ? (
         <Button
           variant="contained"
-          // red?
           color="primary"
-          // margin left
           sx={{ marginLeft: 2 }}
           onClick={
             isEmergencyMode
@@ -159,7 +179,7 @@ const OrderForm = ({ user, selectedOrder, refreshOrders, inventory }) => {
           setHasUnsavedChanges={setHasUnsavedChanges}
           refreshOrders={refreshOrders}
           clearActiveOrder={() => setActiveOrder(null)}
-          inventory={inventory} // ✅ Pass inventory down
+          inventory={inventory}
         />
       )}
     </Box>

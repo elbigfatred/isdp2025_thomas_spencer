@@ -14,10 +14,12 @@ import {
   Box,
   Typography,
   TextField,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import OrderDetailsModal from "./OrderDetailsModal"; // ✅ Import modal component
 
-const OrderHistory = ({ user, siteId, refreshTrigger }) => {
+const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,20 +27,25 @@ const OrderHistory = ({ user, siteId, refreshTrigger }) => {
   const [orderItems, setOrderItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showActiveOnly, setShowActiveOnly] = useState(true); // ✅ Active filter toggle
 
   useEffect(() => {
-    if (!siteId) return; // ✅ Prevent fetching if no site is selected
+    if (!siteId && !fetchAllOrders) return; // ✅ Prevent fetching if no site is selected
 
     setLoading(true);
+    const endpoint = fetchAllOrders
+      ? "http://localhost:8080/api/orders/all"
+      : `http://localhost:8080/api/orders/site/${siteId}`;
+
     axios
-      .get(`http://localhost:8080/api/orders/site/${siteId}`)
+      .get(endpoint)
       .then((response) => {
         console.log("[DEBUG] Fetched Orders JSON:", response.data);
         setOrders(response.data);
       })
       .catch(() => setError("Failed to load orders"))
       .finally(() => setLoading(false));
-  }, [siteId, refreshTrigger]); // ✅ Orders now reload when site changes
+  }, [siteId, refreshTrigger, fetchAllOrders]);
 
   // ✅ Handle "View Order" button click
   const handleViewOrder = async (order) => {
@@ -74,14 +81,19 @@ const OrderHistory = ({ user, siteId, refreshTrigger }) => {
     orders.length > 0
       ? orders.filter(
           (order) =>
-            order.id.toString().includes(searchQuery.trim()) ||
-            (order.txnType?.txnType || "Unknown")
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase().trim()) ||
-            (order.txnStatus?.statusName || "Unknown")
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase().trim()) ||
-            formatDate(order.createdDate).includes(searchQuery.trim()) // ✅ Search formatted date
+            (showActiveOnly
+              ? !["CANCELLED", "REJECTED", "COMPLETE"].includes(
+                  order.txnStatus?.statusName
+                )
+              : true) &&
+            (order.id.toString().includes(searchQuery.trim()) ||
+              (order.txnType?.txnType || "Unknown")
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase().trim()) ||
+              (order.txnStatus?.statusName || "Unknown")
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase().trim()) ||
+              formatDate(order.createdDate).includes(searchQuery.trim()))
         )
       : [];
 
@@ -98,6 +110,19 @@ const OrderHistory = ({ user, siteId, refreshTrigger }) => {
         </Typography>
       ) : (
         <>
+          {/* ✅ Active Orders Toggle */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showActiveOnly}
+                onChange={() => setShowActiveOnly((prev) => !prev)}
+                color="primary"
+              />
+            }
+            label="Show Active Orders Only"
+            sx={{ marginBottom: 2 }}
+          />
+
           {/* ✅ Search Bar */}
           <TextField
             label="Search Order History"
@@ -118,6 +143,9 @@ const OrderHistory = ({ user, siteId, refreshTrigger }) => {
                 <TableRow>
                   <TableCell>
                     <strong>Order ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Site</strong>
                   </TableCell>
                   <TableCell>
                     <strong>Type</strong>
@@ -147,6 +175,9 @@ const OrderHistory = ({ user, siteId, refreshTrigger }) => {
                   filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{order.id}</TableCell>
+                      <TableCell>
+                        {order.siteIDTo?.siteName || "Unknown"}
+                      </TableCell>
                       <TableCell>
                         {order.txnType?.txnType || "Unknown"}
                       </TableCell>

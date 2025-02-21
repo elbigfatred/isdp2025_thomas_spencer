@@ -1,72 +1,91 @@
-// OrdersDashboard.jsx
-//     ├── OrderHistory.jsx  [Past orders list]
-//     └── OrderForm.jsx  [Order creation/modification UI]
-//         ├── OrderDetailsModal.jsx  [Popup for order details]
-//         └──  OrderItemsManager.jsx  [Handles order item addition/removal]
-//             ├── InventoryList.jsx  [Displays all available inventory items]
-//             ├── OrderItemsList.jsx  [Displays items already in the order]
-//             ├── OrderItemsTable.jsx  [Editable table of order items]
-//             └──  OrderRow.jsx  [Each individual order row component]
-
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import { Box, Typography, Select, MenuItem } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  Button,
+  Stack,
+} from "@mui/material";
 import OrderHistory from "./OrderHistory"; // View orders
 import OrderForm from "./OrderForm"; // Create/edit orders
 import axios from "axios";
 
 const OrdersDashboard = ({ user }) => {
+  const isAdminOrWHMgr =
+    user?.mainrole === "Warehouse Manager" ||
+    user?.mainrole === "Administrator";
+
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Used to trigger refresh
-  const [selectedSite, setSelectedSite] = useState(user?.site?.id || ""); // Store selected site
-  const [availableSites, setAvailableSites] = useState([]); // List of all sites
-  const [inventory, setInventory] = useState([]); // ✅ Store inventory at this level
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedSite, setSelectedSite] = useState(
+    isAdminOrWHMgr ? "ALL" : user?.site?.id
+  );
+  const [availableSites, setAvailableSites] = useState([]);
+  const [inventory, setInventory] = useState([]);
 
   useEffect(() => {
-    // ✅ If user is a warehouse manager, fetch all sites
-    console.log(user);
-    if (user?.mainrole === "Warehouse Manager") {
+    if (isAdminOrWHMgr) {
       axios
         .get("http://localhost:8080/api/sites")
         .then((response) => {
-          -setAvailableSites(response.data);
+          const activeSites = response.data.filter((site) => site.active);
+          setAvailableSites(activeSites);
+          console.log("[DEBUG] Loaded active sites:", activeSites);
         })
-        .catch(() => console.error("Failed to load sites"));
+        .catch(() => console.error("[ERROR] Failed to load sites"));
     }
   }, [user]);
 
-  // ✅ Load inventory when site changes
   useEffect(() => {
     if (!selectedSite) return;
 
-    axios
-      .get(`http://localhost:8080/api/inventory/site/${selectedSite}`)
-      .then((response) => setInventory(response.data))
-      .catch(() => console.error("Failed to load inventory"));
+    if (selectedSite === "ALL") {
+      console.log("[DEBUG] Fetching all orders across all sites...");
+    } else {
+      console.log("[DEBUG] Loading inventory for site:", selectedSite);
+      axios
+        .get(`http://localhost:8080/api/inventory/site/${selectedSite}`)
+        .then((response) => setInventory(response.data))
+        .catch(() => console.error("[ERROR] Failed to load inventory"));
+    }
   }, [selectedSite]);
 
-  // Function to refresh the orders list
   const refreshOrders = () => {
+    console.log("[DEBUG] Refreshing dashboard...");
     setRefreshTrigger((prev) => prev + 1);
+    setSelectedOrder(null);
+  };
+
+  const handleSiteChange = (event) => {
+    const newSite = event.target.value;
+    setSelectedSite(newSite);
+    refreshOrders();
   };
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ marginBottom: 2 }}>
-        {user?.mainrole === "Warehouse Manager"
-          ? "Warehouse Order Management"
-          : "Store Orders"}
-      </Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ marginBottom: 2 }}
+      >
+        <Typography variant="h4">
+          {isAdminOrWHMgr ? "Warehouse Order Management" : "Store Orders"}
+        </Typography>
 
-      {/* ✅ Show site selection ONLY for Warehouse Managers */}
-      {user?.mainrole === "Warehouse Manager" && (
+        <Button variant="contained" color="primary" onClick={refreshOrders}>
+          Refresh Dashboard
+        </Button>
+      </Stack>
+
+      {isAdminOrWHMgr && (
         <Box sx={{ marginBottom: 2 }}>
           <Typography variant="h6">Select a Site</Typography>
-          <Select
-            value={selectedSite}
-            onChange={(e) => setSelectedSite(e.target.value)}
-            fullWidth
-          >
+          <Select value={selectedSite} onChange={handleSiteChange} fullWidth>
+            <MenuItem value="ALL">All Sites</MenuItem>
             {availableSites.map((site) => (
               <MenuItem key={site.id} value={site.id}>
                 {site.siteName}
@@ -76,21 +95,22 @@ const OrdersDashboard = ({ user }) => {
         </Box>
       )}
 
-      {/* View All Orders Section */}
+      {/* ✅ Display Order History for selected site or ALL */}
       <OrderHistory
         user={user}
-        siteId={selectedSite}
-        onSelectOrder={setSelectedOrder}
+        siteId={selectedSite === "ALL" ? null : selectedSite}
         refreshTrigger={refreshTrigger}
+        fetchAllOrders={selectedSite === "ALL"}
       />
 
-      {/* Store Managers Only: Create/Edit Orders */}
-      {user?.mainrole !== "Warehouse Manager" && (
+      {/* ✅ Disable Order Form if "ALL" is selected */}
+      {selectedSite !== "ALL" && (
         <OrderForm
           user={user}
           selectedOrder={selectedOrder}
           refreshOrders={refreshOrders}
           inventory={inventory}
+          selectedSite={selectedSite}
         />
       )}
     </Box>

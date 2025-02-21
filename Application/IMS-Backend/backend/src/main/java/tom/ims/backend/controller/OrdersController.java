@@ -209,7 +209,7 @@ public class OrdersController {
             // ✅ Submit each order (Store Orders only)
             for (Txn order : newOrders) {
                 if(Objects.equals(order.getTxnType().getTxnType(), "Store Order")) {
-                    orderService.submitOrder(order.getId());
+                    orderService.autoSubmitOrder(order.getId());
                     System.out.println("[AUTO-SUBMIT] Submitted Order ID: " + order.getId());
                 }
             }

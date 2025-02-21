@@ -4,10 +4,9 @@ import models.*;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
-import utils.InventoryRequests;
-import utils.ItemRequests;
-import utils.SessionManager;
-import utils.TxnRequests;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import utils.*;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -49,6 +48,11 @@ public class ViewReceiveOrder {
     private JButton btnUpdateBackorder;
     private JSpinner spnOrderQuantity;
     private JLabel lblOrderDate;
+    private JButton btnHelp;
+    private JLabel lblOrderDetails;
+    private JLabel lblWeight;
+    private JLabel lblTotalQuantity;
+    private JLabel lblTotalCost;
     private JDatePickerImpl datePicker; // ✅ Declare the date picker
 
     // =================== FRAME VARIABLES ===================
@@ -72,14 +76,15 @@ public class ViewReceiveOrder {
         this.selectedtxn = txnToViewReceive;
         this.mode = usage;
 
-        editBackOrderPanel.setVisible(false);
+        //editBackOrderPanel.setVisible(false);
 
         frame.setTitle(Objects.equals(usage, "VIEW") ? "Bullseye Inventory Management System - View Order"
                 : "Bullseye Inventory Management System - View/Receive Order");
-        frame.setSize(750, 570);
+        frame.setSize(750, 615);
 
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        loadItems();
 
         // ✅ Hide the submit button if we're not in RECEIVE mode
         btnConfirmReceived.setVisible(Objects.equals(mode, "RECEIVE"));
@@ -97,6 +102,7 @@ public class ViewReceiveOrder {
                 txnStatus.setStatusName("ASSEMBLING");
                 selectedtxn.setTxnStatus(txnStatus);
                 JOptionPane.showMessageDialog(frame, "Order is now being assembled.");
+                showTxnDetails();
                 checkAndSetupFulfillment(); // Refresh UI
             } else {
                 JOptionPane.showMessageDialog(frame, "Error updating order status.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -137,6 +143,8 @@ public class ViewReceiveOrder {
             // Determine how to populate the table
             updateTableDisplay();
             checkAndSetupFulfillment();  // ✅ NEW: Check roles + status and adjust UI
+            showTxnDetails();
+
 
             frame.setVisible(true);
         });
@@ -182,6 +190,10 @@ public class ViewReceiveOrder {
             public void actionPerformed(ActionEvent e) {
                 btnExit.doClick();
             }
+        });
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.VIEW_RECEIVE_ORDER_HELP,"View Order Help",JOptionPane.INFORMATION_MESSAGE);
         });
         return contentPane;
     }
@@ -283,6 +295,7 @@ public class ViewReceiveOrder {
                 (Objects.equals(selectedtxn.getTxnType().getTxnType(), "Store Order") ||
                         Objects.equals(selectedtxn.getTxnType().getTxnType(), "Emergency Order"))){
             updateFulfillmentTable();
+            editBackOrderPanel.setVisible(true);
         } else {
             populateTxnItemsTable();
         }
@@ -316,6 +329,7 @@ public class ViewReceiveOrder {
         // If order is SUBMITTED, we update the fulfillment table
         if (selectedtxn.getTxnStatus().getStatusName().equalsIgnoreCase("SUBMITTED")) {
             updateFulfillmentTable();
+            editBackOrderPanel.setVisible(true);
             btnConfirmReceived.setVisible(true);
         } else {
             btnConfirmReceived.setVisible(false);
@@ -375,7 +389,13 @@ public class ViewReceiveOrder {
      * Updates the fulfillment table for RECEIVE mode.
      */
     private void updateFulfillmentTable() {
-        String[] columns = {"Item ID", "Item Name", "Ordered Qty", "Stock Available in Warehouse", "To Fulfill", "To Backorder"};
+        editBackOrderPanel.setVisible(true);
+        lblOrderDate.setVisible(false);
+        spnOrderQuantity.setEnabled(false);
+        loadItems();
+
+        System.out.println("UPDATING FULFILLMENT TABLE");
+        String[] columns = {"Item ID", "Item Name", "Ordered Qty", "Stock in Warehouse", "To Fulfill", "To Backorder"};
 
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -403,6 +423,100 @@ public class ViewReceiveOrder {
         }
 
         tblTxnItems.setModel(tableModel);
+        tblTxnItems.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // ✅ Add listener for row selection
+        tblTxnItems.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblTxnItems.getSelectedRow();
+                if (selectedRow != -1) {
+                    setSelectedFulfillmentItem(selectedRow);
+                } else {
+                    clearFulfillmentSelection();
+                }
+            }
+        });
+
+
+        // ✅ Single spinner listener for updating the selected item's quantity
+        spnOrderQuantity.addChangeListener(e -> {
+            int selectedRow = tblTxnItems.getSelectedRow();
+            if (selectedRow != -1) {
+                updateOrderedQuantity(selectedRow);
+                showTxnDetails();
+            }
+        });
+
+        btnUpdateBackorder.removeActionListener(btnUpdateBackorder.getActionListeners().length > 0 ? btnUpdateBackorder.getActionListeners()[0] : null);
+        btnUpdateBackorder.addActionListener(e -> handleTxnItemsUpdate());
+
+    }
+
+    private void setSelectedFulfillmentItem(int selectedRow) {
+        int itemID = (int) tblTxnItems.getValueAt(selectedRow, 0);
+
+        // ✅ Find the corresponding TxnItem in txnItems
+        TxnItem selectedItem = txnItems.stream()
+                .filter(item -> item.getItemID() == itemID)
+                .findFirst()
+                .orElse(null);
+
+        if (selectedItem == null) {
+            System.out.println("[ERROR] Selected item not found in txnItems list.");
+            return;
+        }
+
+        System.out.println("Selected Item: " + selectedItem.getItemID() + selectedItem.getQuantity());
+
+        // ✅ Update UI elements
+        lblBackOrderItemLabel.setText(selectedItem.getItemName() + ", Case Size: " + itemMap.get(selectedItem.getItemID()).getCaseSize());
+        spnOrderQuantity.setEnabled(true);
+        spnOrderQuantity.setValue(selectedItem.getQuantity());
+        btnUpdateBackorder.setEnabled(true);
+
+        // ✅ Adjust spinner step size based on caseSize
+        int caseSize = itemMap.getOrDefault(itemID, new Item()).getCaseSize();
+        setSpinnerStepSize(caseSize > 0 ? caseSize : 1);
+    }
+
+    private void updateOrderedQuantity(int selectedRow) {
+        int itemID = (int) tblTxnItems.getValueAt(selectedRow, 0);
+        int newOrderedQty = (int) spnOrderQuantity.getValue();
+
+        // ✅ Find the corresponding TxnItem
+        TxnItem selectedItem = txnItems.stream()
+                .filter(item -> item.getItemID() == itemID)
+                .findFirst()
+                .orElse(null);
+
+        if (selectedItem == null) {
+            System.out.println("[ERROR] Item not found in txnItems list.");
+            return;
+        }
+
+        // ✅ Update Ordered Quantity in txnItems
+        selectedItem.setQuantity(newOrderedQty);
+
+        int stockAvailable = warehouseStock.getOrDefault(itemID, 0);
+        int toFulfill = Math.min(stockAvailable, newOrderedQty);
+        int backorderQty = newOrderedQty - toFulfill;
+
+        // ✅ Update the corresponding row in tblTxnItems
+        tblTxnItems.setValueAt(newOrderedQty, selectedRow, 2); // Ordered Qty column
+        tblTxnItems.setValueAt(toFulfill, selectedRow, 4); // To Fulfill column
+        tblTxnItems.setValueAt(backorderQty > 0 ? backorderQty : "N/A", selectedRow, 5); // To Backorder column
+
+        System.out.println("[INFO] Updated Order Item: " + selectedItem.getItemName());
+        System.out.println("  - New Ordered Qty: " + newOrderedQty);
+        System.out.println("  - New To Fulfill: " + toFulfill);
+        System.out.println("  - New Backorder: " + backorderQty);
+    }
+
+    private void clearFulfillmentSelection() {
+        lblBackOrderItemLabel.setText("Please select an item...");
+        spnOrderQuantity.setEnabled(false);
+        spnOrderQuantity.setValue(0);
+        btnUpdateBackorder.setEnabled(false);
     }
 
     private void checkAndSetupFulfillment() {
@@ -421,7 +535,7 @@ public class ViewReceiveOrder {
         btnFulfillOrder.setVisible(false);
         btnConfirmAssembled.setVisible(false);
         fullfillPanel.setVisible(false);
-        editBackOrderPanel.setVisible(false); // Default to hidden
+        //editBackOrderPanel.setVisible(false); // Default to hidden
 
         if (!(isWarehouseEmployee || isWarehouseManagerOrAdmin)) return; // ✅ Ignore if user has no warehouse access
 
@@ -552,14 +666,15 @@ public class ViewReceiveOrder {
      * Only called when an Admin or Warehouse Manager selects an item.
      */
     private void DisplayBackOrderItem() {
+        btnUpdateBackorder.setEnabled(true);
         if (selectedItemIndex < 0 || selectedItemIndex >= txnItems.size()) {
             // ❌ No valid item selected - Reset UI elements
             lblBackOrderItemLabel.setText("Please select an item...");
             spnOrderQuantity.setEnabled(false);
             spnOrderQuantity.setValue(0);
-            btnUpdateBackorder.setEnabled(false);
-            datePicker.setVisible(false);
-            lblOrderDate.setVisible(false);
+            //btnUpdateBackorder.setEnabled(false);
+            //datePicker.setVisible(false);
+            //lblOrderDate.setVisible(false);
             return;
         }
 
@@ -570,10 +685,10 @@ public class ViewReceiveOrder {
 
         System.out.println("[INFO] Displaying Backorder Item: " + selectedItem.getItemName() + " (ItemID: " + itemID + ")");
 
-        lblBackOrderItemLabel.setText(selectedItem.getItemName());
+        lblBackOrderItemLabel.setText(selectedItem.getItemName() + ", Case Size: " + itemMap.get(itemID).getCaseSize());
         spnOrderQuantity.setEnabled(true);
         spnOrderQuantity.setValue(orderedQty); // Set to existing quantity
-        btnUpdateBackorder.setEnabled(true);
+        //btnUpdateBackorder.setEnabled(true);
         datePicker.setVisible(true);
         lblOrderDate.setVisible(true);
 
@@ -611,6 +726,9 @@ public class ViewReceiveOrder {
             // ✅ Update the table cell directly
             DefaultTableModel model = (DefaultTableModel) tblTxnItems.getModel();
             model.setValueAt(newQuantity, selectedItemIndex, 2); // Column index 2 = "Ordered Qty"
+
+            showTxnDetails();
+
         });
     }
 
@@ -651,7 +769,6 @@ public class ViewReceiveOrder {
     private Date convertLocalDateTimeToDate(LocalDateTime localDateTime) {
         return Date.from(localDateTime.toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
-
 
     private void loadItems() {
         List<Item> itemList = ItemRequests.fetchItems(); // Fetch items from DB
@@ -702,12 +819,81 @@ public class ViewReceiveOrder {
 
         // ✅ Show success message if both updates succeed
         if (itemsUpdated && dateUpdated) {
-            JOptionPane.showMessageDialog(frame, "Backorder updated successfully!");
+            JOptionPane.showMessageDialog(frame, "Back Order updated successfully!");
             frame.dispose();
         } else {
             JOptionPane.showMessageDialog(frame, "Failed to update backorder.", "Error", JOptionPane.ERROR_MESSAGE);
         }
 
+    }
+
+    private void handleTxnItemsUpdate() {
+        // ✅ Step 1: Get transaction ID
+        int txnId = selectedtxn.getId();
+
+        // ✅ Step 2: Get updated items list
+        List<TxnItem> updatedItems = new ArrayList<>(txnItems); // Directly use txnItems list
+
+        // ✅ Step 3: Get employee username
+        String empUsername = SessionManager.getInstance().getUsername();
+
+        // ✅ Debugging printout
+        System.out.println("[DEBUG] Preparing Backorder Update...");
+        System.out.println("[DEBUG] Transaction ID: " + txnId);
+        System.out.println("[DEBUG] Employee Username: " + empUsername);
+        System.out.println("[DEBUG] Items to Update:");
+
+        for (TxnItem item : updatedItems) {
+            System.out.println("  - Item ID: " + item.getItemID() + ", Quantity: " + item.getQuantity());
+        }
+
+        // ✅ Step 4: Update Order Items (no ship date update)
+        boolean itemsUpdated = TxnRequests.updateOrderItems(txnId, updatedItems, empUsername);
+
+        // ✅ Show success message if the update was successful
+        if (itemsUpdated) {
+            JOptionPane.showMessageDialog(frame, "Submitted Order updated successfully!");
+        } else {
+            JOptionPane.showMessageDialog(frame, "Failed to update backorder.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showTxnDetails() {
+        Integer txnID = selectedtxn.getId();
+        String txnStatus = selectedtxn.getTxnStatus().getStatusName();
+        String txnType = selectedtxn.getTxnType().getTxnType();
+
+        String display = "Order ID: " + txnID + " / Status: " + txnStatus + " / Type: " + txnType;
+        lblOrderDetails.setText(display);
+
+        // ✅ Initialize totals
+        BigDecimal totalCost = BigDecimal.ZERO;
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        int totalQuantity = 0;
+
+        // ✅ Iterate over TxnItems
+        for (TxnItem txnItem : txnItems) {
+            Integer itemID = txnItem.getItemID();
+
+            // ✅ Retrieve item details from itemMap
+            if (itemMap.containsKey(itemID)) {
+                Item item = itemMap.get(itemID);
+
+                int quantity = txnItem.getQuantity();
+                totalQuantity += quantity;
+                // ✅ Ensure BigDecimal calculations
+                BigDecimal itemCost = item.getCostPrice().multiply(BigDecimal.valueOf(quantity));
+                BigDecimal itemWeight = item.getWeight().multiply(BigDecimal.valueOf(quantity));
+
+                totalCost = totalCost.add(itemCost);
+                totalWeight = totalWeight.add(itemWeight);
+            }
+        }
+
+        // ✅ Update UI Labels
+        lblTotalQuantity.setText("Total Quantity: " + totalQuantity);
+        lblTotalCost.setText("Total Cost: $" + String.format("%.2f", totalCost));
+        lblWeight.setText("Total Weight: " + String.format("%.2f", totalWeight) + " kg");
     }
 
 }

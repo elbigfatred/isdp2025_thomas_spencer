@@ -217,6 +217,7 @@ public class DashboardForm {
             DashboardTabPane.add("Orders", OrdersTab);
 
             loadInitialData();
+            pnlInventoryAdminSelectSite.setVisible(true);
             //populateEmployeeTable(allEmployees);
             populateOrdersTable(allTxns);
             updateOrdersTableBySearch();
@@ -307,7 +308,27 @@ public class DashboardForm {
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager") || Arrays.asList(accessPosition).contains("Administrator") || Arrays.asList(accessPosition).contains("Store Manager")) {
+            cmbInventoryAdminSiteSelect.removeAllItems();
+            for(Site site : allSites) {
+                if(site.isActive()){
+                    cmbInventoryAdminSiteSelect.addItem(site);
+                }
+            }
+            pnlInventoryAdminSelectSite.setVisible(true);
             inventorySite = SessionManager.getInstance().getSite();
+
+            //  Ensure site is not null and exists in ComboBox before setting it
+            if (inventorySite != null) {
+                for (int i = 0; i < cmbInventoryAdminSiteSelect.getItemCount(); i++) {
+                    Site existingSite = (Site) cmbInventoryAdminSiteSelect.getItemAt(i);
+                    //  Compare using siteName for debugging
+                    if (existingSite.getSiteName().equals(inventorySite.getSiteName())) {
+                        cmbInventoryAdminSiteSelect.setSelectedItem(existingSite);
+                        break; // ✅ Stop once we find a match
+                    }
+                }
+            }
+
             loadInventoryBySite(inventorySite.getId());
             loadStatusComboBox();
             loadOrdersLocationComboBox();
@@ -501,6 +522,10 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.ITEMS_HELP,"Items Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
+        btnOrdersHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.DASHBOARD_ORDER_VIEWER_HELP,"Orders Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
         btnAddSite.addActionListener(e -> addSite());
 
         btnEditSite.addActionListener(e -> editSite());
@@ -545,6 +570,19 @@ public class DashboardForm {
                 inventorySite = selectedSite; // Store selected site globally
                 loadInventoryBySite(inventorySite.getId()); // Reload inventory
                 txtSiteSearch.setText("");
+                btnInventoryEdit.setEnabled(true);
+
+                if (!Arrays.asList(accessPosition).contains("Administrator")) {
+
+                    Integer userSiteId = SessionManager.getInstance().getSite().getId();
+                    Integer selectedSiteId = selectedSite.getId();
+
+                    if (!userSiteId.equals(selectedSiteId)) {
+                        btnInventoryEdit.setEnabled(false);
+                    } else {
+                        btnInventoryEdit.setEnabled(true);
+                    }
+                }
             }
         });
 
@@ -611,11 +649,27 @@ public class DashboardForm {
                 break;
             }
         }
-
         if (selectedInventory == null) {
             JOptionPane.showMessageDialog(frame, "Selected inventory item not found.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        if (!Arrays.asList(accessPosition).contains("Administrator")) {
+
+            Integer userSiteId = SessionManager.getInstance().getSite().getId();
+            Integer inventoryId = selectedInventory.getSiteID();
+
+            if (!userSiteId.equals(inventoryId)) {
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "You can only edit inventory for your assigned site.",
+                        "Access Denied",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+        }
+
 
         // Open the EditInventoryForm
         Inventory finalSelectedInventory = selectedInventory;

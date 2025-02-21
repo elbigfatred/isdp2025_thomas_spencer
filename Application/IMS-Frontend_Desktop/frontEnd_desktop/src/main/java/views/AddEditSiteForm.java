@@ -199,6 +199,10 @@ public class AddEditSiteForm {
             txtNotes.setText(selectedSite.getNotes());
             chkActive.setSelected(selectedSite.isActive());
         }
+        else {
+            txtCountry.setText("Canada");
+        }
+        txtCountry.setEnabled(false);
     }
 
     private void populateProvincesComboBox() {

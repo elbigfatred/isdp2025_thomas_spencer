@@ -14,6 +14,8 @@ import {
   Typography,
   TablePagination,
   CircularProgress,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 
 const InventoryList = ({
@@ -25,26 +27,31 @@ const InventoryList = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25); // Default: 25 rows per page
-  const [loading, setLoading] = useState(true); // ✅ Loading state
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [loading, setLoading] = useState(true);
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false); // ✅ Toggle for filtering low stock items
 
-  // Simulate a loading delay (replace this with actual API fetching logic)
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500); // Simulates a delay before rendering items
-    return () => clearTimeout(timer);
-  }, [availableItems]); // Re-run when availableItems changes
+    setLoading(!availableItems || availableItems.length === 0); // ✅ Properly handle loading state
+  }, [availableItems]);
 
-  // ✅ Filter items based on search input (by SKU or name)
+  // ✅ Filter items based on search input AND toggle state
   const filteredItems = useMemo(() => {
-    return availableItems.filter(
-      (inventory) =>
-        inventory.item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        inventory.item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [availableItems, searchQuery]);
+    return availableItems
+      .filter(
+        (inventory) =>
+          inventory.item.sku
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          inventory.item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .filter((inventory) => {
+        if (showLowStockOnly) {
+          return inventory.quantity < inventory.optimumThreshold; // ✅ Only show low-stock items when enabled
+        }
+        return true;
+      });
+  }, [availableItems, searchQuery, showLowStockOnly]);
 
   // ✅ Get only the rows for the current page
   const paginatedItems = filteredItems.slice(
@@ -52,29 +59,35 @@ const InventoryList = ({
     page * rowsPerPage + rowsPerPage
   );
 
-  // ✅ Handle pagination changes
-  const handleChangePage = (event, newPage) => setPage(newPage);
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // Reset to first page when changing page size
-  };
-
   return (
     <Box>
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        color="primary"
-        sx={{
-          textTransform: "uppercase",
-          letterSpacing: 1.2,
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        Available Inventory
-      </Typography>
-      <Box></Box>
+      {/* ✅ Search Bar & Low Stock Toggle Inline */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Typography
+          variant="h4"
+          fontWeight="bold"
+          color="primary"
+          sx={{
+            textTransform: "uppercase",
+            letterSpacing: 1.2,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Available Inventory
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showLowStockOnly}
+              onChange={(e) => setShowLowStockOnly(e.target.checked)}
+            />
+          }
+          label="Items Under Optimum Threshold Only"
+          sx={{ whiteSpace: "nowrap" }}
+        />
+      </Box>
+
       {/* ✅ Search Bar */}
       <TextField
         label="Search Site Inventory"
@@ -84,6 +97,19 @@ const InventoryList = ({
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
       />
+
+      {/* ✅ Toggle for Low Stock Items */}
+      {/* <FormControlLabel
+        control={
+          <Switch
+            checked={showLowStockOnly}
+            onChange={(e) => setShowLowStockOnly(e.target.checked)}
+          />
+        }
+        label="Show Only Low Stock Items"
+        sx={{ marginBottom: 2 }}
+      /> */}
+
       {/* ✅ Inventory Table */}
       <TableContainer
         component={Paper}
@@ -114,7 +140,6 @@ const InventoryList = ({
           </TableHead>
           <TableBody>
             {loading ? (
-              // ✅ Ensure table width remains the same by keeping row structure
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ height: "200px" }}>
                   <CircularProgress />
@@ -162,15 +187,19 @@ const InventoryList = ({
           </TableBody>
         </Table>
       </TableContainer>
+
       {/* ✅ Pagination Controls */}
       <TablePagination
-        rowsPerPageOptions={[10, 25, 50, 100]} // Allows user to select page size
+        rowsPerPageOptions={[10, 25, 50, 100]}
         component="div"
-        count={filteredItems.length} // Total rows
+        count={filteredItems.length}
         rowsPerPage={rowsPerPage}
         page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        onPageChange={(event, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(event) => {
+          setRowsPerPage(parseInt(event.target.value, 10));
+          setPage(0);
+        }}
       />
     </Box>
   );

@@ -2,6 +2,8 @@ package tom.ims.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import tom.ims.backend.model.*;
 import tom.ims.backend.repository.*;
 import tom.ims.backend.model.Txnitem;
@@ -69,6 +71,7 @@ public class OrderService {
         // ✅ Auto-populate order with low stock items
         List<Inventory> lowStockItems = inventoryService.getItemsBelowThreshold(siteTo.getId());
         int addedItemCount = 0;
+        int totalAddedItems = 0;
 
         System.out.println("[DEBUG] Found " + lowStockItems.size() + " items below reorder threshold for site " + siteTo.getId());
 
@@ -107,6 +110,7 @@ public class OrderService {
 
                 txnItemsRepository.save(txnItem);
                 addedItemCount++; // ✅ Track number of items added
+                totalAddedItems += txnItem.getQuantity();
                 System.out.println("[INFO] Added txnItem: Item ID = " + inv.getId().getItemID() + ", Quantity = " + txnItem.getQuantity());
 
             } catch (Exception e) {
@@ -119,7 +123,8 @@ public class OrderService {
         String auditMessage = "Store order created by " + employee.getFirstName() + " " + employee.getLastName() +
                 " at " + siteTo.getSiteName() + " on " + LocalDateTime.now() +
                 ". Scheduled for delivery on " + shipDate +
-                ". " + addedItemCount + " items were automatically added due to low stock.";
+                ". " + addedItemCount + " line items were automatically added due to low stock."
+                + ". Total Quantity: " + totalAddedItems;
 
         // ✅ Save audit log **LAST**
         txnauditService.createAuditEntry(savedOrder, employee, auditMessage);
@@ -190,6 +195,7 @@ public class OrderService {
     }
 
     // === ORDER UPDATING ===
+    @Transactional
     public void updateOrderItems(OrderUpdateRequest orderUpdateRequest, String empUsername) {
         Txn txn = txnRepository.findById(orderUpdateRequest.getTxnID())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -198,15 +204,17 @@ public class OrderService {
 
         Employee employee = employeeRepository.findByUsername(empUsername).get();
 
-        // ✅ Get count of items before update
+        // ✅ Get count of line items before update (SIMPLE COUNT)
         int previousItemCount = txnItemsRepository.countByTxnID(txn.getId());
+        System.out.println("[DEBUG] Line items before update: " + previousItemCount);
 
         // ✅ Remove all existing txn items for this order before adding new ones
         txnItemsRepository.deleteByTxnID(txn);
-
+        txnItemsRepository.flush(); // ✅ Force immediate execution
 
         // ✅ Add new items
         int newItemCount = 0;
+        int newItemTotal = 0;
         for (OrderUpdateRequest.OrderItemUpdate itemUpdate : orderUpdateRequest.getItems()) {
             Item item = itemService.getItemById(itemUpdate.getItemID());
 
@@ -230,19 +238,22 @@ public class OrderService {
             txnItemsRepository.save(txnItem);
 
             newItemCount++;
+            newItemTotal += txnItem.getQuantity();
         }
 
         // ✅ Build concise audit log
         StringBuilder auditLog = new StringBuilder();
         auditLog.append("Order items updated by ").append(employee.getFirstName()).append(" ").append(employee.getLastName())
                 .append(" on ").append(LocalDateTime.now()).append(" for Order ID: ").append(txn.getId())
-                .append(". Items before update: ").append(previousItemCount)
-                .append(", Items after update: ").append(newItemCount).append(".");
+                .append(". Line Items before update: ").append(previousItemCount)
+                .append(", Line Items after update: ").append(newItemCount).append(".")
+                .append(". Total Items after update: ").append(newItemTotal);
 
         // ✅ Save audit log **LAST**
         txnauditService.createAuditEntry(txn, employee, auditLog.toString());
         System.out.println("[DEBUG] auditLog: " + auditLog.toString());
     }
+
 
     public Txn updateOrderStatus(int txnId, String status, String empUsername) {
         Txn order = getOrderById(txnId);
@@ -282,6 +293,14 @@ public class OrderService {
         Txn txn = txnRepository.findById(txnId)
                 .orElseThrow(() -> new RuntimeException("Backorder not found with ID: " + txnId));
 
+
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Backorder ID ").append(txnId).append(" updated by System ")
+                .append(" on ").append(LocalDateTime.now()).append(". ");
+
+        int totalNewItems = 0;
+        int totalUpdatedItems = 0;
+
         for (Txnitem newItem : itemsToAdd) {
             Item item = itemService.getItemById(newItem.getItemID().getId());
 
@@ -294,9 +313,16 @@ public class OrderService {
 
             if (existingTxnItem != null) {
                 // ✅ If it exists, just increase the quantity
+                int oldQuantity = existingTxnItem.getQuantity();
+
                 existingTxnItem.setQuantity(existingTxnItem.getQuantity() + newItem.getQuantity());
                 txnItemsRepository.save(existingTxnItem);
+
+                totalNewItems++;
                 System.out.println("[INFO] Updated quantity for existing item: " + item.getId());
+                auditLog.append("Updated Item ID ").append(item.getId())
+                        .append(" from ").append(oldQuantity)
+                        .append(" to ").append(existingTxnItem.getQuantity()).append(". ");
             } else {
                 // ✅ Otherwise, create a new entry
                 TxnitemId txnitemId = new TxnitemId();
@@ -308,9 +334,21 @@ public class OrderService {
                 newItem.setItemID(item);
 
                 txnItemsRepository.save(newItem);
+                totalNewItems++;
+                auditLog.append("Added new Item ID ").append(item.getId())
+                        .append(" with quantity ").append(newItem.getQuantity()).append(". ");
+
                 System.out.println("[INFO] Added new item to backorder: " + item.getId());
             }
         }
+
+
+        auditLog.append("Total Items Added: ").append(totalNewItems)
+                .append(", Total Items Updated: ").append(totalUpdatedItems).append(".");
+
+        // ✅ Save audit log
+        Employee systemUser = employeeService.getEmployeeById(1000);
+        txnauditService.createAuditEntry(txn, systemUser, auditLog.toString());
     }
 
     // === ORDER SUBMISSION & AUTO-PROCESSING ===
@@ -339,6 +377,41 @@ public class OrderService {
         StringBuilder auditLog = new StringBuilder();
         auditLog.append("Order ID ").append(txnId).append(" submitted by ")
                 .append(employee.getFirstName()).append(" ").append(employee.getLastName())
+                .append(" on ").append(LocalDateTime.now());
+
+        // ✅ Save audit log **LAST**
+        txnauditService.createAuditEntry(savedTxn, employee, auditLog.toString());
+
+
+        System.out.println("[INFO] Order " + txnId + " submitted successfully.");
+
+        return savedTxn;
+    }
+
+    public Txn autoSubmitOrder(Integer txnId) {
+        // ✅ Retrieve the order
+        Txn txn = txnRepository.findById(txnId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Ensure order is in 'NEW' status
+        if (!"NEW".equals(txn.getTxnStatus().getStatusName())) {
+            throw new RuntimeException("Only NEW orders can be submitted");
+        }
+
+        // ✅ Fetch 'SUBMITTED' status from the database
+        Txnstatus submittedStatus = txnStatusService.findByName("SUBMITTED");
+        if (submittedStatus == null) {
+            throw new RuntimeException("SUBMITTED status not found in database");
+        }
+
+        // ✅ Update order status
+        txn.setTxnStatus(submittedStatus);
+        Txn savedTxn = txnRepository.save(txn);
+
+        Employee employee = txn.getEmployeeID();
+        // ✅ Build audit log
+        StringBuilder auditLog = new StringBuilder();
+        auditLog.append("Order ID ").append(txnId).append(" automatically submitted by System (regular order cutoff)")
                 .append(" on ").append(LocalDateTime.now());
 
         // ✅ Save audit log **LAST**
@@ -501,11 +574,29 @@ public class OrderService {
             Txn txn = txnRepository.findById(txnId).orElseThrow(() ->
                     new IllegalArgumentException("Transaction not found: " + txnId));
 
+            // ✅ Convert string to LocalDate
+            LocalDateTime newShipDate = LocalDate.parse(shipDate).atStartOfDay();
+            LocalDateTime oldShipDate = txn.getShipDate(); // Capture previous date
+
+            // ✅ Fetch employee for logging
+            Employee employee = employeeRepository.findByUsername(empUsername)
+                    .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + empUsername));
+
             // ✅ Convert string to LocalDate and update
             txn.setShipDate(LocalDate.parse(shipDate).atStartOfDay());
 
             // ✅ Save the transaction
             txnRepository.save(txn);
+
+            // ✅ Build audit log message
+            String auditMessage = "Ship date updated for Order ID " + txnId
+                    + " by " + employee.getFirstName() + " " + employee.getLastName()
+                    + " on " + LocalDateTime.now()
+                    + ". Previous ship date: " + (oldShipDate != null ? oldShipDate.toLocalDate() : "None")
+                    + ", New ship date: " + newShipDate.toLocalDate();
+
+            // ✅ Save audit log
+            txnauditService.createAuditEntry(txn, employee, auditMessage);
 
             System.out.println("[SUCCESS] Ship date updated successfully for Order ID: " + txnId);
 

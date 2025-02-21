@@ -145,6 +145,16 @@ const OrderItemsManager = ({
         </Alert>
       )}
 
+      {/* ✅ Show Store Order Auto-Submission Message */}
+      {!isEmergencyOrder && (
+        <Alert severity="info" sx={{ marginBottom: 2 }}>
+          <strong>Note:</strong> All <strong>NEW</strong> store orders will be
+          automatically{" "}
+          <strong>submitted at 11:59 PM every Tuesday night</strong>. Orders
+          will be delivered the following week.
+        </Alert>
+      )}
+
       <Box sx={{ display: "flex", gap: 2, marginTop: 3 }}>
         <InventoryList
           availableItems={inventory}

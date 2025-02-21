@@ -91,4 +91,24 @@ public class HelpBlurbs {
                     + "• ✅ Toggle <b>Active</b> status to enable or disable a site.<br>"
                     + "• 💾 Click <b>'Save'</b> to finalize changes.<br><br>"
                     + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
+
+    public static final String DASHBOARD_ORDER_VIEWER_HELP =
+            "<html><br><br>📋 <b>Order Viewer</b><br><br>"
+                    + "• 🔍 Use the <b>search bar</b> to quickly find specific orders.<br>"
+                    + "• 📑 Filter orders using the <b>dropdown menus</b> to refine by status or site.<br>"
+                    + "• ✅ Check the <b>'Show Only Active Orders'</b> box to view only orders that are still in progress.<br>"
+                    + "• 📌 Click an order to <b>select it</b>, then press <b>'View/Modify'</b> for details and actions.<br>"
+                    + "• 🔄 Click <b>'Refresh'</b> to reload the latest order data.<br><br>"
+                    + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
+
+    public static final String VIEW_RECEIVE_ORDER_HELP =
+            "<html><br><br>📦 <b>View & Receive Orders</b><br><br>"
+                    + "• 👀 View order details, including <b>items, quantities, and order status</b>.<br>"
+                    + "• 🔄 <b>Roles affect actions:</b> Different users can process orders at different times.<br>"
+                    + "• ✅ Store Managers can <b>review and submit orders</b>.<br>"
+                    + "• 🚚 Warehouse Managers can <b>receive, fulfill, and backorder items</b>.<br>"
+                    + "• 📝 Use the <b>Notes</b> section to add comments before processing.<br>"
+                    + "• 📋 Backorders are created automatically for unfulfilled items.<br>"
+                    + "• 🚀 Click <b>'Confirm Received'</b> to process an order once it arrives.<br><br>"
+                    + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
 }
