@@ -43,10 +43,6 @@ public class TxnStatus {
 
     @Override
     public String toString() {
-        return "TxnStatus{" +
-                "statusName='" + statusName + '\'' +
-                ", statusDescription='" + statusDescription + '\'' +
-                ", active=" + active +
-                '}';
+        return statusName;
     }
 }

@@ -9,12 +9,15 @@ import javax.swing.Timer;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -95,6 +98,13 @@ public class DashboardForm {
     private JButton btnOrdersHelp;
     private JTable tblOrders;
     private JButton btnOrdersViewReceive;
+    private JPanel pnlWarehouseMgrNotifications;
+    private JLabel lblWHMgrNotificationsLine1;
+    private JLabel lblWHMgrNotificationsLine2;
+    private JComboBox cmbOrdersStatus;
+    private JComboBox cmbOrdersLocation;
+    private JLabel lblOrderSite;
+    private JLabel lblOrderStatus;
 
     // =================== FRAME VARIABLES ===================
 
@@ -269,6 +279,8 @@ public class DashboardForm {
             allTxns = TxnRequests.fetchAllOrders();
             btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
+            pnlWarehouseMgrNotifications.setVisible(true);
+            updateWHMgrNotifications();
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
@@ -276,27 +288,42 @@ public class DashboardForm {
             allTxns = TxnRequests.fetchAllOrders();
             btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
+            pnlWarehouseMgrNotifications.setVisible(true);
+            updateWHMgrNotifications();
         }
 
-        if (Arrays.asList(accessPosition).contains("Warehouse Worker")) {
+        if (Arrays.asList(accessPosition).contains("Warehouse Worker") && Arrays.asList(accessPosition).size() == 1) {
             allTxns = TxnRequests.fetchAllOrders();
             btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
+            loadStatusComboBox();
+            loadOrdersLocationComboBox();
+            cmbOrdersLocation.setSelectedItem("ALL");
+            cmbOrdersStatus.setVisible(false);
+            pnlWarehouseMgrNotifications.setVisible(false);
+            cmbOrdersLocation.setVisible(false);
+            lblOrderSite.setVisible(false);
+            lblOrderStatus.setVisible(false);
         }
 
-        if (Arrays.asList(accessPosition).contains("Warehouse Manager") || Arrays.asList(accessPosition).contains("Administator") || Arrays.asList(accessPosition).contains("Store Manager")) {
+        if (Arrays.asList(accessPosition).contains("Warehouse Manager") || Arrays.asList(accessPosition).contains("Administrator") || Arrays.asList(accessPosition).contains("Store Manager")) {
             inventorySite = SessionManager.getInstance().getSite();
             loadInventoryBySite(inventorySite.getId());
+            loadStatusComboBox();
+            loadOrdersLocationComboBox();
+            cmbOrdersLocation.setSelectedItem("ALL");
         }
 
         if (Arrays.asList(accessPosition).contains("Store Manager") && !Arrays.asList(accessPosition).contains("Warehouse Manager") && !Arrays.asList(accessPosition).contains("Administrator")) {
             inventorySite = SessionManager.getInstance().getSite();
             loadInventoryBySite(inventorySite.getId());
 
-            // ✅ Fetch only orders for this site
-            allTxns = TxnRequests.fetchOrdersBySite(inventorySite.getId());
+            //  Fetch only orders for this site
+            //allTxns = TxnRequests.fetchOrdersBySite(inventorySite.getId());
+            allTxns = TxnRequests.fetchAllOrders();
             btnOrdersViewReceive.setText("View Order");
             orderViewReceiveMode = "VIEW";
+            cmbOrdersLocation.setSelectedItem(inventorySite.getSiteName());
         }
     }
 
@@ -1005,6 +1032,85 @@ public class DashboardForm {
 
     }
 
+    private void loadStatusComboBox(){
+        //  Clear existing items first
+        cmbOrdersStatus.removeAllItems();
+
+        //  Add "ALL" option at the top
+        cmbOrdersStatus.addItem("ALL");
+
+        //  Fetch statuses and populate the combo box
+        List<TxnStatus> statuses = TxnRequests.fetchTxnStatuses();
+        for (TxnStatus status : statuses) {
+            cmbOrdersStatus.addItem(status.getStatusName());
+        }
+
+        //  Set "ALL" as the default selection
+        cmbOrdersStatus.setSelectedItem("ALL");
+
+
+        //  Add listener to fire updateOrdersTableBySearch() on selection change
+        cmbOrdersStatus.addActionListener(e -> updateOrdersTableBySearch());
+
+        System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
+    }
+
+    private void loadOrdersLocationComboBox() {
+        // ✅ Clear any existing items
+        cmbOrdersLocation.removeAllItems();
+
+        // ✅ Add "ALL" option for Admins/WHMgrs
+        cmbOrdersLocation.addItem("ALL");
+
+        // ✅ Fetch sites and populate combo box
+        List<Site> sites = SiteRequests.fetchSites();
+        for (Site site : sites) {
+            cmbOrdersLocation.addItem(site.getSiteName());
+        }
+
+        // ✅ Add listener to update orders table when selection changes
+        cmbOrdersLocation.addActionListener(e -> updateOrdersTableBySearch());
+
+        System.out.println("[INFO] Loaded orders location combo box with " + sites.size() + " sites.");
+    }
+
+    private void updateWHMgrNotifications() {
+        // Fetch roles as a single string and split into an array
+        String permissionLevels = SessionManager.getInstance().getPermissionLevel(); // Example: "Administrator, Warehouse Manager"
+        String[] roles = permissionLevels.split(",\\s*"); // Split by ", " (comma followed by optional whitespace)
+        // ✅ Check if user is an Admin or Warehouse Manager
+        boolean isWHMgrOrAdmin = Arrays.asList(roles).contains("Administrator") || Arrays.asList(roles).contains("Warehouse Manager");
+
+        if (!isWHMgrOrAdmin) {
+            lblWHMgrNotificationsLine1.setText(""); // Hide notifications if not WHMgr/Admin
+            lblWHMgrNotificationsLine2.setText("");
+            return;
+        }
+
+        // ✅ Count submitted orders
+        long submittedEmergencyOrders = allTxns.stream()
+                .filter(order -> "SUBMITTED".equalsIgnoreCase(order.getTxnStatus().getStatusName()))
+                .filter(order -> "Emergency Order".equalsIgnoreCase(order.getTxnType().getTxnType()))
+                .count();
+
+        long submittedStoreOrders = allTxns.stream()
+                .filter(order -> "SUBMITTED".equalsIgnoreCase(order.getTxnStatus().getStatusName()))
+                .filter(order -> "Store Order".equalsIgnoreCase(order.getTxnType().getTxnType()))
+                .count();
+
+        // ✅ Update UI Labels
+        lblWHMgrNotificationsLine1.setText("🚨 " + submittedEmergencyOrders + " Emergency Order(s) need processing.");
+        lblWHMgrNotificationsLine2.setText("📦 " + submittedStoreOrders + " Store Order(s) need processing.");
+
+        // ✅ Hide labels if there are no submitted orders
+        if (submittedEmergencyOrders == 0) {
+            lblWHMgrNotificationsLine1.setText(""); // Clear label if no emergencies
+        }
+        if (submittedStoreOrders == 0) {
+            lblWHMgrNotificationsLine2.setText(""); // Clear label if no store orders
+        }
+    }
+
     // =================== ITEM MANAGEMENT ===================
 
     /**
@@ -1527,8 +1633,8 @@ public class DashboardForm {
         for (Inventory inv : inventoryList) {
             Object[] rowData = {
                     inv.getItemID(),
-                    inv.getItem().getName(),  // ✅ Now using the actual item object
-                    inv.getItem().getSku(),   // ✅ Added SKU
+                    inv.getItem().getName(),  //  Now using the actual item object
+                    inv.getItem().getSku(),   //  Added SKU
                     inv.getQuantity(),
                     inv.getReorderThreshold(),
                     inv.getOptimumThreshold(),
@@ -1573,8 +1679,8 @@ public class DashboardForm {
 
         for (Inventory inv : allInventory) {
             if (String.valueOf(inv.getItemID()).contains(searchQuery) ||  // Match Item ID
-                    inv.getItem().getName().toLowerCase().contains(searchQuery) ||  // ✅ Match Item Name
-                    inv.getItem().getSku().toLowerCase().contains(searchQuery) ||  // ✅ Match SKU
+                    inv.getItem().getName().toLowerCase().contains(searchQuery) ||  //  Match Item Name
+                    inv.getItem().getSku().toLowerCase().contains(searchQuery) ||  //  Match SKU
                     String.valueOf(inv.getQuantity()).contains(searchQuery) ||  // Match Quantity
                     String.valueOf(inv.getReorderThreshold()).contains(searchQuery) ||  // Match Reorder Threshold
                     String.valueOf(inv.getOptimumThreshold()).contains(searchQuery) ||  // Match Optimum Threshold
@@ -1590,50 +1696,98 @@ public class DashboardForm {
      * Updates the orders table based on the search field input.
      */
     private void updateOrdersTableBySearch() {
+        if (allTxns == null) {
+            return;
+        }
         boolean showActiveOnly = chkNewOrdersOnly.isSelected();
 
-        List<Txn> filteredOrders = new ArrayList<>();
+        // ✅ Ensure selectedStatus is never null (default to "ALL")
+        Object selectedStatusObj = cmbOrdersStatus.getSelectedItem();
+        String selectedStatus = (selectedStatusObj != null) ? selectedStatusObj.toString() : "ALL";
+
+        // ✅ Ensure selectedLocation is never null (default to "ALL")
+        Object selectedLocationObj = cmbOrdersLocation.getSelectedItem();
+        String selectedLocation = (selectedLocationObj != null) ? selectedLocationObj.toString() : "ALL";
+
+        // ✅ Determine if user is a Warehouse Worker
+        SessionManager session = SessionManager.getInstance();
+        boolean isWarehouseWorker = Arrays.asList(accessPosition).contains("Warehouse Worker") && Arrays.asList(accessPosition).size() == 1;
+
 
         String search = txtOrdersSearch.getText().trim().toLowerCase();
+        List<Txn> filteredOrders = new ArrayList<>();
 
         for (Txn order : allTxns) {
-            if (showActiveOnly && order.getTxnStatus().getStatusName().equalsIgnoreCase("CANCELLED")) {
-                continue; // Skip cancelled orders when active filter is ON
+            String orderStatus = order.getTxnStatus().getStatusName();
+            String orderSite = order.getSiteTo().getSiteName();
+
+            // ✅ Ignore CANCELLED orders when "Show Active Only" is checked
+            if (showActiveOnly && "CANCELLED".equalsIgnoreCase(orderStatus)) {
+                continue;
             }
 
+            // ✅ Apply Status Filter (Skip if "ALL" is selected)
+            if (!"ALL".equalsIgnoreCase(selectedStatus) && !orderStatus.equalsIgnoreCase(selectedStatus)) {
+                continue;
+            }
+
+            // ✅ Apply Location Filter (Skip if "ALL" is selected)
+            if (!"ALL".equalsIgnoreCase(selectedLocation) && !orderSite.equalsIgnoreCase(selectedLocation)) {
+                continue;
+            }
+
+            // ✅ Warehouse Worker filter (Only see RECEIVED and ASSEMBLING orders)
+            if (isWarehouseWorker && !("RECEIVED".equalsIgnoreCase(orderStatus) || "ASSEMBLING".equalsIgnoreCase(orderStatus))) {
+                continue;
+            }
+
+            // ✅ Get formatted dates
+            String createdDateFormatted = formatDate(order.getCreatedDate());
+            String shipDateFormatted = order.getShipDate() != null ? formatDate(order.getShipDate()) : "N/A";
+
+            // ✅ Apply Search Filter (Include formatted dates)
             if (search.isEmpty() ||
                     String.valueOf(order.getId()).contains(search) ||
                     order.getTxnType().getTxnType().toLowerCase().contains(search) ||
-                    order.getTxnStatus().getStatusName().toLowerCase().contains(search) ||
-                    order.getSiteTo().getSiteName().toLowerCase().contains(search) ||
+                    orderStatus.toLowerCase().contains(search) ||
+                    orderSite.toLowerCase().contains(search) ||
                     (order.getEmployee() != null && order.getEmployee().getUsername().toLowerCase().contains(search)) ||
-                    order.getBarCode().toLowerCase().contains(search)) {
+                    order.getBarCode().toLowerCase().contains(search) ||
+                    createdDateFormatted.toLowerCase().contains(search) ||  // ✅ Search Created Date
+                    shipDateFormatted.toLowerCase().contains(search)) {    // ✅ Search Ship Date
 
                 filteredOrders.add(order);
             }
         }
 
-        // ✅ Sort orders with NEW Emergency Orders first, then NEW Store Orders, then by creation date
+        // ✅ Sort Orders: SUBMITTED (Bold) → Emergency Orders → Store Orders → Everything Else (Latest First)
         filteredOrders.sort((o1, o2) -> {
-            boolean o1Emergency = o1.getTxnType().getTxnType().equalsIgnoreCase("Emergency Order");
-            boolean o2Emergency = o2.getTxnType().getTxnType().equalsIgnoreCase("Emergency Order");
-            boolean o1New = o1.getTxnStatus().getStatusName().equalsIgnoreCase("NEW");
-            boolean o2New = o2.getTxnStatus().getStatusName().equalsIgnoreCase("NEW");
+            boolean o1Submitted = "SUBMITTED".equalsIgnoreCase(o1.getTxnStatus().getStatusName());
+            boolean o2Submitted = "SUBMITTED".equalsIgnoreCase(o2.getTxnStatus().getStatusName());
+            boolean o1Emergency = "Emergency Order".equalsIgnoreCase(o1.getTxnType().getTxnType());
+            boolean o2Emergency = "Emergency Order".equalsIgnoreCase(o2.getTxnType().getTxnType());
+            boolean o1StoreOrder = "Store Order".equalsIgnoreCase(o1.getTxnType().getTxnType());
+            boolean o2StoreOrder = "Store Order".equalsIgnoreCase(o2.getTxnType().getTxnType());
 
-            if (o1New && o2New) {
-                if (o1Emergency && !o2Emergency) return -1;
-                if (!o1Emergency && o2Emergency) return 1;
-            } else if (o1New) {
-                return -1;
-            } else if (o2New) {
-                return 1;
-            }
+            // 🔹 Step 1: SUBMITTED Orders should always be at the top (bold)
+            if (o1Submitted && !o2Submitted) return -1;
+            if (!o1Submitted && o2Submitted) return 1;
 
-            return o2.getCreatedDate().compareTo(o1.getCreatedDate()); // Latest first
+            // 🔹 Step 2: Emergency Orders come before Store Orders
+            if (o1Emergency && !o2Emergency) return -1;
+            if (!o1Emergency && o2Emergency) return 1;
+
+            // 🔹 Step 3: Store Orders come before other types
+            if (o1StoreOrder && !o2StoreOrder) return -1;
+            if (!o1StoreOrder && o2StoreOrder) return 1;
+
+            // 🔹 Step 4: If all else is equal, sort by Created Date (latest first)
+            return o2.getCreatedDate().compareTo(o1.getCreatedDate());
         });
 
         populateOrdersTable(filteredOrders);
     }
+
 
     /**
      * Populates the orders table with provided order data.
@@ -1641,12 +1795,12 @@ public class DashboardForm {
      * @param filteredOrders List of orders to display.
      */
     private void populateOrdersTable(List<Txn> filteredOrders) {
-        String[] columns = {"ID", "Type", "Status", "Site", "Created Date", "Ship Date", "Employee", "Barcode"};
+        String[] columns = {"ID", "Type", "Status", "Site", "Created Date", "Ship Date", "Created By Employee", "Barcode"};
 
         DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // ✅ Make all cells non-editable
+                return false; // Make all cells non-editable
             }
         };
 
@@ -1656,9 +1810,9 @@ public class DashboardForm {
                     order.getTxnType().getTxnType(),
                     order.getTxnStatus().getStatusName(),
                     order.getSiteTo().getSiteName(),
-                    order.getCreatedDate(),
-                    order.getShipDate() != null ? order.getShipDate() : "N/A",
-                    order.getEmployee().getId() != null ? order.getEmployee().getUsername() : "N/A",
+                    formatDate(order.getCreatedDate()),
+                    order.getShipDate() != null ? formatDate(order.getShipDate()) : "N/A",
+                    (order.getEmployee() != null && order.getEmployee().getId() != null) ? order.getEmployee().getUsername() : "N/A",
                     order.getBarCode()
             };
             tableModel.addRow(rowData);
@@ -1666,15 +1820,15 @@ public class DashboardForm {
 
         tblOrders.setModel(tableModel);
 
-        // ✅ Hide txnID column (first column)
+        // 🔹 Hide txnID column (first column)
         tblOrders.getColumnModel().getColumn(0).setMinWidth(0);
         tblOrders.getColumnModel().getColumn(0).setMaxWidth(0);
         tblOrders.getColumnModel().getColumn(0).setWidth(0);
 
-        // ✅ Allow selection of entire rows only
+        // 🔹 Allow selection of entire rows only
         tblOrders.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // ✅ Listen for row selection and update selectedTxnID
+        // 🔹 Listen for row selection and update selectedTxnID
         tblOrders.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = tblOrders.getSelectedRow();
@@ -1685,6 +1839,62 @@ public class DashboardForm {
                 }
             }
         });
+
+        // 🔹 Apply bold styling ONLY to the "Status" column if status is SUBMITTED
+        tblOrders.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                String status = value.toString();
+                if ("SUBMITTED".equalsIgnoreCase(status)) {
+                    label.setFont(label.getFont().deriveFont(Font.BOLD)); // 🔹 Bold ONLY the "Status" column
+                }
+                return label;
+            }
+        });
+
+        // 🔹 Auto-size columns for better visibility
+        autoResizeColumns(tblOrders);
+    }
+
+    /**
+     * 🔹 Auto-resize table columns based on content
+     */
+    private void autoResizeColumns(JTable table) {
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        for (int column = 0; column < table.getColumnCount(); column++) {
+            int width = 100; // Default minimum width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                TableCellRenderer renderer = table.getCellRenderer(row, column);
+                Component comp = table.prepareRenderer(renderer, row, column);
+                width = Math.max(comp.getPreferredSize().width + 10, width); // Add padding
+            }
+            table.getColumnModel().getColumn(column).setPreferredWidth(width);
+        }
+    }
+
+    private String formatDate(LocalDateTime dateTime) {
+        if (dateTime == null) return "N/A"; // Handle null dates
+
+        // Extract day of the month
+        int day = dateTime.getDayOfMonth();
+
+        // Determine proper suffix (st, nd, rd, th)
+        String suffix;
+        if (day >= 11 && day <= 13) {
+            suffix = "th"; // 11th, 12th, 13th are special cases
+        } else {
+            switch (day % 10) {
+                case 1: suffix = "st"; break;
+                case 2: suffix = "nd"; break;
+                case 3: suffix = "rd"; break;
+                default: suffix = "th";
+            }
+        }
+
+        // Format the date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMM d'" + suffix + "', yyyy");
+        return dateTime.format(formatter);
     }
 
     // =================== SESSION MANAGEMENT AND LOGOUT ===================
@@ -1839,6 +2049,7 @@ public class DashboardForm {
 
     // =================== INTERNAL CLASS ===================
 
+
     public class BoldTableCellRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -1850,4 +2061,6 @@ public class DashboardForm {
             return label;
         }
     }
+
+
 }

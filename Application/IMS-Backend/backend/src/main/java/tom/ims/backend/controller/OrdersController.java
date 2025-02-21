@@ -8,10 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.*;
 import tom.ims.backend.repository.TxnRepository;
-import tom.ims.backend.service.InventoryService;
-import tom.ims.backend.service.OrderService;
-import tom.ims.backend.service.ItemService;
+import tom.ims.backend.service.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +22,10 @@ public class OrdersController {
     @Autowired private OrderService orderService;
     @Autowired private InventoryService inventoryService;
     @Autowired private TxnRepository txnRepository;
+    @Autowired private TxnTypeService txnTypeService;
+    @Autowired private TxnStatusService statusService;
+    @Autowired
+    private TxnStatusService txnStatusService;
 
     // ======================================================
     // 1️⃣ GENERAL ORDER RETRIEVAL & MANAGEMENT
@@ -343,4 +346,16 @@ public class OrdersController {
         return ResponseEntity.ok(reorderItems);
     }
 
+    @GetMapping("/allorderstatuses")
+    public ResponseEntity<List<Txnstatus>> getAllOrderStatues() {
+        List<Txnstatus> alltypes = new ArrayList<>();
+        try {
+            alltypes = txnStatusService.findAll();
+            System.out.println("[DEBUG] Found " + alltypes.size() + " transaction types");
+            return ResponseEntity.ok(alltypes);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alltypes);
+        }
+    }
 }
