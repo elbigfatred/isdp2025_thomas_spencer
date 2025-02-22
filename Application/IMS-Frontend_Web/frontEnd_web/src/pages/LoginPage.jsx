@@ -12,7 +12,10 @@ import {
   FormControlLabel,
   createTheme,
   ThemeProvider,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 import bullseyeLogo from "../assets/bullseye1.png";
 
 const LoginPage = ({ onLogin, darkMode, setDarkMode }) => {
@@ -83,7 +86,7 @@ const LoginPage = ({ onLogin, darkMode, setDarkMode }) => {
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 2,
-            color: darkMode ? "#ffffff" : "#333", // Ensures text is visible in both modes
+            color: darkMode ? "#ffffff" : "#333",
           }}
         >
           <FormControlLabel
@@ -98,7 +101,7 @@ const LoginPage = ({ onLogin, darkMode, setDarkMode }) => {
                 sx={{
                   fontSize: "0.9rem",
                   fontWeight: 500,
-                  color: darkMode ? "#ffffff" : "#333", // Adjusts dynamically
+                  color: darkMode ? "#ffffff" : "#333",
                 }}
               >
                 Dark Mode
@@ -116,8 +119,23 @@ const LoginPage = ({ onLogin, darkMode, setDarkMode }) => {
             width: 350,
             backgroundColor: darkMode ? "#333" : "#ffffff",
             color: darkMode ? "#fff" : "#000",
+            position: "relative",
           }}
         >
+          {/* ✅ Help Icon Positioned Top Right */}
+          <Tooltip title="Enter your username and password to log in. If you forget your password, contact an administrator.">
+            <IconButton
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                color: darkMode ? "#ffffff" : "#333",
+              }}
+            >
+              <HelpOutlineIcon />
+            </IconButton>
+          </Tooltip>
+
           {/* Title */}
           <Typography variant="h6" sx={{ fontWeight: "bold", marginBottom: 1 }}>
             Bullseye Inventory Management System
