@@ -13,7 +13,11 @@ import {
   Box,
   Typography,
   useTheme,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
 
 const OrderItemsList = ({
   orderItems = [],
@@ -67,20 +71,33 @@ const OrderItemsList = ({
 
   return (
     <Box>
-      {/* ✅ Title */}
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        color="primary"
-        sx={{
-          textTransform: "uppercase",
-          letterSpacing: 1.2,
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        Current Cart
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {/* ✅ Title */}
+        <Typography
+          variant="h4"
+          fontWeight="bold"
+          color="primary"
+          sx={{
+            textTransform: "uppercase",
+            letterSpacing: 1.2,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Current Cart
+        </Typography>
+
+        {/* ✅ Help Tooltip */}
+        <Tooltip
+          title="This section displays all items currently added to your order.
+           You can modify quantities, remove items, or proceed with the order submission."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
       {/* ✅ Search Bar */}
       <TextField

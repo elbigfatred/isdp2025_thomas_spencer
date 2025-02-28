@@ -196,6 +196,17 @@ public class EditInventoryForm {
         int updatedReorderThreshold = (Integer) spinner1.getValue();
         int updatedOptimumThreshold = (Integer) spinner2.getValue();
 
+        if(updatedOptimumThreshold < updatedReorderThreshold) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Optimum threshold must be higher than Reorder threshold.",
+                    "Invalid Input",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            spinner1.transferFocus();
+            return;
+        }
+
         // Log the values retrieved from UI components
         System.out.println("[DEBUG] Updated Reorder Threshold: " + updatedReorderThreshold);
         System.out.println("[DEBUG] Updated Optimum Threshold: " + updatedOptimumThreshold);

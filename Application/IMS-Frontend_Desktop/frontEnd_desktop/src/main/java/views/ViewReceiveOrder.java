@@ -694,7 +694,6 @@ public class ViewReceiveOrder {
 
         // ✅ Adjust spinner step based on caseSize from itemMap
         if (itemMap.containsKey(itemID)) {
-
             int caseSize = itemMap.get(itemID).getCaseSize();
             System.out.println("[INFO] Case size: " + caseSize);
             setSpinnerStepSize(caseSize);
@@ -718,6 +717,15 @@ public class ViewReceiveOrder {
             // ✅ Get new quantity from spinner
             int newQuantity = (int) spnOrderQuantity.getValue();
             TxnItem selectedItem = txnItems.get(selectedItemIndex);
+            int stepSize = (int) ((SpinnerNumberModel) spnOrderQuantity.getModel()).getStepSize();
+            setSpinnerStepSize(stepSize);
+
+            // ✅ Ensure the new quantity is a multiple of the step size and at least 0
+            if (newQuantity < 0) {
+                newQuantity = 0; // Prevent negative values
+            } else {
+                newQuantity = Math.round((float) newQuantity / stepSize) * stepSize; // Snap to nearest multiple
+            }
 
             // ✅ Update quantity in memory
             selectedItem.setQuantity(newQuantity);
@@ -739,6 +747,9 @@ public class ViewReceiveOrder {
         SpinnerNumberModel model = (SpinnerNumberModel) spnOrderQuantity.getModel();
         model.setStepSize(stepSize);
         model.setMinimum(stepSize);
+
+        // Disable manual input (forces users to use spinner buttons)
+        ((JSpinner.DefaultEditor) spnOrderQuantity.getEditor()).getTextField().setEditable(false);
     }
 
     private void setupDatePicker() {
@@ -896,23 +907,24 @@ public class ViewReceiveOrder {
         lblWeight.setText("Total Weight: " + String.format("%.2f", totalWeight) + " kg");
     }
 
-}
 
-class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
-    private final String datePattern = "yyyy-MM-dd";
-    private final SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
+    class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+        private final String datePattern = "yyyy-MM-dd";
+        private final SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
 
-    @Override
-    public Object stringToValue(String text) throws ParseException {
-        return dateFormatter.parse(text);
-    }
-
-    @Override
-    public String valueToString(Object value) throws ParseException {
-        if (value != null) {
-            Calendar cal = (Calendar) value;
-            return dateFormatter.format(cal.getTime());
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            return dateFormatter.parse(text);
         }
-        return "";
+
+        @Override
+        public String valueToString(Object value) throws ParseException {
+            if (value != null) {
+                Calendar cal = (Calendar) value;
+                return dateFormatter.format(cal.getTime());
+            }
+            return "";
+        }
     }
 }
+

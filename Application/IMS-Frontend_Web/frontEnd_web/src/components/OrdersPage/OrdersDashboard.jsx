@@ -7,7 +7,10 @@ import {
   MenuItem,
   Button,
   Stack,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // Help Icon
 import OrderHistory from "./OrderHistory"; // View orders
 import OrderForm from "./OrderForm"; // Create/edit orders
 import axios from "axios";
@@ -72,9 +75,19 @@ const OrdersDashboard = ({ user }) => {
         alignItems="center"
         sx={{ marginBottom: 2 }}
       >
-        <Typography variant="h4">
-          {isAdminOrWHMgr ? "Warehouse Order Management" : "Store Orders"}
-        </Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="h4">
+            {isAdminOrWHMgr ? "Warehouse Order Management" : "Store Orders"}
+          </Typography>
+          <Tooltip
+            title="This dashboard allows you to view, create, and manage store and emergency orders. "
+            arrow
+          >
+            <IconButton>
+              <HelpOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         <Button variant="contained" color="primary" onClick={refreshOrders}>
           Refresh Dashboard
@@ -83,7 +96,17 @@ const OrdersDashboard = ({ user }) => {
 
       {isAdminOrWHMgr && (
         <Box sx={{ marginBottom: 2 }}>
-          <Typography variant="h6">Select a Site</Typography>
+          <Stack direction="row" alignItems="center" gap={1} mb={1}>
+            <Typography variant="h6">Select a Site</Typography>
+            <Tooltip
+              title="Admins and Warehouse Managers can select a specific site or choose 'All Sites' to view all orders."
+              arrow
+            >
+              <IconButton>
+                <HelpOutlineIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
           <Select value={selectedSite} onChange={handleSiteChange} fullWidth>
             <MenuItem value="ALL">All Sites</MenuItem>
             {availableSites.map((site) => (

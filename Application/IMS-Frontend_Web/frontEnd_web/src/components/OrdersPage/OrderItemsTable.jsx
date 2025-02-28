@@ -13,6 +13,8 @@ import {
   Box,
 } from "@mui/material";
 
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
+
 const OrderItemTable = ({ items }) => {
   const [searchQuery, setSearchQuery] = useState("");
 

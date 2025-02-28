@@ -8,8 +8,11 @@ import {
   Button,
   ToggleButton,
   ToggleButtonGroup,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import OrderItemsManager from "./OrderItemsManager";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
 
 const OrderForm = ({
   user,
@@ -141,8 +144,19 @@ const OrderForm = ({
 
   return (
     <Box sx={{ marginTop: 3 }}>
-      <Typography variant="h6">Order Editor</Typography>
-
+      <Box display="flex" alignItems="center" gap={0} mb={1}>
+        <Typography variant="h6">Order Editor</Typography>
+        <Tooltip
+          title="Here you can create and manage store orders and emergency orders for your store.
+          Toggle between Store Order and Emergency Order to create different types of orders.
+          Orders will automatically be shown if there is an active order for the selected store."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       {checkingActiveOrder && (
         <Typography>Checking for active orders...</Typography>
       )}

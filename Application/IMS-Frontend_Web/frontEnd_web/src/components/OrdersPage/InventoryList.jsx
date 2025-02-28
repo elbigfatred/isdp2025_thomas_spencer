@@ -16,7 +16,11 @@ import {
   CircularProgress,
   FormControlLabel,
   Switch,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
 
 const InventoryList = ({
   availableItems,
@@ -37,6 +41,7 @@ const InventoryList = ({
 
   // ✅ Filter items based on search input AND toggle state
   const filteredItems = useMemo(() => {
+    console.log(orderItems);
     return availableItems
       .filter(
         (inventory) =>
@@ -76,6 +81,17 @@ const InventoryList = ({
         >
           Available Inventory
         </Typography>
+
+        <Tooltip
+          title="This table displays all available inventory for the current site. 
+             Use the search bar to filter items and toggle low stock mode to see only understocked items."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
+
         <FormControlLabel
           control={
             <Switch
@@ -83,12 +99,12 @@ const InventoryList = ({
               onChange={(e) => setShowLowStockOnly(e.target.checked)}
             />
           }
-          label="Items Under Optimum Threshold Only"
+          label="Under Optimum Threshold Only"
           sx={{ whiteSpace: "nowrap" }}
         />
       </Box>
 
-      {/* ✅ Search Bar */}
+      {/*  Search Bar */}
       <TextField
         label="Search Site Inventory"
         variant="outlined"
@@ -98,19 +114,7 @@ const InventoryList = ({
         onChange={(e) => setSearchQuery(e.target.value)}
       />
 
-      {/* ✅ Toggle for Low Stock Items */}
-      {/* <FormControlLabel
-        control={
-          <Switch
-            checked={showLowStockOnly}
-            onChange={(e) => setShowLowStockOnly(e.target.checked)}
-          />
-        }
-        label="Show Only Low Stock Items"
-        sx={{ marginBottom: 2 }}
-      /> */}
-
-      {/* ✅ Inventory Table */}
+      {/*  Inventory Table */}
       <TableContainer
         component={Paper}
         sx={{ maxHeight: "600px", minHeight: "600px", overflowY: "auto" }}
@@ -177,7 +181,7 @@ const InventoryList = ({
                         onClick={() => onAddItem(inventory.item)}
                         disabled={isDisabled}
                       >
-                        {isDisabled ? "Limit Reached" : "Add Item +"}
+                        {isDisabled ? "Limit Reached" : "Add Case +"}
                       </Button>
                     </TableCell>
                   </TableRow>

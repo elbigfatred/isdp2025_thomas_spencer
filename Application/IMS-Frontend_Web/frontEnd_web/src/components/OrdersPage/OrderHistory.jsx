@@ -16,8 +16,11 @@ import {
   TextField,
   Switch,
   FormControlLabel,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
-import OrderDetailsModal from "./OrderDetailsModal"; // ✅ Import modal component
+import OrderDetailsModal from "./OrderDetailsModal"; //  Import modal component
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
 
 const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
   const [orders, setOrders] = useState([]);
@@ -99,7 +102,18 @@ const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
 
   return (
     <Box>
-      <Typography variant="h6">Order History</Typography>
+      {/* ✅ Order History Section with Help Icon */}
+      <Box display="flex" alignItems="center" gap={0}>
+        <Typography variant="h6">Order History</Typography>
+        <Tooltip
+          title="This section shows a list of past orders for the selected site. Use the search bar to filter orders."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
       {error && <Typography color="error">{error}</Typography>}
       {loading && <Typography>Loading orders...</Typography>}

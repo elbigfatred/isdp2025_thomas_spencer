@@ -11,9 +11,12 @@ import {
   FormControlLabel,
   createTheme,
   ThemeProvider,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 
 import bullseyeLogo from "../assets/bullseye1.png";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 
 const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
   const [activePage, setActivePage] = useState("sites");
@@ -52,7 +55,7 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
           }}
         >
           {/* Logo */}
-          <Box sx={{ width: "80%", marginBottom: 2 }}>
+          <Box sx={{ width: "80%", marginBottom: 1 }}>
             <img
               src={bullseyeLogo}
               alt="Bullseye Logo"
@@ -63,7 +66,21 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
           <Typography variant="h6" sx={{ marginBottom: 2 }}>
             Dashboard
           </Typography>
-
+          {/*  Help Tooltip */}
+          <Tooltip
+            title="This is the Bullseye Dashboard.
+             You can view different tables, and operations pertinent to your role here. 
+             Select a tab on the left to navigate."
+            arrow
+          >
+            <IconButton
+              sx={{
+                marginBottom: 1,
+              }}
+            >
+              <HelpOutlineIcon />
+            </IconButton>
+          </Tooltip>
           {/* Dark Mode Toggle */}
           <FormControlLabel
             control={

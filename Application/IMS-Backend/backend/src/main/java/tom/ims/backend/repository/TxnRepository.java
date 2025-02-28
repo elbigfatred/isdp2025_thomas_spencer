@@ -27,7 +27,7 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
     // ✅ Fetch all orders with a specific status
     List<Txn> findByTxnStatus_StatusName(String status);
 
-    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Emergency Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
+    @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = ?1 AND t.txnType.txnType = 'Emergency Order' AND t.txnStatus.statusName IN ('NEW','SUBMITTED','RECEIVED','ASSEMBLED','ASSEMBLING','IN TRANSIT','DELIVERED')")
     List<Txn> findActiveEmergencyOrdersBySite(Integer siteId);
 
     @Query("SELECT t FROM Txn t WHERE t.txnType.txnType IN ('Store Order', 'Emergency Order')")

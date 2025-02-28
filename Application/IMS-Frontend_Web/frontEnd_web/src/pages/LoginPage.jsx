@@ -122,8 +122,12 @@ const LoginPage = ({ onLogin, darkMode, setDarkMode }) => {
             position: "relative",
           }}
         >
-          {/* ✅ Help Icon Positioned Top Right */}
-          <Tooltip title="Enter your username and password to log in. If you forget your password, contact an administrator.">
+          {/*  Help Icon Positioned Top Right */}
+          <Tooltip
+            title="Enter your username and password to log in. 
+          If you forget your password, please use the secure Bullseye Desktop Application to reset your password. 
+          If you continue to have issues, please contact an administrator."
+          >
             <IconButton
               sx={{
                 position: "absolute",

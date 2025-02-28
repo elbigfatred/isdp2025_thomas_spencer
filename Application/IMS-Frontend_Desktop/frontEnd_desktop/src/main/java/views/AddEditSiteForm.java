@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.net.URL;
+import java.sql.SQLOutput;
 import java.util.List;
 import java.util.Objects;
 
@@ -76,6 +77,8 @@ public class AddEditSiteForm {
             frame.setSize(600, 570);
             this.selectedSite = siteToModify;
         }
+
+        mode = usage;
 
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -201,6 +204,13 @@ public class AddEditSiteForm {
         }
         else {
             txtCountry.setText("Canada");
+            // Set default province selection directly
+            for (int i = 0; i < cmbProvince.getItemCount(); i++) {
+                if ("NB".equals(((Province) cmbProvince.getItemAt(i)).getProvinceId())) {
+                    cmbProvince.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
         txtCountry.setEnabled(false);
     }
@@ -269,9 +279,10 @@ public class AddEditSiteForm {
             String editFailureMessage = "Failed to modify employee. Please try again.";
 
             if (success) {
+                System.out.println(mode);
                 JOptionPane.showMessageDialog(
                         frame,
-                        mode == "ADD" ? addSuccessMessage : editSuccessMessage,
+                        Objects.equals(mode, "ADD") ? addSuccessMessage : editSuccessMessage,
                         "Success",
                         JOptionPane.INFORMATION_MESSAGE
                 );
@@ -279,7 +290,7 @@ public class AddEditSiteForm {
             } else {
                 JOptionPane.showMessageDialog(
                         frame,
-                        mode == "EDIT" ? editFailureMessage : addFailureMessage,
+                        Objects.equals(mode, "EDIT") ? editFailureMessage : addFailureMessage,
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                 );

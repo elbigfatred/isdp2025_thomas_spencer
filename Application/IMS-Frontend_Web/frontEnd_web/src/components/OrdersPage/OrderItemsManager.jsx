@@ -5,6 +5,8 @@ import { Box, Typography, Button, Alert } from "@mui/material";
 import InventoryList from "./InventoryList";
 import OrderItemsList from "./OrderItemsList";
 
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
+
 const OrderItemsManager = ({
   user,
   order,
