@@ -1,5 +1,6 @@
 package tom.ims.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,7 +22,8 @@ public class Employee {
     private Integer id;
 
     @Column(name = "Password", nullable = false, length = 255)
-    @JsonProperty("password")
+    //@JsonProperty("password")
+    @JsonIgnore
     private String password;
 
     @Column(name = "FirstName", nullable = false, length = 20)

@@ -1,8 +1,10 @@
-/* eslint-disable react/prop-types */
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import UsersTable from "../components/UsersTable";
 import SitesTable from "../components/SitesTable";
 import OrdersPage from "../components/OrdersPage/OrdersDashboard";
+import DeliveriesDashboard from "../components/DeliveriesPage/DeliveriesDashboard";
+import OnlineOrdersDashboard from "../components/OnlineOrdersPage/OnlineOrdersDashboard";
+
 import {
   Button,
   Box,
@@ -16,16 +18,44 @@ import {
 } from "@mui/material";
 
 import bullseyeLogo from "../assets/bullseye1.png";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
-  const [activePage, setActivePage] = useState("sites");
-
   const userRoles = user.roles.map((role) => role.posn.permissionLevel);
+
+  // ✅ Updated Role-Based Access Controls
   const hasOrdersAccess =
     userRoles.includes("Warehouse Manager") ||
     userRoles.includes("Administrator") ||
     userRoles.includes("Store Manager");
+
+  const hasDeliveryAccess =
+    userRoles.includes("Delivery") || userRoles.includes("Administrator");
+
+  const hasOnlineOrdersAccess =
+    userRoles.includes("Administrator") ||
+    userRoles.includes("Store Worker") ||
+    userRoles.includes("Store Manager") ||
+    userRoles.includes("Online Customer");
+
+  const hasUsersAccess =
+    userRoles.includes("Regional Manager") ||
+    userRoles.includes("Financial Manager") ||
+    userRoles.includes("Warehouse Manager") ||
+    userRoles.includes("Store Manager") ||
+    userRoles.includes("Warehouse Worker") ||
+    userRoles.includes("Administrator");
+
+  const hasSitesAccess = hasUsersAccess; // Same roles as user access
+
+  // ✅ Auto-Pick the First Available Tab
+  const availableTabs = [];
+  if (hasSitesAccess) availableTabs.push("sites");
+  if (hasUsersAccess) availableTabs.push("users");
+  if (hasOrdersAccess) availableTabs.push("orders");
+  if (hasDeliveryAccess) availableTabs.push("deliveries");
+
+  const [activePage, setActivePage] = useState(availableTabs[0] || null);
 
   const theme = useMemo(
     () =>
@@ -66,21 +96,14 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
           <Typography variant="h6" sx={{ marginBottom: 2 }}>
             Dashboard
           </Typography>
-          {/*  Help Tooltip */}
-          <Tooltip
-            title="This is the Bullseye Dashboard.
-             You can view different tables, and operations pertinent to your role here. 
-             Select a tab on the left to navigate."
-            arrow
-          >
-            <IconButton
-              sx={{
-                marginBottom: 1,
-              }}
-            >
+
+          {/* Help Tooltip */}
+          <Tooltip title="Select a tab on the left to navigate." arrow>
+            <IconButton sx={{ marginBottom: 1 }}>
               <HelpOutlineIcon />
             </IconButton>
           </Tooltip>
+
           {/* Dark Mode Toggle */}
           <FormControlLabel
             control={
@@ -88,7 +111,7 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
                 checked={darkMode}
                 onChange={() => {
                   setDarkMode(!darkMode);
-                  localStorage.setItem("darkMode", JSON.stringify(!darkMode)); // Persist dark mode setting
+                  localStorage.setItem("darkMode", JSON.stringify(!darkMode));
                 }}
               />
             }
@@ -97,21 +120,25 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
           />
 
           {/* Navigation Buttons */}
-          <Button
-            variant={activePage === "sites" ? "contained" : "outlined"}
-            onClick={() => setActivePage("sites")}
-            sx={{ width: "100%", marginBottom: 1 }}
-          >
-            Sites
-          </Button>
+          {hasSitesAccess && (
+            <Button
+              variant={activePage === "sites" ? "contained" : "outlined"}
+              onClick={() => setActivePage("sites")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Sites
+            </Button>
+          )}
 
-          <Button
-            variant={activePage === "users" ? "contained" : "outlined"}
-            onClick={() => setActivePage("users")}
-            sx={{ width: "100%", marginBottom: 1 }}
-          >
-            Users
-          </Button>
+          {hasUsersAccess && (
+            <Button
+              variant={activePage === "users" ? "contained" : "outlined"}
+              onClick={() => setActivePage("users")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Users
+            </Button>
+          )}
 
           {hasOrdersAccess && (
             <Button
@@ -120,6 +147,28 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
               sx={{ width: "100%", marginBottom: 1 }}
             >
               Store Orders
+            </Button>
+          )}
+
+          {hasDeliveryAccess && (
+            <Button
+              variant={activePage === "deliveries" ? "contained" : "outlined"}
+              onClick={() => setActivePage("deliveries")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Deliveries
+            </Button>
+          )}
+
+          {hasOnlineOrdersAccess && (
+            <Button
+              variant={
+                activePage === "online-orders" ? "contained" : "outlined"
+              }
+              onClick={() => setActivePage("online-orders")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Online Orders
             </Button>
           )}
 
@@ -161,12 +210,36 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
             }}
           >
             {/* Dynamic Page Rendering */}
-            {activePage === "sites" && <SitesTable />}
-            {activePage === "users" && <UsersTable />}
+            {activePage === "sites" && hasSitesAccess && <SitesTable />}
+            {activePage === "users" && hasUsersAccess && <UsersTable />}
             {activePage === "orders" && hasOrdersAccess ? (
               <OrdersPage user={user} />
             ) : (
               activePage === "orders" && <Typography>Access Denied</Typography>
+            )}
+            {activePage === "deliveries" && hasDeliveryAccess ? (
+              <DeliveriesDashboard />
+            ) : (
+              activePage === "deliveries" && (
+                <Typography>Access Denied</Typography>
+              )
+            )}
+            {activePage === "online-orders" && hasOnlineOrdersAccess ? (
+              <OnlineOrdersDashboard user={user} />
+            ) : (
+              activePage === "online-orders" && (
+                <Typography>Access Denied</Typography>
+              )
+            )}
+
+            {/* ✅ If no page is selected, show this message */}
+            {!activePage && (
+              <Typography
+                variant="h6"
+                sx={{ textAlign: "center", marginTop: 4 }}
+              >
+                Select a tab on the left to get started.
+              </Typography>
             )}
           </Box>
         </Box>

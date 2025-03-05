@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="" />
+    <list default="true" id="984928dc-41e4-4979-8c63-3df792894a59" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Employee.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Employee.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Vehicle.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/model/Vehicle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/repository/TxnRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Backend/backend/src/main/java/tom/ims/backend/service/OrderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/pages/Dashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/src/pages/Dashboard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../../IMS-Frontend_Web/frontEnd_web/yarn.lock" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -203,6 +213,8 @@
       <workItem from="1740135525536" duration="15000" />
       <workItem from="1740353236052" duration="9000" />
       <workItem from="1740590956051" duration="7000" />
+      <workItem from="1741007173254" duration="17000" />
+      <workItem from="1741087681466" duration="4000" />
     </task>
     <servers />
   </component>

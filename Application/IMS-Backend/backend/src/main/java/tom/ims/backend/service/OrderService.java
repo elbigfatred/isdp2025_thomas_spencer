@@ -8,6 +8,7 @@ import tom.ims.backend.model.*;
 import tom.ims.backend.repository.*;
 import tom.ims.backend.model.Txnitem;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -253,7 +254,6 @@ public class OrderService {
         txnauditService.createAuditEntry(txn, employee, auditLog.toString());
         System.out.println("[DEBUG] auditLog: " + auditLog.toString());
     }
-
 
     public Txn updateOrderStatus(int txnId, String status, String empUsername) {
         Txn order = getOrderById(txnId);
@@ -542,7 +542,7 @@ public class OrderService {
         return savedBackorder;
     }
 
-    // === DELIVERY SCHEDULING ===
+    // === DELIVERY AND SCHEDULING ===
     public LocalDate calculateNextDeliveryDate(String dayOfWeek) {
         DayOfWeek deliveryDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
         LocalDate today = LocalDate.now();
@@ -604,6 +604,34 @@ public class OrderService {
             System.out.println("[ERROR] Failed to update ship date: " + e.getMessage());
             throw new RuntimeException("Failed to update ship date", e);
         }
+    }
+
+
+    public List<DeliveryTxnDTO> findUpcomingDeliveries() {
+        return txnRepository.findAllAssembledStoreOrders().stream()
+                .map(txn -> {
+                    List<Txnitem> txnItems = getTxnItemsByTxnId(txn.getId());
+
+                    int totalItems = txnItems.size();
+
+                    // Calculate total weight using BigDecimal
+                    BigDecimal totalWeight = txnItems.stream()
+                            .map(txnItem -> {
+                                BigDecimal itemWeight = txnItem.getItemID().getWeight(); // Get weight per item
+                                BigDecimal quantity = BigDecimal.valueOf(txnItem.getQuantity());
+                                return itemWeight.multiply(quantity); // Multiply weight by quantity
+                            })
+                            .reduce(BigDecimal.ZERO, BigDecimal::add); // Sum up all weights
+
+                    return new DeliveryTxnDTO(txn, totalItems, totalWeight);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public BigDecimal calculateTotalWeight(Txn txn) {
+        return txnItemsRepository.findById_TxnID(txn.getId()).stream()
+                .map(item -> item.getItemID().getWeight().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 }

@@ -35,4 +35,11 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
 
     @Query("SELECT t FROM Txn t WHERE t.siteIDTo.id = :siteID AND t.txnType.txnType = 'Back Order' AND t.txnStatus.statusName = 'NEW'")
     Txn findNewBackorderBySite(@Param("siteID") Integer siteID);
+
+    @Query("SELECT t FROM Txn t " +
+            "WHERE (t.txnType.txnType = 'Store Order' OR t.txnType.txnType = 'Emergency Order') " +
+            "AND (t.txnStatus.statusName = 'ASSEMBLED' " +
+            "OR t.deliveryID IS NOT NULL) " +
+            "ORDER BY t.shipDate")
+    List<Txn> findAllAssembledStoreOrders();
 }
