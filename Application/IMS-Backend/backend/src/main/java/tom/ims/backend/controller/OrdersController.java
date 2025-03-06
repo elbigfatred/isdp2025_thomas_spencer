@@ -1,19 +1,23 @@
 package tom.ims.backend.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.*;
-import tom.ims.backend.repository.TxnRepository;
+import tom.ims.backend.repository.*;
 import tom.ims.backend.service.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,8 +28,18 @@ public class OrdersController {
     @Autowired private TxnRepository txnRepository;
     @Autowired private TxnTypeService txnTypeService;
     @Autowired private TxnStatusService statusService;
+    @Autowired private TxnStatusService txnStatusService;
+    @Autowired private TxnTypeRepository txnTypeRepository;
+    @Autowired private SiteRepository siteRepository;
+    @Autowired private TxnStatusRepository txnStatusRepository;
+    @Autowired private EmployeeRepository employeeRepository;
+    @Autowired private ItemRepository itemRepository;
+    @Autowired private TxnItemsRepository txnItemsRepository;
+    @Autowired private TxnauditService txnauditService;
     @Autowired
-    private TxnStatusService txnStatusService;
+    private ItemService itemService;
+    @Autowired
+    private SiteService siteService;
 
     // ======================================================
     // 1️⃣ GENERAL ORDER RETRIEVAL & MANAGEMENT
@@ -305,11 +319,112 @@ public class OrdersController {
         }
     }
 
+    // ======================================================
+    // 6️⃣ ONLINE ORDER END POINTS
+    // ======================================================
+
+    @PostMapping("/submitOnlineOrder")
+    public ResponseEntity<?> submitOnlineOrder(@RequestBody OnlineOrderRequest request) {
+        // Step 1: Validate input
+        if (request.getCustomer() == null || request.getItems().isEmpty() || request.getSiteID() == null) {
+            return ResponseEntity.badRequest().body("Invalid request. Missing required fields.");
+        }
+
+        // Step 2: Create TXN for Online Order
+        Txn newTxn = new Txn();
+        newTxn.setTxnType(txnTypeRepository.findByTypeName("Online"));
+        newTxn.setSiteIDFrom(siteService.getSiteById(request.getSiteID()));
+        newTxn.setSiteIDTo(siteService.getSiteById(request.getSiteID()));
+        newTxn.setTxnStatus(txnStatusService.findByName("SUBMITTED"));
+        LocalDateTime now = LocalDateTime.now();
+        newTxn.setCreatedDate(now);
+        // Set default ship date to 2 hours from now
+        LocalDateTime calculatedShipDate = now.plusHours(2);
+        // Adjust for cutoff times
+        if (now.getHour() >= 17) {
+            // If order is placed after 5 PM, ship at 9 AM the next day
+            calculatedShipDate = now.plusDays(1).withHour(9).withMinute(0);
+        } else if (now.getHour() < 9) {
+            // If order is placed before 9 AM, ship at 11 AM the same day
+            calculatedShipDate = now.withHour(11).withMinute(0);
+        }
+        // Set the adjusted ship date
+        newTxn.setShipDate(calculatedShipDate);
+        newTxn.setEmployeeID(employeeRepository.findById(request.getCreatedByUserID()).orElse(null));
+        // ✅ Generate and set barcode
+        String generatedBarcode = "OO-" + LocalDate.now().toString().replace("-", "") + "-" + (int) (Math.random() * 10000);
+        newTxn.setBarCode(generatedBarcode);
+        newTxn.setEmergencyDelivery((byte) 0);
+
+        // ✅ Convert customer info to JSON and store in notes field
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String customerInfoJson = objectMapper.writeValueAsString(request.getCustomer());
+            newTxn.setNotes(customerInfoJson);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing customer info.");
+        }
+
+        txnRepository.save(newTxn);
+
+        // Step 3: Create TXNITEMS
+        for (OnlineOrderRequest.OrderItem item : request.getItems()) {
+            // ✅ Properly construct the composite key
+            TxnitemId txnitemId = new TxnitemId();
+            txnitemId.setTxnID(newTxn.getId());
+            txnitemId.setItemID(item.getItemID());
+
+            // ✅ Create the transaction item
+            Txnitem txnItem = new Txnitem();
+            Item newItem = itemService.getItemById(item.getItemID());
+            txnItem.setId(txnitemId); // ✅ Set composite key properly
+            txnItem.setTxnID(newTxn);
+            txnItem.setItemID(newItem);
+            txnItem.setQuantity(item.getQuantity());
+
+            txnItemsRepository.save(txnItem);
+        }
+
+        // Step 4: Create a TXN AUDIT Record
+        Txnaudit txnAudit = new Txnaudit();
+        txnAudit.setTxnID(newTxn.getId());
+        Employee emp = employeeRepository.findById(request.getCreatedByUserID()).orElse(null);
+
+        txnauditService.createAuditEntry(newTxn, emp, "Online Order Submitted by customer " + request.getCustomer().getName());
+
+        return ResponseEntity.ok(Map.of("message", "Order Submitted Successfully", "orderID", newTxn.getId()));    }
+
+    @GetMapping("/searchOrders")
+    public ResponseEntity<List<Txn>> searchOrders(@RequestParam String query) {
+        List<Txn> result;
+
+        // ✅ Check if the query is a numeric Order ID
+        if (query.matches("\\d+")) {
+            Optional<Txn> txn = txnRepository.findByIdAndTxnType_TxnType(Integer.parseInt(query), "Online");
+            result = txn.map(Collections::singletonList).orElse(null); // ✅ Return as a list or null
+        } else {
+            // ✅ Otherwise, assume it's an email & search within notes
+            result = txnRepository.findByCustomerEmail(query);
+            if (result.isEmpty()) result = null;
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/online")
+    public ResponseEntity<List<Txn>> getOnlineOrdersForStore(@RequestParam Integer siteID) {
+        List<Txn> onlineOrders = txnRepository.findOnlineOrdersBySite(
+                siteID
+        );
+        return ResponseEntity.ok(onlineOrders);
+    }
+
 
     // ======================================================
     // 7️⃣ UTILITY & DEBUGGING METHODS (OPTIONAL)
     // ======================================================
-
     @GetMapping("/prepopulate")
     public ResponseEntity<List<Inventory>> prepopulateOrder(@RequestParam Integer siteId) {
         List<Inventory> reorderItems = inventoryService.getItemsBelowThreshold(siteId);

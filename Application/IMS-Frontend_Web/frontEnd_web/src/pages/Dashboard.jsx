@@ -4,6 +4,7 @@ import SitesTable from "../components/SitesTable";
 import OrdersPage from "../components/OrdersPage/OrdersDashboard";
 import DeliveriesDashboard from "../components/DeliveriesPage/DeliveriesDashboard";
 import OnlineOrdersDashboard from "../components/OnlineOrdersPage/OnlineOrdersDashboard";
+import TodaysDeliveriesDashboard from "../components/TodaysDeliveriesPage/TodaysDeliveriesDashboard";
 
 import {
   Button,
@@ -45,6 +46,13 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
     userRoles.includes("Store Manager") ||
     userRoles.includes("Warehouse Worker") ||
     userRoles.includes("Administrator");
+
+  const hasTodaysDeliveriesAccess =
+    userRoles.includes("Administrator") ||
+    userRoles.includes("Delivery") ||
+    userRoles.includes("Warehouse Manager") ||
+    userRoles.includes("Store Manager") ||
+    userRoles.includes("Store Worker");
 
   const hasSitesAccess = hasUsersAccess; // Same roles as user access
 
@@ -156,7 +164,19 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
               onClick={() => setActivePage("deliveries")}
               sx={{ width: "100%", marginBottom: 1 }}
             >
-              Deliveries
+              Delivery Scheduling
+            </Button>
+          )}
+
+          {hasTodaysDeliveriesAccess && (
+            <Button
+              variant={
+                activePage === "todays-deliveries" ? "contained" : "outlined"
+              }
+              onClick={() => setActivePage("todays-deliveries")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Today's Deliveries
             </Button>
           )}
 
@@ -218,9 +238,16 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
               activePage === "orders" && <Typography>Access Denied</Typography>
             )}
             {activePage === "deliveries" && hasDeliveryAccess ? (
-              <DeliveriesDashboard />
+              <DeliveriesDashboard user={user} />
             ) : (
               activePage === "deliveries" && (
+                <Typography>Access Denied</Typography>
+              )
+            )}
+            {activePage === "todays-deliveries" && hasTodaysDeliveriesAccess ? (
+              <TodaysDeliveriesDashboard user={user} />
+            ) : (
+              activePage === "todays-deliveries" && (
                 <Typography>Access Denied</Typography>
               )
             )}

@@ -14,7 +14,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { parseISO, format, addDays } from "date-fns";
 import AssignDeliveryModal from "./AssignDeliveryModal";
 
-const DeliveriesDashboard = () => {
+const DeliveriesDashboard = ({ user }) => {
   const [deliveries, setDeliveries] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,11 +95,15 @@ const DeliveriesDashboard = () => {
     setLoadingAssignment(true);
     const txnIds = selectedOrders.map((order) => order.txn.id);
 
-    fetch("http://localhost:8080/api/delivery/assignDelivery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(txnIds),
-    })
+    fetch(
+      "http://localhost:8080/api/delivery/assignDelivery?empUsername=" +
+        user.username,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(txnIds),
+      }
+    )
       .then((res) =>
         res.ok ? res.json() : Promise.reject("Failed to assign delivery")
       )

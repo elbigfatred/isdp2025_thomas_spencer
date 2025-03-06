@@ -6,24 +6,32 @@ import {
   Button,
   CircularProgress,
   Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
+import OrderDetailsModal from "./OrderDetailsModal"; // Import the modal
 
 const SearchForOnlineOrders = () => {
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const handleSearch = () => {
     if (!searchValue) return;
     setLoading(true);
-    fetch(`http://localhost:8080/api/online-orders/search?query=${searchValue}`)
+    fetch(`http://localhost:8080/api/orders/searchOrders?query=${searchValue}`)
       .then((res) => res.json())
       .then((data) => {
-        setOrder(data);
+        setOrders(data || []); // Handle null response
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching order:", err);
+        console.error("Error fetching orders:", err);
         setLoading(false);
       });
   };
@@ -44,14 +52,61 @@ const SearchForOnlineOrders = () => {
 
       {loading && <CircularProgress sx={{ marginTop: 2 }} />}
 
-      {order && (
-        <Paper sx={{ marginTop: 2, padding: 2 }}>
-          <Typography variant="h6">Order Details</Typography>
-          <Typography>Txn ID: {order.txnID}</Typography>
-          <Typography>Customer: {order.customerInfo?.email}</Typography>
-          <Typography>Total Items: {order.totalItems}</Typography>
-          <Typography>Status: {order.status}</Typography>
-        </Paper>
+      {orders.length > 0 && (
+        <TableContainer component={Paper} sx={{ marginTop: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Order ID</TableCell>
+                <TableCell>Pickup Location</TableCell>
+                <TableCell>Pickup Time</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.id}</TableCell>
+                  <TableCell>{order.siteIDTo.siteName}</TableCell>
+                  <TableCell>
+                    {new Date(order.shipDate).toLocaleString("en-US", {
+                      weekday: "long",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {order.txnStatus.statusName === "ASSEMBLED"
+                      ? "READY FOR PICKUP"
+                      : order.txnStatus.statusName}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <OrderDetailsModal
+          open={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          order={selectedOrder}
+        />
       )}
     </Box>
   );

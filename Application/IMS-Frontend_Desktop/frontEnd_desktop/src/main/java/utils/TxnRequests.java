@@ -115,8 +115,7 @@ public class TxnRequests {
                     txn.setBarCode(obj.optString("barCode", "N/A"));
                     txn.setNotes(obj.optString("notes", ""));
                     txn.setEmergencyDelivery(obj.optInt("emergencyDelivery", 0) == 1);
-                    txn.setDeliveryID(obj.isNull("deliveryID") ? null : obj.getInt("deliveryID"));
-
+                    txn.setDeliveryID(obj.isNull("deliveryID") ? null : obj.getJSONObject("deliveryID").getInt("id"));
                     // Parse Dates
                     DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
                     txn.setCreatedDate(LocalDateTime.parse(obj.getString("createdDate"), formatter));

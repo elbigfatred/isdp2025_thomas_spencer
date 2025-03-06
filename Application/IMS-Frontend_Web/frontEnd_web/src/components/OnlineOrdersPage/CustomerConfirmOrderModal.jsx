@@ -26,16 +26,43 @@ const CustomerConfirmOrderModal = ({
     email: "",
   });
 
-  // Handles Input Change
+  const [errors, setErrors] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
+
+  // Regex Patterns
+  const nameRegex = /^[A-Za-z\s]{2,50}$/; // Only letters and spaces, 2-50 chars
+  const phoneRegex = /^(?:\d{3}-\d{3}-\d{4}|\d{10})$/; // Accepts "123-456-7890" or "1234567890"
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Standard email format
+
+  // Handles Input Change & Validation
   const handleChange = (e) => {
-    setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setCustomerInfo({ ...customerInfo, [name]: value });
+
+    // Validate Fields
+    let errorMsg = "";
+    if (name === "name" && !nameRegex.test(value)) {
+      errorMsg = "Enter a valid full name (letters only, 2-50 chars).";
+    } else if (name === "phone" && !phoneRegex.test(value)) {
+      errorMsg = "Enter a valid phone number (e.g., 123-456-7890).";
+    } else if (name === "email" && !emailRegex.test(value)) {
+      errorMsg = "Enter a valid email address.";
+    }
+
+    setErrors({ ...errors, [name]: errorMsg });
   };
 
   // Checks if form is valid
   const isFormValid =
     customerInfo.name.trim() !== "" &&
     customerInfo.phone.trim() !== "" &&
-    customerInfo.email.trim() !== "";
+    customerInfo.email.trim() !== "" &&
+    !errors.name &&
+    !errors.phone &&
+    !errors.email;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -80,6 +107,8 @@ const CustomerConfirmOrderModal = ({
           sx={{ marginBottom: 2 }}
           onChange={handleChange}
           value={customerInfo.name}
+          error={!!errors.name}
+          helperText={errors.name}
         />
         <TextField
           fullWidth
@@ -90,6 +119,8 @@ const CustomerConfirmOrderModal = ({
           sx={{ marginBottom: 2 }}
           onChange={handleChange}
           value={customerInfo.phone}
+          error={!!errors.phone}
+          helperText={errors.phone}
         />
         <TextField
           fullWidth
@@ -101,6 +132,8 @@ const CustomerConfirmOrderModal = ({
           sx={{ marginBottom: 2 }}
           onChange={handleChange}
           value={customerInfo.email}
+          error={!!errors.email}
+          helperText={errors.email}
         />
 
         {/* 📌 Order Total */}
@@ -129,7 +162,7 @@ const CustomerConfirmOrderModal = ({
             variant="contained"
             color="primary"
             onClick={() => onConfirm(customerInfo)}
-            disabled={!isFormValid} // Prevents confirming if fields are empty
+            disabled={!isFormValid} // Prevents confirming if invalid
           >
             Place Order
           </Button>

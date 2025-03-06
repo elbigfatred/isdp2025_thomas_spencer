@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * DashboardForm provides the main UI for the Bullseye Inventory Management System.
@@ -277,8 +278,11 @@ public class DashboardForm {
                     cmbInventoryAdminSiteSelect.addItem(site);
                 }
             }
-            allTxns = TxnRequests.fetchAllOrders();
-            btnOrdersViewReceive.setText("View/Modify Order");
+            System.out.println("Fetching txns");
+            allTxns = TxnRequests.fetchAllOrders().stream()
+                    .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
+                    .collect(Collectors.toList());
+            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             pnlWarehouseMgrNotifications.setVisible(true);
             updateWHMgrNotifications();
@@ -286,16 +290,22 @@ public class DashboardForm {
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
-            allTxns = TxnRequests.fetchAllOrders();
-            btnOrdersViewReceive.setText("View/Modify Order");
+            System.out.println("Fetching txns");
+            allTxns = TxnRequests.fetchAllOrders().stream()
+                    .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
+                    .collect(Collectors.toList());
+            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             pnlWarehouseMgrNotifications.setVisible(true);
             updateWHMgrNotifications();
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Worker") && Arrays.asList(accessPosition).size() == 1) {
-            allTxns = TxnRequests.fetchAllOrders();
-            btnOrdersViewReceive.setText("View/Modify Order");
+            System.out.println("Fetching txns");
+            allTxns = TxnRequests.fetchAllOrders().stream()
+                    .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
+                    .collect(Collectors.toList());
+            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             loadStatusComboBox();
             loadOrdersLocationComboBox();
@@ -341,7 +351,11 @@ public class DashboardForm {
 
             //  Fetch only orders for this site
             //allTxns = TxnRequests.fetchOrdersBySite(inventorySite.getId());
-            allTxns = TxnRequests.fetchAllOrders();
+            System.out.println("Fetching txns");
+            allTxns = TxnRequests.fetchAllOrders().stream()
+                    .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
+                    .collect(Collectors.toList());
+            System.out.println(allTxns);
             btnOrdersViewReceive.setText("View Order");
             orderViewReceiveMode = "VIEW";
             cmbOrdersLocation.setSelectedItem(inventorySite.getSiteName());
@@ -1576,7 +1590,8 @@ public class DashboardForm {
                 "Phone",
                 "Day of Week",
                 "Distance from WH",
-                "Active"
+                "Active",
+                "Notes"
         };
 
         // Create a table model
@@ -1600,7 +1615,8 @@ public class DashboardForm {
                     site.getPhone(),
                     site.getDayOfWeek(),
                     site.getDistanceFromWH(),
-                    site.isActive() ? "Yes" : "No"
+                    site.isActive() ? "Yes" : "No",
+                    site.getNotes()
             };
             tableModel.addRow(rowData);
         }

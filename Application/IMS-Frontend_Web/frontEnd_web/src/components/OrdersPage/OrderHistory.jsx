@@ -44,9 +44,16 @@ const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
       .get(endpoint)
       .then((response) => {
         console.log("[DEBUG] Fetched Orders JSON:", response.data);
-        setOrders(response.data);
+        // ✅ Filter orders based on txnType
+        const filteredOrders = response.data.filter((order) =>
+          ["Store Order", "Emergency Order", "Back Order"].includes(
+            order.txnType.txnType
+          )
+        );
+
+        setOrders(filteredOrders);
       })
-      .catch(() => setError("Failed to load orders"))
+      .catch(() => setError(""))
       .finally(() => setLoading(false));
   }, [siteId, refreshTrigger, fetchAllOrders]);
 

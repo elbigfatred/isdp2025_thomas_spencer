@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import tom.ims.backend.model.Site;
 import tom.ims.backend.model.Txn;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,4 +43,18 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
             "OR t.deliveryID IS NOT NULL) " +
             "ORDER BY t.shipDate")
     List<Txn> findAllAssembledStoreOrders();
+
+    Optional<Txn> findByIdAndTxnType_TxnType(Integer txnID, String typeName);
+
+    @Query("SELECT t FROM Txn t WHERE t.txnType.txnType = 'Online' AND t.notes LIKE CONCAT('%\"email\":\"', :emailinput, '\"%')")
+    List<Txn> findByCustomerEmail(@Param("emailinput") String emailinput);
+
+    @Query("SELECT t FROM Txn t WHERE t.txnType.txnType = 'Online' AND t.siteIDTo.id = :siteID")
+    List<Txn> findOnlineOrdersBySite(@Param("siteID") Integer siteID);
+
+    // Repository Query
+    @Query("SELECT t FROM Txn t WHERE t.txnType.txnType IN ('STORE ORDER', 'EMERGENCY ORDER') " +
+            "AND t.deliveryID IS NOT NULL " +
+            "AND DATE(t.shipDate) = :today")
+    List<Txn> findByTxnTypeAndDeliveryAssignedToday(@Param("today") LocalDate today);
 }

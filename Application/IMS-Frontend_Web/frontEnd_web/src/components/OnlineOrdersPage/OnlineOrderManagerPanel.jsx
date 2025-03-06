@@ -26,7 +26,14 @@ const OnlineOrderManagerPanel = ({ user }) => {
   useEffect(() => {
     fetch("http://localhost:8080/api/sites")
       .then((res) => res.json())
-      .then((data) => setSites(data))
+      .then((data) =>
+        setSites(
+          data.filter(
+            (site) =>
+              site.active && site.siteName.toLowerCase().includes("retail")
+          )
+        )
+      )
       .catch((err) => console.error("Error fetching sites:", err));
   }, []);
 
@@ -105,10 +112,103 @@ const OnlineOrderManagerPanel = ({ user }) => {
   const tax = subtotal * TAX_RATE;
   const grandTotal = subtotal + tax;
 
-  const handleOrderConfirm = () => {
-    console.log("Order placed!");
-    setOrderModalOpen(false);
-    setCart([]); // Clear cart after order
+  const handleConfirmOrder = async (customerInfo) => {
+    if (!user || !activeSite || cart.length === 0) {
+      console.error("Invalid order submission: Missing required data.");
+      return;
+    }
+
+    const orderPayload = {
+      customer: {
+        name: customerInfo.name,
+        phone: customerInfo.phone,
+        email: customerInfo.email,
+      },
+      items: cart.map((item) => ({
+        itemID: item.id.itemID,
+        quantity: item.quantity,
+      })),
+      createdByUserID: user.id,
+      siteID: activeSite.id,
+    };
+
+    console.log("Submitting Order Payload:", orderPayload);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/orders/submitOnlineOrder",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(orderPayload),
+        }
+      );
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text };
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to submit order");
+      }
+
+      console.log("Order submitted successfully:", data);
+
+      // ✅ Determine Pickup Time and Day
+      const now = new Date();
+      const orderHour = now.getHours();
+
+      let pickupDate;
+      let pickupDay = "today";
+
+      if (orderHour >= 17) {
+        // After 5:00 PM → Ready at 9:00 AM tomorrow
+        pickupDate = new Date(now);
+        pickupDate.setDate(now.getDate() + 1);
+        pickupDate.setHours(9, 0, 0);
+        pickupDay = "tomorrow";
+      } else if (orderHour < 9) {
+        // Before 9:00 AM → Ready at 11:00 AM today
+        pickupDate = new Date(now);
+        pickupDate.setHours(11, 0, 0);
+      } else {
+        // Otherwise → Ready exactly 2 hours from now
+        pickupDate = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      }
+
+      // ✅ Format Time in 12-hour AM/PM format
+      const pickupHour = pickupDate.getHours();
+      const pickupMinutes = pickupDate.getMinutes().toString().padStart(2, "0");
+      const period = pickupHour >= 12 ? "PM" : "AM";
+      const formattedHour = ((pickupHour + 11) % 12) + 1; // Convert 24-hour to 12-hour
+
+      const pickupTime = `${formattedHour}:${pickupMinutes} ${period}`;
+
+      // ✅ Show confirmation message with "today" or "tomorrow"
+      window.alert(
+        `Order placed successfully! Your order will be ready for pickup at ${pickupTime} ${pickupDay}.\n\nOrder ID: ${
+          data.orderID || "N/A"
+        }`
+      );
+
+      // ✅ Optionally clear the cart after successful order
+      setCart([]);
+      setOrderModalOpen(false);
+      setActiveSite(null);
+    } catch (error) {
+      console.error("Error submitting order:", error);
+
+      // ✅ Show error message
+      window.alert(
+        "There was an error processing your order. Please try again later."
+      );
+    }
   };
 
   return (
@@ -123,7 +223,8 @@ const OnlineOrderManagerPanel = ({ user }) => {
         <Select value={activeSite || ""} onChange={handleSiteChange}>
           {sites.map((site) => (
             <MenuItem key={site.id} value={site}>
-              {site.siteName} - {site.city}
+              {site.siteName} - {site.address}, {site.city},{" "}
+              {site.province?.provinceID}
             </MenuItem>
           ))}
         </Select>
@@ -165,9 +266,8 @@ const OnlineOrderManagerPanel = ({ user }) => {
 
               <Button
                 variant="contained"
-                color="primary"
+                color="error"
                 sx={{ marginTop: 2 }}
-                fullWidth
                 disabled={cart.length === 0}
                 onClick={() => setOrderModalOpen(true)}
               >
@@ -185,7 +285,7 @@ const OnlineOrderManagerPanel = ({ user }) => {
         subtotal={subtotal}
         tax={tax}
         grandTotal={grandTotal}
-        onConfirm={handleOrderConfirm}
+        onConfirm={handleConfirmOrder}
         cart={cart}
       />
     </Box>

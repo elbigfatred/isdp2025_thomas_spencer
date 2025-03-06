@@ -3,19 +3,16 @@ package tom.ims.backend.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tom.ims.backend.model.Delivery;
-import tom.ims.backend.model.DeliveryTxnDTO;
-import tom.ims.backend.model.Txn;
-import tom.ims.backend.model.Vehicle;
-import tom.ims.backend.repository.DeliveryRepository;
-import tom.ims.backend.repository.TxnRepository;
-import tom.ims.backend.service.OrderService;
-import tom.ims.backend.service.VehicleService;
+import tom.ims.backend.model.*;
+import tom.ims.backend.repository.*;
+import tom.ims.backend.service.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/delivery")
@@ -25,6 +22,13 @@ public class DeliveryController {
     @Autowired private VehicleService vehicleService;
     @Autowired private TxnRepository txnRepository;
     @Autowired private DeliveryRepository deliveryRepository;
+    @Autowired private EmployeeRepository employeeRepository;
+    @Autowired private TxnauditService txnauditService;
+    @Autowired private TxnItemsRepository txnItemsRepository;
+    @Autowired private EmployeeService employeeService;
+    @Autowired private InventoryRepository inventoryRepository;
+    @Autowired private TxnauditService auditService;
+    @Autowired private TxnStatusService txnStatusService;
 
     @GetMapping("/upcoming")
     public ResponseEntity<List<DeliveryTxnDTO>> getUpcomingDeliveries() {
@@ -38,9 +42,9 @@ public class DeliveryController {
     }
 
     @PostMapping("/assignDelivery")
-    public ResponseEntity<?> assignDelivery(@RequestBody List<Integer> txnIds) {
+    public ResponseEntity<?> assignDelivery(@RequestBody List<Integer> txnIds, @RequestParam String empUsername) {
         if (txnIds.isEmpty()) {
-            System.out.println("🚨 No transactions provided for delivery assignment.");
+            System.out.println("No transactions provided for delivery assignment.");
             return ResponseEntity.badRequest().body("No transactions provided.");
         }
 
@@ -48,7 +52,7 @@ public class DeliveryController {
         List<Txn> transactions = txnRepository.findAllById(txnIds);
 
         if (transactions.isEmpty()) {
-            System.out.println("🚨 No valid transactions found for given IDs: " + txnIds);
+            System.out.println("No valid transactions found for given IDs: " + txnIds);
             return ResponseEntity.badRequest().body("No valid transactions found.");
         }
 
@@ -57,7 +61,7 @@ public class DeliveryController {
                 .allMatch(txn -> txn.getTxnStatus().getStatusName().equals("ASSEMBLED"));
 
         if (!allAssembled) {
-            System.out.println("🚨 Some transactions are NOT in ASSEMBLED status.");
+            System.out.println("Some transactions are NOT in ASSEMBLED status.");
             return ResponseEntity.badRequest().body("All transactions must be in ASSEMBLED status.");
         }
 
@@ -66,8 +70,17 @@ public class DeliveryController {
                 .anyMatch(txn -> txn.getDeliveryID() != null);
 
         if (anyAlreadyAssigned) {
-            System.out.println("🚨 Some transactions already have a delivery ID assigned.");
+            System.out.println("Some transactions already have a delivery ID assigned.");
             return ResponseEntity.badRequest().body("Some transactions already have a delivery ID assigned.");
+        }
+
+        // Fetch the Employee assigning the delivery
+        Employee assigningEmployee = employeeRepository.findByUsername(empUsername)
+                .orElse(null);
+
+        if (assigningEmployee == null) {
+            System.out.println("🚨 Employee not found: " + empUsername);
+            return ResponseEntity.badRequest().body("Employee not found.");
         }
 
         // Convert LocalDateTime to Instant (Assume UTC timezone)
@@ -110,10 +123,18 @@ public class DeliveryController {
         delivery = deliveryRepository.save(delivery); // Save the new delivery record
         System.out.println("✅ New delivery created with ID: " + delivery.getId());
 
-        // Assign the new deliveryID to each transaction
+        // Assign the new deliveryID to each transaction and log the audit entry
         Delivery finalDelivery = delivery;
-        transactions.forEach(txn -> txn.setDeliveryID(finalDelivery));
-        txnRepository.saveAll(transactions);
+        transactions.forEach(txn -> {
+            txn.setDeliveryID(finalDelivery);
+            txnRepository.save(txn); // Ensure each transaction is saved
+
+            // ✅ Create an audit entry
+            String actionDetails = "Assigned Delivery ID " + finalDelivery.getId() + " by " + empUsername;
+            txnauditService.createAuditEntry(txn, assigningEmployee, actionDetails);
+
+            System.out.println("📝 Audit logged for Txn ID: " + txn.getId());
+        });        txnRepository.saveAll(transactions);
 
         System.out.println("✅ Successfully assigned delivery ID " + finalDelivery.getId() +
                 " to " + transactions.size() + " transactions.");
@@ -122,5 +143,13 @@ public class DeliveryController {
     }
 
 
+    @GetMapping("/shipping-today")
+    public ResponseEntity<List<Txn>> getOrdersForShippingReceiving() {
+        LocalDate today = LocalDate.now();
+
+        List<Txn> orders = txnRepository.findByTxnTypeAndDeliveryAssignedToday(today);
+
+        return ResponseEntity.ok(orders);
+    }
 
 }

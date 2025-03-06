@@ -15,12 +15,16 @@ import {
   TextField,
 } from "@mui/material";
 
+import ItemDetailsModal from "./ItemDetailsModal";
+
 const InventoryList = ({ activeSite, addToCart }) => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!activeSite) return;
@@ -43,6 +47,11 @@ const InventoryList = ({ activeSite, addToCart }) => {
   const filteredInventory = inventory.filter((item) =>
     item.item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleOpenDetails = (item) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
 
   return (
     <Box>
@@ -78,6 +87,7 @@ const InventoryList = ({ activeSite, addToCart }) => {
                   <TableCell>SKU</TableCell>
                   <TableCell>Stock</TableCell>
                   <TableCell>Price</TableCell>
+                  <TableCell>Details</TableCell>
                   <TableCell>Action</TableCell>
                 </TableRow>
               </TableHead>
@@ -90,6 +100,16 @@ const InventoryList = ({ activeSite, addToCart }) => {
                       <TableCell>{item.item.sku}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>${item.item.retailPrice.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleOpenDetails(item)}
+                          sx={{ marginRight: 1 }}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="contained"
@@ -118,6 +138,15 @@ const InventoryList = ({ activeSite, addToCart }) => {
             }
           />
         </>
+      )}
+
+      {/* Item Details Modal */}
+      {selectedItem && (
+        <ItemDetailsModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          item={selectedItem.item}
+        />
       )}
     </Box>
   );

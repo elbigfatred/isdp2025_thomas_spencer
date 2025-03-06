@@ -384,13 +384,13 @@ INSERT INTO `employee` (`employeeID`, `Password`, `FirstName`, `LastName`, `Emai
 (1007, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Tansy', 'Graupel', 'tgraupel@bullseye.ca', 1, 7, 'tgraupel', 'Store Manager'),
 (1008, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Shuncho', 'Yuasa', 'syuasa@bullseye.ca', 1, 8, 'syuasa', 'Store Manager'),
 (1009, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Emi', 'Byron', 'ebyron@bullseye.ca', 1, 9, 'ebyron', 'Store Manager'),
-(1010, 'P@ssw0rd-', 'Arabella', 'Bean', 'abean@bullseye.ca', 1, 10, 'abean', 'Store Manager'),
-(1011, 'P@ssw0rd-', 'Hattie', 'Trent', 'htrent@bullseye.ca', 1, 2, 'htrent', 'Warehouse Worker'),
-(1012, 'P@ssw0rd-', 'Berniece', 'Callan', 'bcallan@bullseye.ca', 1, 2, 'bcallan', 'Warehouse Worker'),
-(1013, 'P@ssw0rd-', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton', 'Warehouse Worker'),
-(1014, 'P@ssw0rd-', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones', 'Warehouse Worker'),
-(9999, 'P@ssw0rd-', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999, 'acadia', 'Delivery'),
-(10000, 'P@ssw0rd-', 'online', 'online', '', 1, 1, 'online', 'Online Customer');
+(1010, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Arabella', 'Bean', 'abean@bullseye.ca', 1, 10, 'abean', 'Store Manager'),
+(1011, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Hattie', 'Trent', 'htrent@bullseye.ca', 1, 2, 'htrent', 'Warehouse Worker'),
+(1012, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Berniece', 'Callan', 'bcallan@bullseye.ca', 1, 2, 'bcallan', 'Warehouse Worker'),
+(1013, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'Erika', 'Atherton', 'eatherton@bullseye.ca', 1, 2, 'eatherton', 'Warehouse Worker'),
+(1014, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'James Earl', 'Jones', 'jjones@bullseye.ca', 1, 2, 'jjones', 'Warehouse Worker'),
+(9999, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'acadia', 'acadia', 'info@acadiatrucking.ca', 1, 9999, 'acadia', 'Delivery'),
+(10000, '$2a$10$LO8H4t3WzWS8TDjaIOnIX.fuk27RVqlEpmY2MT.PuLEkpO0hgA4K2', 'online', 'online', '', 1, 1, 'online', 'Online Customer');
 
 -- Insert relationships into the user_posn table
 INSERT INTO `user_posn` (`userID`, `posnID`) VALUES
