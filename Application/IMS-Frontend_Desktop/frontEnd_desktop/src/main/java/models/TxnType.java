@@ -33,9 +33,6 @@ public class TxnType {
 
     @Override
     public String toString() {
-        return "TxnType{" +
-                "txnType='" + txnType + '\'' +
-                ", active=" + active +
-                '}';
+        return getTxnType();
     }
 }

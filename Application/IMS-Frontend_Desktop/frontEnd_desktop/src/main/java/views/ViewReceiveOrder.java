@@ -1034,7 +1034,7 @@ public class ViewReceiveOrder {
     }
 
 
-    class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+    static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
         private final String datePattern = "yyyy-MM-dd";
         private final SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
 
