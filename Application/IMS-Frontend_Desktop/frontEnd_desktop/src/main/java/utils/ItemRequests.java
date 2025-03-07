@@ -84,7 +84,7 @@ public class ItemRequests {
                         // Parse supplier
                         JSONObject supplierJson = jsonObject.getJSONObject("supplier");
                         Supplier supplier = new Supplier();
-                        supplier.setId(supplierJson.getInt("id"));
+                        supplier.setId(supplierJson.getInt("supplierid"));
                         supplier.setName(supplierJson.getString("name"));
                         supplier.setAddress1(supplierJson.getString("address1"));
                         supplier.setAddress2(supplierJson.optString("address2", null)); // Handle nullable fields

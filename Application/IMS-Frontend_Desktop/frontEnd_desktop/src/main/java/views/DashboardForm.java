@@ -106,6 +106,21 @@ public class DashboardForm {
     private JComboBox cmbOrdersLocation;
     private JLabel lblOrderSite;
     private JLabel lblOrderStatus;
+    private JPanel SupplierCRUDPane;
+    private JTable SupplierTabTable;
+    private JPanel SupplierHeaderPane;
+    private JButton btnAddSupplier;
+    private JButton btnModifySupplier;
+    private JTextField txtSupplierSearch;
+    private JButton btnSuppliersHelp;
+    private JPanel SuppliersTab;
+    private JPanel TxnsTab;
+    private JPanel TxnHeaderPane;
+    private JTable tblTxns;
+    private JPanel TxnCrudPane;
+    private JButton btnEditTxn;
+    private JTextField txtTxnsSearch;
+    private JButton btnTxnsHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -128,6 +143,10 @@ public class DashboardForm {
     private List<Txn> allTxns;
     private int ordersTableSelectedId = -1;
     private String orderViewReceiveMode;
+    private List<Supplier> allSuppliers;
+    private int supplierTableSelectedId = -1;
+    private List<Txn> allModTxns;
+    private int modTxnTableSelectedId = -1;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -186,23 +205,32 @@ public class DashboardForm {
             DashboardTabPane.add("Inventory", InventoryTab);
             pnlInventoryAdminSelectSite.setVisible(true);
             DashboardTabPane.add("Orders", OrdersTab);
+            DashboardTabPane.add("Suppliers", SuppliersTab);
+            DashboardTabPane.add("Transaction Records", TxnsTab);
 
             loadInitialData();
             populateEditPermissionsEmployeesTable(allEmployees);
             populateEditPermissionsPositionList(allPosns, null);
             populateOrdersTable(allTxns);
             updateOrdersTableBySearch();
+            populateSuppliersTable(allSuppliers);
+            updateSuppliersTableBySearch();
+            populateTxnTable(allTxns);
+            updateTxnTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
             DashboardTabPane.add("Items", ItemsTab);
             DashboardTabPane.add("Inventory", InventoryTab);
             DashboardTabPane.add("Orders", OrdersTab);
+            DashboardTabPane.add("Suppliers", SuppliersTab);
 
             loadInitialData();
             populateItemsTable(allItems);
             populateOrdersTable(allTxns);
             updateOrdersTableBySearch();
+            populateSuppliersTable(allSuppliers);
+            updateSuppliersTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Worker")) {
@@ -272,6 +300,8 @@ public class DashboardForm {
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
             allPosns = PositionRequests.fetchPositions();
+            allSuppliers = SupplierUtil.fetchAllSuppliers(true);
+            allModTxns = TxnsModsRequests.fetchAllTransactions();
             cmbInventoryAdminSiteSelect.removeAllItems();
             for(Site site : allSites) {
                 if(site.isActive()){
@@ -290,6 +320,7 @@ public class DashboardForm {
 
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
+            allSuppliers = SupplierUtil.fetchAllSuppliers(true);
             System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
@@ -627,8 +658,368 @@ public class DashboardForm {
             updateOrdersTableBySearch();
         });
 
+        txtSupplierSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateSuppliersTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateSuppliersTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateSuppliersTableBySearch();
+            }
+        });
+
+        btnAddSupplier.addActionListener(e -> addSupplier());
+
+        btnModifySupplier.addActionListener(e -> editSupplier());
+
+        txtTxnsSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateTxnTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateTxnTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateTxnTableBySearch();
+            }
+        });
+
+        btnEditTxn.addActionListener(e -> {
+            editTransaction();
+        });
+
+
+
         return ContentPane;
     }
+
+    // =================== TXN RECORD MANAGEMENT ===================
+
+    /**
+     * Populates the JTable with transaction data.
+     *
+     * @param filteredTxns List of transactions to display.
+     */
+    private void populateTxnTable(List<Txn> filteredTxns) {
+        // Define column headers
+        String[] columns = {
+                "Txn ID",
+                "Status",
+                "Txn Type",
+                "To Site",
+                "From Site",
+                "Ship Date",
+                "Delivery ID",
+                "Bar Code",
+                "Emergency"
+        };
+
+        // Create a table model
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Prevent cell editing
+            }
+        };
+
+        // Populate table rows
+        for (Txn txn : filteredTxns) {
+            Object[] rowData = {
+                    txn.getId(),
+                    txn.getTxnStatus().getStatusName(),
+                    txn.getTxnType().getTxnType(),
+                    txn.getSiteTo().getSiteName(),
+                    txn.getSiteFrom() != null ? txn.getSiteFrom().getSiteName() : "N/A",
+                    txn.getShipDate() != null ? txn.getShipDate().toString() : "Not Set",
+                    txn.getDeliveryID() != null ? txn.getDeliveryID() : "None",
+                    txn.getBarCode(),
+                    txn.isEmergencyDelivery() ? "Yes" : "No"
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set model to the JTable
+        tblTxns.setModel(tableModel);
+
+        // Hide the Txn ID column
+        tblTxns.getColumnModel().getColumn(0).setMinWidth(0);
+        tblTxns.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblTxns.getColumnModel().getColumn(0).setWidth(0);
+
+        // Allow single row selection
+        tblTxns.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Handle row selection
+        tblTxns.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblTxns.getSelectedRow();
+                if (selectedRow != -1) {
+                    modTxnTableSelectedId = (Integer) tblTxns.getValueAt(selectedRow, 0); // Get selected Txn ID
+                } else {
+                    modTxnTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
+    /**
+     * Updates the transaction table based on search input.
+     */
+    private void updateTxnTableBySearch() {
+        // If search field is empty, display all transactions
+        if (txtTxnsSearch.getText().trim().isEmpty()) {
+            populateTxnTable(allModTxns);
+            return;
+        }
+
+        String search = txtTxnsSearch.getText().trim().toLowerCase();
+        List<Txn> filteredTxns = new ArrayList<>();
+
+        // Filter transactions based on search term
+        for (Txn txn : allModTxns) {
+            if (txn.getTxnStatus().getStatusName().toLowerCase().contains(search) ||
+                    txn.getTxnType().getTxnType().toLowerCase().contains(search) ||
+                    txn.getSiteTo().getSiteName().toLowerCase().contains(search) ||
+                    (txn.getSiteFrom() != null && txn.getSiteFrom().getSiteName().toLowerCase().contains(search)) ||
+                    (txn.getBarCode() != null && txn.getBarCode().toLowerCase().contains(search)) ||
+                    (txn.getShipDate() != null && txn.getShipDate().toString().contains(search)) ||
+                    (txn.getDeliveryID() != null && txn.getDeliveryID().toString().contains(search)) ||
+                    (txn.isEmergencyDelivery() ? "yes" : "no").contains(search)) {
+
+                filteredTxns.add(txn);
+            }
+        }
+
+        // Update table with filtered transactions
+        populateTxnTable(filteredTxns);
+    }
+
+    private void editTransaction() {
+        // Ensure a transaction is selected
+        if (modTxnTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a transaction to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Find the selected transaction
+        Txn txnToEdit = null;
+        for (Txn txn : allModTxns) {
+            if (txn.getId() == modTxnTableSelectedId) {
+                txnToEdit = txn;
+                break;
+            }
+        }
+
+        // Ensure the transaction exists
+        if (txnToEdit == null) {
+            JOptionPane.showMessageDialog(frame, "Selected transaction not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Block editing if status is CANCELLED or COMPLETE
+        if ("CANCELLED".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName()) ||
+                "COMPLETE".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName())) {
+            JOptionPane.showMessageDialog(frame,
+                    "This transaction cannot be modified because it is already " + txnToEdit.getTxnStatus().getStatusName() + ".",
+                    "Edit Restricted", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Open the Edit Transaction Form
+        Txn finalTxnToEdit = txnToEdit;
+        SwingUtilities.invokeLater(() ->
+                new EditTxnForm().showEditTxnForm(
+                        frame,
+                        frame.getLocation(),
+                        finalTxnToEdit,
+                        () -> {
+                            // Refresh table after editing transaction
+                            loadInitialData();
+                            populateTxnTable(allModTxns);
+                        }
+                )
+        );
+    }
+
+
+    // =================== SUPPLIER MANAGEMENT MANAGEMENT ===================
+
+    private void populateSuppliersTable(List<Supplier> filteredSuppliers) {
+        // Define column names for the table
+        String[] columns = {
+                "ID",
+                "Supplier Name",
+                "Address",
+                "City",
+                "Province",
+                "Country",
+                "Postal Code",
+                "Phone",
+                "Contact Person",
+                "Active",
+                "Notes"
+        };
+
+        // Create a table model
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Prevent editing of table cells
+            }
+        };
+
+        // Populate the table model with supplier data
+        for (Supplier supplier : filteredSuppliers) {
+            Object[] rowData = {
+                    supplier.getId(),
+                    supplier.getName(),
+                    supplier.getAddress1() +
+                            (supplier.getAddress2() != null && !supplier.getAddress2().isEmpty()
+                                    ? " " + supplier.getAddress2() : ""),
+                    supplier.getCity(),
+                    supplier.getProvinceId(), // Assuming this holds province name
+                    supplier.getCountry(),
+                    supplier.getPostalcode(),
+                    supplier.getPhone(),
+                    supplier.getContact(),
+                    supplier.getActive() ? "Yes" : "No",
+                    supplier.getNotes()
+            };
+            tableModel.addRow(rowData);
+        }
+
+        // Set the table model to the JTable
+        SupplierTabTable.setModel(tableModel);
+
+        // Hide the first column (ID)
+        SupplierTabTable.getColumnModel().getColumn(0).setMinWidth(0);
+        SupplierTabTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        SupplierTabTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Allow selection of entire rows only
+        SupplierTabTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Add a listener to handle row selection
+        SupplierTabTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = SupplierTabTable.getSelectedRow();
+                if (selectedRow != -1) {
+                    supplierTableSelectedId = (Integer) SupplierTabTable.getValueAt(selectedRow, 0); // Get supplier ID
+                } else {
+                    supplierTableSelectedId = -1;
+                }
+            }
+        });
+    }
+
+    /**
+     * Updates the suppliers table based on the search field input.
+     */
+    private void updateSuppliersTableBySearch() {
+        // If the search bar is empty, populate the table with all suppliers
+        if (txtSupplierSearch.getText().trim().isEmpty()) {
+            populateSuppliersTable(allSuppliers); // Populate with the full list of suppliers
+            return;
+        }
+
+        String search = txtSupplierSearch.getText().trim().toLowerCase(); // Get search term and convert to lowercase
+        List<Supplier> filteredSuppliers = new ArrayList<>();
+
+        // Loop through all suppliers and filter based on search term
+        for (Supplier supplier : allSuppliers) {
+            if (supplier.getName().toLowerCase().contains(search) ||  // Match Supplier Name
+                    supplier.getAddress1().toLowerCase().contains(search) ||  // Match Address
+                    (supplier.getAddress2() != null && supplier.getAddress2().toLowerCase().contains(search)) ||
+                    (supplier.getCity() != null && supplier.getCity().toLowerCase().contains(search)) || // Match City
+                    (supplier.getProvinceId() != null && supplier.getProvinceId().toLowerCase().contains(search)) || // Match Province
+                    (supplier.getCountry() != null && supplier.getCountry().toLowerCase().contains(search)) || // Match Country
+                    (supplier.getPostalcode() != null && supplier.getPostalcode().toLowerCase().contains(search)) || // Match Postal Code
+                    (supplier.getPhone() != null && supplier.getPhone().toLowerCase().contains(search)) || // Match Phone
+                    (supplier.getContact() != null && supplier.getContact().toLowerCase().contains(search)) || // Match Contact Person
+                    (supplier.getNotes() != null && supplier.getNotes().toLowerCase().contains(search)) || // Match Notes
+                    (supplier.getActive() ? "yes" : "no").contains(search)) { // Match Active status
+
+                filteredSuppliers.add(supplier); // Add matching supplier to the filtered list
+            }
+        }
+
+        // Populate the table with the filtered suppliers
+        populateSuppliersTable(filteredSuppliers);
+    }
+
+    /**
+     * Opens the form to add a new supplier.
+     */
+    private void addSupplier() {
+        SwingUtilities.invokeLater(() ->
+                new AddEditSupplierForm().showAddEditSupplierForm(
+                        frame,
+                        frame.getLocation(),
+                        "ADD",
+                        null,
+                        () -> {
+                            // Refresh table after adding supplier
+                            loadInitialData();
+                            populateSuppliersTable(allSuppliers);
+                        }
+                )
+        );
+    }
+
+    /**
+     * Opens the form to edit the selected supplier.
+     */
+    private void editSupplier() {
+        // Ensure a supplier is selected
+        if (supplierTableSelectedId == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a supplier to modify.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Find the supplier in the list
+        Supplier supplierToEdit = null;
+        for (Supplier supplier : allSuppliers) {
+            if (supplier.getId().equals(supplierTableSelectedId)) {
+                supplierToEdit = supplier;
+                break;
+            }
+        }
+
+        // Ensure a valid supplier was found
+        if (supplierToEdit == null) {
+            JOptionPane.showMessageDialog(frame, "Selected supplier not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Open the edit form
+        Supplier finalSupplierToEdit = supplierToEdit;
+        SwingUtilities.invokeLater(() ->
+                new AddEditSupplierForm().showAddEditSupplierForm(
+                        frame,
+                        frame.getLocation(),
+                        "EDIT",
+                        finalSupplierToEdit,
+                        () -> {
+                            // Refresh table after editing supplier
+                            loadInitialData();
+                            populateSuppliersTable(allSuppliers);
+                        }
+                )
+        );
+    }
+
 
     // =================== INVENTORY MANAGEMENT ===================
 

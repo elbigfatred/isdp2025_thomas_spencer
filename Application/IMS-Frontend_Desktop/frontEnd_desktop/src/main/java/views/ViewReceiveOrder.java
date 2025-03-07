@@ -5,7 +5,7 @@ import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+
 import utils.*;
 
 import javax.swing.*;
@@ -53,6 +53,7 @@ public class ViewReceiveOrder {
     private JLabel lblWeight;
     private JLabel lblTotalQuantity;
     private JLabel lblTotalCost;
+    private JButton btnConfirmAcceptOrder;
     private JDatePickerImpl datePicker; // ✅ Declare the date picker
 
     // =================== FRAME VARIABLES ===================
@@ -195,6 +196,11 @@ public class ViewReceiveOrder {
         btnHelp.addActionListener(e -> {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.VIEW_RECEIVE_ORDER_HELP,"View Order Help",JOptionPane.INFORMATION_MESSAGE);
         });
+
+        btnConfirmAcceptOrder.addActionListener(e -> {
+            handleAcceptOrder();
+        });
+
         return contentPane;
     }
 
@@ -466,7 +472,7 @@ public class ViewReceiveOrder {
             return;
         }
 
-        System.out.println("Selected Item: " + selectedItem.getItemID() + selectedItem.getQuantity());
+        System.out.println("Selected Item: " + selectedItem.getItemID() + " Quantity: " + selectedItem.getQuantity());
 
         // ✅ Update UI elements
         lblBackOrderItemLabel.setText(selectedItem.getItemName() + ", Case Size: " + itemMap.get(selectedItem.getItemID()).getCaseSize());
@@ -523,6 +529,12 @@ public class ViewReceiveOrder {
         String txnStatus = selectedtxn.getTxnStatus().getStatusName();
         String txnType = selectedtxn.getTxnType().getTxnType(); // Store Order, Emergency Order, Back Order
 
+        boolean isStoreEmployee = Arrays.stream(accessPosition)
+                .anyMatch(role -> role.equalsIgnoreCase("Store Manager")
+                        || role.equalsIgnoreCase("Assistant Store Manager")
+                        || role.equalsIgnoreCase("Store Worker")
+                        || role.equalsIgnoreCase("Administrator"));
+
         boolean isWarehouseEmployee = Arrays.stream(accessPosition)
                 .anyMatch(role -> role.equalsIgnoreCase("Warehouse Worker"));
 
@@ -536,6 +548,16 @@ public class ViewReceiveOrder {
         btnConfirmAssembled.setVisible(false);
         fullfillPanel.setVisible(false);
         //editBackOrderPanel.setVisible(false); // Default to hidden
+
+        // ✅ STORE-SIDE RECEIVING MODE (DELIVERED -> COMPLETE)
+        if ("DELIVERED".equalsIgnoreCase(txnStatus) && isStoreEmployee) {
+            //btnConfirmReceived.setText("Confirm Order Received");
+            //btnConfirmReceived.setVisible(true);
+            //btnConfirmReceived.setEnabled(true);
+            btnConfirmAcceptOrder.setVisible(true);
+            startAssemblyProcess();
+            return;
+        }
 
         if (!(isWarehouseEmployee || isWarehouseManagerOrAdmin)) return; // ✅ Ignore if user has no warehouse access
 
@@ -596,8 +618,12 @@ public class ViewReceiveOrder {
             } else {
                 lblFullfillItemDesc.setText("Scanning Complete");
                 btnScanItem.setEnabled(false);
-                btnConfirmAssembled.setEnabled(true); // ✅ Enable confirm button
-            }
+                if ("DELIVERED".equalsIgnoreCase(selectedtxn.getTxnStatus().getStatusName())) {
+                    System.out.println("[INFO] All items scanned. Enabling btnConfirmAcceptOrder...");
+                    btnConfirmAcceptOrder.setEnabled(true);  // ✅ Enable the button when all items are scanned
+                } else {
+                    btnConfirmAssembled.setEnabled(true); // ✅ Enable confirm button for warehouse assembly
+                }            }
         }
     }
 
@@ -782,7 +808,9 @@ public class ViewReceiveOrder {
     }
 
     private void loadItems() {
+        System.out.println("[INFO] Loading Items");
         List<Item> itemList = ItemRequests.fetchItems(); // Fetch items from DB
+        System.out.println("[INFO] Loaded " + itemList.size() + " items");
 
         // ✅ Store them in a Map where key = itemID
         itemMap = new HashMap<>();
@@ -905,6 +933,104 @@ public class ViewReceiveOrder {
         lblTotalQuantity.setText("Total Quantity: " + totalQuantity);
         lblTotalCost.setText("Total Cost: $" + String.format("%.2f", totalCost));
         lblWeight.setText("Total Weight: " + String.format("%.2f", totalWeight) + " kg");
+    }
+
+    private void handleAcceptOrder() {
+        // ✅ Step 1: Prompt for Manager's Signature
+        String managerUsername = JOptionPane.showInputDialog(frame,
+                "Manager Signature Required:\nPlease type name",
+                "Confirm Order Acceptance", JOptionPane.PLAIN_MESSAGE);
+
+        // ❌ If user cancels or enters nothing, stop
+        if (managerUsername == null || managerUsername.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "No signature submitted. Order acceptance canceled.",
+                    "Canceled", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // ✅ Step 2: Change Transaction Status to COMPLETE
+        String empUsername = SessionManager.getInstance().getUsername();
+        boolean statusUpdated = TxnRequests.updateOrderStatus(selectedtxn.getId(), "COMPLETE", empUsername);
+
+        if (!statusUpdated) {
+            JOptionPane.showMessageDialog(frame, "Failed to update transaction status!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // ✅ Step 3: Decrement Inventory from Truck (siteID: Truck 9999)
+        List<Inventory> itemsFromTruck = txnItemsToInventory(selectedtxn.getId(), 9999);
+        boolean truckDecrementSuccess = InventoryRequests.decrementInventory(9999, itemsFromTruck);
+
+        // ✅ Step 4: Increment Inventory at Store (Fetch Store Inventory)
+        int storeSiteID = selectedtxn.getSiteTo().getId();
+        List<Inventory> updatedStoreInventory = matchStoreInventory(storeSiteID, itemsFromTruck);
+        boolean storeIncrementSuccess = InventoryRequests.incrementInventory(storeSiteID, itemsFromTruck);
+
+        // ✅ Step 5: Confirm Success
+        if (truckDecrementSuccess && storeIncrementSuccess) {
+            JOptionPane.showMessageDialog(frame,
+                    "Order successfully received and added to inventory!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            frame.dispose(); // Close window
+        } else {
+            JOptionPane.showMessageDialog(frame,
+                    "Error: Inventory update failed!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private List<Inventory> txnItemsToInventory(int txnId, int siteId) {
+        List<TxnItem> txnItems = TxnRequests.fetchTxnItems(txnId);
+        List<Inventory> inventoryList = new ArrayList<>();
+
+        for (TxnItem txnItem : txnItems) {
+            Inventory inventory = new Inventory();
+            inventory.setSiteID(siteId);
+            inventory.setItemID(txnItem.getItemID());
+            inventory.setQuantity(txnItem.getQuantity());
+            inventoryList.add(inventory);
+        }
+
+        return inventoryList;
+    }
+
+    private List<Inventory> matchStoreInventory(int storeSiteID, List<Inventory> itemsFromTruck) {
+        List<Inventory> allSiteInv = InventoryRequests.fetchInventoryBySite(storeSiteID);
+        List<Inventory> updatedInventory = new ArrayList<>();
+
+        // ✅ Debugging: Log all store inventory
+        System.out.println("[DEBUG] Store Inventory for Site " + storeSiteID + ":");
+        for (Inventory inv : allSiteInv) {
+            System.out.println("   - Inventory Item: ItemID=" + inv.getItemID() + ", Quantity=" + inv.getQuantity());
+        }
+
+        for (Inventory truckItem : itemsFromTruck) {
+            // ✅ Debugging: Log truck item
+            System.out.println("[DEBUG] Processing Truck Item: ItemID=" + truckItem.getItemID() + ", Quantity=" + truckItem.getQuantity());
+
+            // ✅ Ensure correct ID comparison
+            Inventory storeItem = allSiteInv.stream()
+                    .filter(inv -> inv.getItemID()==(truckItem.getItemID())) // Ensure correct comparison
+                    .findFirst()
+                    .orElse(null);
+
+            if (storeItem != null) {
+                // ✅ Existing inventory item found, increment quantity
+                System.out.println("[MATCH FOUND] Incrementing ItemID=" + storeItem.getItemID() + " by " + truckItem.getQuantity());
+                storeItem.setQuantity(storeItem.getQuantity() + truckItem.getQuantity());
+                updatedInventory.add(storeItem);
+            } else {
+                // ❌ No existing inventory found, create a new one with correct site ID
+                System.out.println("[NO MATCH] Creating new inventory item for ItemID=" + truckItem.getItemID());
+                Inventory newInventory = new Inventory();
+                newInventory.setSiteID(storeSiteID);
+                newInventory.setItemID(truckItem.getItemID());
+                newInventory.setQuantity(truckItem.getQuantity());
+                updatedInventory.add(newInventory);
+            }
+        }
+
+        return updatedInventory;
     }
 
 

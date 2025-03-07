@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ProvinceRepository extends JpaRepository<Province, String> {
     List<Province> findByActive(Byte active);
+    Province findByProvinceID(String provinceID);
 }

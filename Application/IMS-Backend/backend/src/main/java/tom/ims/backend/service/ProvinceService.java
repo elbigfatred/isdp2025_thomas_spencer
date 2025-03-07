@@ -16,4 +16,6 @@ public class ProvinceService {
     public List<Province> getActiveProvinces() {
         return provinceRepository.findByActive((byte) 1);
     }
+
+
 }

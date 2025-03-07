@@ -1,5 +1,6 @@
 package tom.ims.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,41 +14,53 @@ public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "supplierID", nullable = false)
+    @JsonProperty("supplierid")
     private Integer id;
 
     @Column(name = "name", nullable = false, length = 50)
+    @JsonProperty("name")
     private String name;
 
     @Column(name = "address1", nullable = false, length = 50)
+    @JsonProperty("address1")
     private String address1;
 
     @Column(name = "address2", length = 50)
+    @JsonProperty("address2")
     private String address2;
 
     @Column(name = "city", nullable = false, length = 50)
+    @JsonProperty("city")
     private String city;
 
     @Column(name = "country", nullable = false, length = 50)
+    @JsonProperty("country")
     private String country;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "province", nullable = false)
+    @JsonProperty("province")
     private Province province;
 
     @Column(name = "postalcode", nullable = false, length = 11)
+    @JsonProperty("postalcode")
     private String postalcode;
 
     @Column(name = "phone", nullable = false, length = 14)
+    @JsonProperty("phone")
     private String phone;
 
     @Column(name = "contact", length = 100)
+    @JsonProperty("contact")
     private String contact;
 
     @Column(name = "notes")
+    @JsonProperty("notes")
     private String notes;
 
     @ColumnDefault("1")
     @Column(name = "active", nullable = false)
+    @JsonProperty("active")
     private Byte active;
 
     // Getters and Setters

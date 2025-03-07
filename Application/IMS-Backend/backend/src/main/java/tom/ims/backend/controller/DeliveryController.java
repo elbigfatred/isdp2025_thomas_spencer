@@ -29,6 +29,8 @@ public class DeliveryController {
     @Autowired private InventoryRepository inventoryRepository;
     @Autowired private TxnauditService auditService;
     @Autowired private TxnStatusService txnStatusService;
+    @Autowired private DeliveryService deliveryService; // Inject DeliveryService
+
 
     @GetMapping("/upcoming")
     public ResponseEntity<List<DeliveryTxnDTO>> getUpcomingDeliveries() {
@@ -150,6 +152,12 @@ public class DeliveryController {
         List<Txn> orders = txnRepository.findByTxnTypeAndDeliveryAssignedToday(today);
 
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Delivery>> getAllDeliveries() {
+        List<Delivery> deliveries = deliveryService.getAllDeliveries();
+        return ResponseEntity.ok(deliveries);
     }
 
 }

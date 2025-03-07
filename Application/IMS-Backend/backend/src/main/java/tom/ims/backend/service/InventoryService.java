@@ -78,13 +78,16 @@ public class InventoryService {
 
 
     public void incrementInventory(InventoryUpdateRequest request) {
-        for (InventoryUpdateRequest.InventoryUpdateItem item : request.getItems()) {
-            InventoryId inventoryId = new InventoryId();
-            inventoryId.setSiteID(request.getSiteID());
-            inventoryId.setItemID(item.getItemID());
-            inventoryId.setItemLocation("Stock"); // Default location
+//        for (InventoryUpdateRequest.InventoryUpdateItem item : request.getItems()) {
+//            InventoryId inventoryId = new InventoryId();
+//            inventoryId.setSiteID(request.getSiteID());
+//            inventoryId.setItemID(item.getItemID());
+//            inventoryId.setItemLocation(""); // Default location
+//
+//            Inventory inventory = inventoryRepository.findById(inventoryId).orElse(null);
 
-            Inventory inventory = inventoryRepository.findById(inventoryId).orElse(null);
+        for(InventoryUpdateRequest.InventoryUpdateItem item : request.getItems()) {
+            Inventory inventory = inventoryRepository.findBySiteIdAndItemId(request.getSiteID(), item.getItemID());
 
             if (inventory != null) {
                 // ✅ Existing inventory, just increase quantity
@@ -92,6 +95,10 @@ public class InventoryService {
             } else {
                 // ✅ Inventory doesn't exist—create a new entry
                 inventory = new Inventory();
+                InventoryId inventoryId = new InventoryId();
+                inventoryId.setSiteID(request.getSiteID());
+                inventoryId.setItemID(item.getItemID());
+                inventoryId.setItemLocation(""); // Default location
                 inventory.setId(inventoryId); // ✅ Set the composite key
                 inventory.setQuantity(item.getQuantity());
                 inventory.setOptimumThreshold(0);
