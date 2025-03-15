@@ -30,12 +30,16 @@ const AssignDeliveryModal = ({
               {orders.map((o) => o.txn.id).join(", ")}
             </Typography>
             <Typography>
-              <strong>Vehicle:</strong> {vehicle?.vehicleType}
+              <strong>Vehicle:</strong>{" "}
+              {vehicle?.vehicleType ||
+                "Order is too large to fit on any available vehicle"}
             </Typography>
-            <Typography>
-              <strong>Estimated Distance Cost:</strong> $
-              {estimatedCost.toFixed(2)}
-            </Typography>
+            {vehicle ? (
+              <Typography>
+                <strong>Estimated Distance Cost:</strong> $
+                {estimatedCost.toFixed(2)}
+              </Typography>
+            ) : null}
           </>
         )}
       </DialogContent>
@@ -43,7 +47,11 @@ const AssignDeliveryModal = ({
         <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} color="primary" disabled={loading}>
+        <Button
+          onClick={onConfirm}
+          color="primary"
+          disabled={loading || !vehicle}
+        >
           Confirm
         </Button>
       </DialogActions>

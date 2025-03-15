@@ -46,7 +46,7 @@ const DeliverStoreOrders = ({ orders, user, onRefresh }) => {
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell>{order.barCode}</TableCell>
+                  <TableCell>{order.id}</TableCell>
                   <TableCell>{order.siteIDTo.siteName}</TableCell>
                   <TableCell>{order.deliveryID.vehicle.vehicleType}</TableCell>
                   <TableCell>

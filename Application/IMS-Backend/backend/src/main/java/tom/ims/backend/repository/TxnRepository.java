@@ -39,7 +39,7 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
 
     @Query("SELECT t FROM Txn t " +
             "WHERE (t.txnType.txnType = 'Store Order' OR t.txnType.txnType = 'Emergency Order') " +
-            "AND (t.txnStatus.statusName = 'ASSEMBLED' " +
+            "AND (t.txnStatus.statusName in ('ASSEMBLED','ASSEMBLING','RECEIVED') " +
             "OR t.deliveryID IS NOT NULL) " +
             "ORDER BY t.shipDate")
     List<Txn> findAllAssembledStoreOrders();

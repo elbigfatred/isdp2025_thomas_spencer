@@ -144,7 +144,7 @@ const ReviewStoreOnlineOrders = ({ user }) => {
 
               return (
                 <TableRow key={order.id}>
-                  <TableCell>{order.barCode}</TableCell>
+                  <TableCell>{order.id}</TableCell>
                   <TableCell>{customerInfo.email || "Unknown"}</TableCell>
                   <TableCell>
                     {new Date(order.shipDate).toLocaleString("en-US", {

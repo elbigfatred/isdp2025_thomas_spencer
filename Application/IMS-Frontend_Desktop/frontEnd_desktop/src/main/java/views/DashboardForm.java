@@ -736,13 +736,15 @@ public class DashboardForm {
 
         // Populate table rows
         for (Txn txn : filteredTxns) {
+            String shipDateFormatted = txn.getShipDate() != null ? formatDate(txn.getShipDate()) : "N/A";
+
             Object[] rowData = {
                     txn.getId(),
                     txn.getTxnStatus().getStatusName(),
                     txn.getTxnType().getTxnType(),
                     txn.getSiteTo().getSiteName(),
                     txn.getSiteFrom() != null ? txn.getSiteFrom().getSiteName() : "N/A",
-                    txn.getShipDate() != null ? txn.getShipDate().toString() : "Not Set",
+                    txn.getShipDate() != null ? shipDateFormatted : "Not Set",
                     txn.getDeliveryID() != null ? txn.getDeliveryID() : "None",
                     txn.getBarCode(),
                     txn.isEmergencyDelivery() ? "Yes" : "No"
@@ -830,6 +832,9 @@ public class DashboardForm {
 
         // Block editing if status is CANCELLED or COMPLETE
         if ("CANCELLED".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName()) ||
+                "DELIVERED".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName()) ||
+                "IN TRANSIT".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName()) ||
+                "REJECTED".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName()) ||
                 "COMPLETE".equalsIgnoreCase(txnToEdit.getTxnStatus().getStatusName())) {
             JOptionPane.showMessageDialog(frame,
                     "This transaction cannot be modified because it is already " + txnToEdit.getTxnStatus().getStatusName() + ".",

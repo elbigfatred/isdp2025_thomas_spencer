@@ -26,13 +26,13 @@ public class TxnController {
         this.txnService = txnService;
     }
 
-    // ✅ Get all transactions (Admin access)
+    //  Get all transactions (Admin access)
     @GetMapping
     public ResponseEntity<List<Txn>> getAllTransactions() {
         return ResponseEntity.ok(txnService.findAll());
     }
 
-    // ✅ Get all active transactions (Excludes "CLOSED")
+    //  Get all active transactions (Excludes "CLOSED")
     @GetMapping("/active")
     public ResponseEntity<List<Txn>> getAllActiveTransactions() {
         return ResponseEntity.ok(txnService.findAll().stream()
@@ -40,7 +40,7 @@ public class TxnController {
                 .toList());
     }
 
-    // ✅ Get a transaction by ID
+    //  Get a transaction by ID
     @GetMapping("/{id}")
     public ResponseEntity<Txn> getTransactionById(@PathVariable Integer id) {
         Optional<Txn> txn = txnService.getTransactionById(id);
@@ -59,17 +59,17 @@ public class TxnController {
         return ResponseEntity.ok(txnStatuses);
     }
 
-    // ✅ Modify a transaction
+    //  Modify a transaction
     @PutMapping("/{id}")
     public ResponseEntity<Txn> updateTransaction(@PathVariable Integer id, @RequestBody TxnUpdateDTO txnUpdateDTO) {
         try {
             System.out.println("[DEBUG] Updating transaction ID: " + id);
 
-            // ✅ Retrieve the existing transaction
+            //  Retrieve the existing transaction
             Txn existingTxn = txnService.getTransactionById(id)
                     .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-            // ✅ Fetch related objects using their respective services
+            //  Fetch related objects using their respective services
             if (txnUpdateDTO.getSiteIDTo() != null) {
                 existingTxn.setSiteIDTo(siteService.getSiteById(txnUpdateDTO.getSiteIDTo()));
             }
@@ -88,11 +88,14 @@ public class TxnController {
             if (txnUpdateDTO.getDeliveryID() != null) {
                 existingTxn.setDeliveryID(deliveryService.getDeliveryById(txnUpdateDTO.getDeliveryID()));
             }
+            else{
+                existingTxn.setDeliveryID(null);
+            }
             if (txnUpdateDTO.getEmergencyDelivery() != null) {
                 existingTxn.setEmergencyDelivery(txnUpdateDTO.getEmergencyDelivery());
             }
 
-            // ✅ Save the updated transaction
+            //  Save the updated transaction
             Txn updatedTxn = txnService.updateTransaction(id, existingTxn);
             return ResponseEntity.ok(updatedTxn);
 

@@ -4,6 +4,7 @@ import models.Txn;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
+import utils.InventoryRequests;
 import utils.SessionManager;
 
 import javax.swing.*;
@@ -11,9 +12,11 @@ import java.awt.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Properties;
 import models.*;
+import utils.TxnRequests;
 import utils.TxnsModsRequests;
 
 import java.util.List;
@@ -48,7 +51,7 @@ public class EditTxnForm {
         this.selectedTxn = txnToEdit;
         this.onCloseCallback = onCloseCallback;
 
-        frame.setTitle("Edit Transaction - " + txnToEdit.getId());
+        frame.setTitle("Edit Transaction - ID# " + txnToEdit.getId());
         frame.setSize(700, 430);
         frame.setContentPane(getMainPanel());
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -82,14 +85,14 @@ public class EditTxnForm {
     }
 
     private void setupFields() {
-        // ✅ Populate Sites
+        //  Populate Sites
         List<Site> allSites = TxnsModsRequests.getAllSites();
         cmbDestinationSite.setModel(new DefaultComboBoxModel<>(allSites.toArray(new Site[0])));
         cmbDestinationSite.setSelectedItem(
                 allSites.stream().filter(site -> site.getId() == selectedTxn.getSiteTo().getId()).findFirst().orElse(null)
         );
 
-        // ✅ Populate Transaction Statuses
+        //  Populate Transaction Statuses
         List<TxnStatus> allStatuses = TxnsModsRequests.getAllTxnStatuses();
         cmbTxnStatus.setModel(new DefaultComboBoxModel<>(allStatuses.toArray(new TxnStatus[0])));
         cmbTxnStatus.setSelectedItem(
@@ -97,7 +100,7 @@ public class EditTxnForm {
                         .findFirst().orElse(null)
         );
 
-        // ✅ Populate Transaction Types
+        //  Populate Transaction Types
         List<TxnType> allTypes = TxnsModsRequests.getAllTxnTypes();
         cmbTxnType.setModel(new DefaultComboBoxModel<>(allTypes.toArray(new TxnType[0])));
         cmbTxnType.setSelectedItem(
@@ -105,21 +108,24 @@ public class EditTxnForm {
                         .findFirst().orElse(null)
         );
 
-        // ✅ Populate Barcode
+        //  Populate Barcode
         txtBarcode.setText(selectedTxn.getBarCode());
 
-        // ✅ Populate Delivery ID
+        //  Populate Delivery ID
         List<Integer> allDeliveries = TxnsModsRequests.getAllDeliveryIds();
-        cmbDeliveryId.setModel(new DefaultComboBoxModel<>(allDeliveries.toArray(new Integer[0])));
-        cmbDeliveryId.setSelectedItem(selectedTxn.getDeliveryID());
+        List<Object> deliveryOptions = new ArrayList<>();
+        deliveryOptions.add("None"); // ✅ Add 'None' option
+        deliveryOptions.addAll(allDeliveries);
 
-        // ✅ Set Emergency Order Checkbox
+        cmbDeliveryId.setModel(new DefaultComboBoxModel<>(deliveryOptions.toArray()));
+        cmbDeliveryId.setSelectedItem(selectedTxn.getDeliveryID() != null ? selectedTxn.getDeliveryID() : "None");
+
+        //  Set Emergency Order Checkbox
         chkEmergencyOrder.setSelected(selectedTxn.isEmergencyDelivery());
 
-        // ✅ Setup Date Picker for Ship Date
+        //  Setup Date Picker for Ship Date
         setupDatePicker(selectedTxn.getShipDate());
     }
-
 
     private void setupDatePicker(LocalDateTime shipDate) {
         UtilDateModel model = new UtilDateModel();
@@ -140,7 +146,7 @@ public class EditTxnForm {
     }
 
     private void handleSave() {
-        // 🚨 Prevent saving if TXN is CANCELLED or COMPLETE
+        //  Prevent saving if TXN is CANCELLED or COMPLETE
         if (Objects.equals(selectedTxn.getTxnStatus().getStatusName(), "CANCELLED") ||
                 Objects.equals(selectedTxn.getTxnStatus().getStatusName(), "COMPLETE")) {
             JOptionPane.showMessageDialog(frame, "Cannot modify a completed or cancelled transaction.",
@@ -148,22 +154,49 @@ public class EditTxnForm {
             return;
         }
 
-        // ✅ Extract only the necessary fields
+        if (Objects.equals(selectedTxn.getTxnStatus().getStatusName(), "ASSEMBLED") && (
+                (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "ASSEMBLING")) ||
+                        (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "RECEIVED")) ||
+                        (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "SUBMITTED")) ||
+                        (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "NEW")))) {
+
+            //increment warehouse inventory
+            int whId = 2;
+            List<Inventory> whItems = txnItemsToInventory(selectedTxn.getId(), whId);
+            boolean whIncrementSuccess = InventoryRequests.incrementInventory(whId, whItems);
+            if(!whIncrementSuccess) {
+                JOptionPane.showMessageDialog(frame, "Failed to increment warehouse stock from Transaction status reversion.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            //decrement warehouse bay inventory
+            int whBayId = 3;
+            List<Inventory> whBayItems = txnItemsToInventory(selectedTxn.getId(), whBayId);
+            boolean whBayDecrementSuccess = InventoryRequests.decrementInventory(whBayId, whBayItems);
+            if(!whBayDecrementSuccess) {
+                JOptionPane.showMessageDialog(frame, "Failed to decrement warehouse bay stock from Transaction status reversion.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+        }
+
+        //  Extract only the necessary fields
         int siteIDTo = ((Site) cmbDestinationSite.getSelectedItem()).getId();
         String txnStatus = ((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName();
         String txnType = ((TxnType) cmbTxnType.getSelectedItem()).getTxnType();
         String barCode = txtBarcode.getText();
-        Integer deliveryID = (Integer) cmbDeliveryId.getSelectedItem();
+        Object selectedDelivery = cmbDeliveryId.getSelectedItem();
+        Integer deliveryID = selectedDelivery instanceof Integer ? (Integer) selectedDelivery : null;
         boolean emergencyDelivery = chkEmergencyOrder.isSelected();
 
-        // ✅ Fetch Date from DatePicker
+        //  Fetch Date from DatePicker
         String shipDate = null;
         java.util.Date selectedDate = (java.util.Date) datePicker.getModel().getValue();
         if (selectedDate != null) {
             shipDate = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().toString();
         }
 
-        // ✅ Send Update Request with only required fields
+        //  Send Update Request with only required fields
         boolean success = TxnsModsRequests.updateTxn(
                 selectedTxn.getId(), siteIDTo, txnStatus, shipDate, txnType, barCode, deliveryID, emergencyDelivery
         );
@@ -176,7 +209,7 @@ public class EditTxnForm {
             JOptionPane.showMessageDialog(frame, "Failed to update transaction.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    // ✅ Custom Date Formatter
+    //  Custom Date Formatter
     private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
         private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -210,6 +243,21 @@ public class EditTxnForm {
         lblLogo.setIcon(resizedIcon);
         lblLogo.setHorizontalAlignment(SwingConstants.CENTER);
         lblLogo.setText("");
+    }
+
+    private List<Inventory> txnItemsToInventory(int txnId, int siteId) {
+        List<TxnItem> txnItems = TxnRequests.fetchTxnItems(txnId);
+        List<Inventory> inventoryList = new ArrayList<>();
+
+        for (TxnItem txnItem : txnItems) {
+            Inventory inventory = new Inventory();
+            inventory.setSiteID(siteId);
+            inventory.setItemID(txnItem.getItemID());
+            inventory.setQuantity(txnItem.getQuantity());
+            inventoryList.add(inventory);
+        }
+
+        return inventoryList;
     }
 
 }

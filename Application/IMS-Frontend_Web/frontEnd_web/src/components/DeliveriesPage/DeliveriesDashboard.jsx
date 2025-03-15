@@ -13,6 +13,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { parseISO, format, addDays } from "date-fns";
 import AssignDeliveryModal from "./AssignDeliveryModal";
+import OrderDetailsModal from "./OrderDetailsModal";
 
 const DeliveriesDashboard = ({ user }) => {
   const [deliveries, setDeliveries] = useState([]);
@@ -24,6 +25,8 @@ const DeliveriesDashboard = ({ user }) => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [loadingAssignment, setLoadingAssignment] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:8080/api/delivery/upcoming")
@@ -62,19 +65,26 @@ const DeliveriesDashboard = ({ user }) => {
 
   // Handle Assign Delivery
   const handleAssignDelivery = (orders) => {
+    console.log("ORDERS", orders);
     if (orders.length === 0) return;
 
-    // ✅ Calculate Total Weight
+    //  Calculate Total Weight
     const totalWeight = orders.reduce(
       (sum, order) => sum + order.totalWeight,
       0
     );
 
-    // ✅ Determine Best Vehicle
-    const bestVehicle =
-      vehicles.find((v) => v.maxWeight >= totalWeight) || null;
+    console.log("[DEBUG] Total Weight:", totalWeight);
+    console.log("[DEBUG] Vehicles:", vehicles);
+    let sortedVehicles = vehicles.sort((a, b) => a.maxWeight - b.maxWeight);
+    console.log(sortedVehicles);
 
-    // ✅ Calculate Distance Cost (Sum of each site's distance * cost per km)
+    //  Determine Best Vehicle; smallest that will work
+    const bestVehicle = sortedVehicles.find(
+      (v) => v.maxWeight >= totalWeight || null
+    );
+
+    //  Calculate Distance Cost (Sum of each site's distance * cost per km)
     const totalDistanceCost = orders.reduce(
       (sum, order) =>
         sum +
@@ -83,7 +93,7 @@ const DeliveriesDashboard = ({ user }) => {
       0
     );
 
-    // ✅ Set State for Modal
+    //  Set State for Modal
     setSelectedOrders(orders);
     setSelectedVehicle(bestVehicle);
     setEstimatedCost(totalDistanceCost);
@@ -174,7 +184,10 @@ const DeliveriesDashboard = ({ user }) => {
         groupedDeliveries.map((day, index) => {
           const bestVehicle = getBestVehicle(day.totalWeight);
           const allOrdersAssembled = day.orders.every(
-            (order) => order.txn.txnStatus.statusName === "ASSEMBLED"
+            (order) =>
+              order.txn.txnStatus.statusName === "ASSEMBLED" ||
+              order.txn.txnStatus.statusName === "ASSEMBLING" ||
+              order.txn.txnStatus.statusName === "RECEIVED"
           );
           const hasAssignedDelivery = day.orders.some(
             (order) => order.txn.deliveryID !== null
@@ -197,22 +210,22 @@ const DeliveriesDashboard = ({ user }) => {
                   justifyContent: "space-between",
                 }}
               >
-                {/* ✅ DATE Label - Always First */}
+                {/*  DATE Label - Always First */}
                 <Typography sx={{ fontWeight: "bold", flexShrink: 0 }}>
                   {day.dateLabel}
                 </Typography>
 
-                {/* ✅ Flexible Spacer to Align Button Properly */}
+                {/*  Flexible Spacer to Align Button Properly */}
                 <Box sx={{ flexGrow: 1 }} />
 
-                {/* ✅ Assign Delivery Button (If Needed) */}
+                {/*  Assign Delivery Button (If Needed) */}
                 {!hasAssignedDelivery && day.orders.length > 0 && (
                   <Button
                     variant="contained"
                     color="primary"
                     sx={{ marginRight: 2 }}
                     onClick={(e) => {
-                      e.stopPropagation(); // ✅ Prevents the accordion from toggling
+                      e.stopPropagation(); //  Prevents the accordion from toggling
                       handleAssignDelivery(day.orders);
                     }}
                   >
@@ -220,18 +233,19 @@ const DeliveriesDashboard = ({ user }) => {
                   </Button>
                 )}
 
-                {/* ✅ Show Assigned Vehicle if Delivery Exists */}
+                {/*  Show Assigned Vehicle if Delivery Exists */}
                 {hasAssignedDelivery && (
                   <Typography
                     sx={{ marginRight: 2, fontStyle: "italic", color: "gray" }}
                   >
                     Assigned Vehicle:{" "}
                     {day.orders[0].txn.deliveryID.vehicle.vehicleType} | Estim.
-                    Distance Cost: ${day.orders[0].txn.deliveryID.distanceCost}
+                    Distance Cost: $
+                    {day.orders[0].txn.deliveryID.distanceCost.toFixed(2)}
                   </Typography>
                 )}
 
-                {/* ✅ Order Summary (Always Last) */}
+                {/*  Order Summary (Always Last) */}
                 <Typography sx={{ fontWeight: "bold" }}>
                   {day.orders.length} Orders | {day.totalItems} Items |{" "}
                   {day.totalWeight} kg
@@ -254,6 +268,17 @@ const DeliveriesDashboard = ({ user }) => {
                       <Typography>
                         Total Weight: {delivery.totalWeight} kg
                       </Typography>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={(e) => {
+                          e.stopPropagation(); //  Prevents the accordion from toggling
+                          setSelectedOrder(delivery.txn);
+                          setOrderDetailsOpen(true);
+                        }}
+                      >
+                        Order Details
+                      </Button>
                     </Paper>
                   ))
                 )}
@@ -272,6 +297,11 @@ const DeliveriesDashboard = ({ user }) => {
         vehicle={selectedVehicle}
         estimatedCost={estimatedCost}
         loading={loadingAssignment}
+      />
+      <OrderDetailsModal
+        open={orderDetailsOpen}
+        onClose={() => setOrderDetailsOpen(false)}
+        order={selectedOrder}
       />
     </Box>
   );

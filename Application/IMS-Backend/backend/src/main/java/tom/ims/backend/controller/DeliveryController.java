@@ -58,9 +58,12 @@ public class DeliveryController {
             return ResponseEntity.badRequest().body("No valid transactions found.");
         }
 
-        // Ensure all transactions are in 'ASSEMBLED' status
+        // Ensure all transactions are in 'ASSEMBLED' or ASSEMBLING or RECEIVED status
         boolean allAssembled = transactions.stream()
-                .allMatch(txn -> txn.getTxnStatus().getStatusName().equals("ASSEMBLED"));
+                .allMatch(txn -> {
+                    String status = txn.getTxnStatus().getStatusName();
+                    return status.equals("ASSEMBLED") || status.equals("ASSEMBLING") || status.equals("RECEIVED");
+                });
 
         if (!allAssembled) {
             System.out.println("Some transactions are NOT in ASSEMBLED status.");
@@ -132,7 +135,7 @@ public class DeliveryController {
             txnRepository.save(txn); // Ensure each transaction is saved
 
             // ✅ Create an audit entry
-            String actionDetails = "Assigned Delivery ID " + finalDelivery.getId() + " by " + empUsername;
+            String actionDetails = "Order ID " + txn.getId() + " assigned Delivery ID " + finalDelivery.getId() + " by " + empUsername;
             txnauditService.createAuditEntry(txn, assigningEmployee, actionDetails);
 
             System.out.println("📝 Audit logged for Txn ID: " + txn.getId());

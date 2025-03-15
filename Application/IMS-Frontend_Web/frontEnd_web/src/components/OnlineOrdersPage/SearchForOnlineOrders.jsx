@@ -23,15 +23,30 @@ const SearchForOnlineOrders = () => {
 
   const handleSearch = () => {
     if (!searchValue) return;
+
     setLoading(true);
+
     fetch(`http://localhost:8080/api/orders/searchOrders?query=${searchValue}`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+
+        const text = await res.text(); // Read response as text first
+        try {
+          return text ? JSON.parse(text) : []; // Safely parse JSON or return []
+        } catch (error) {
+          console.error("Invalid JSON response:", text);
+          throw new Error("Invalid JSON received from server");
+        }
+      })
       .then((data) => {
-        setOrders(data || []); // Handle null response
+        setOrders(Array.isArray(data) ? data : []); // Ensure orders is always an array
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching orders:", err);
+        setOrders([]); // Reset orders to empty array on failure
         setLoading(false);
       });
   };

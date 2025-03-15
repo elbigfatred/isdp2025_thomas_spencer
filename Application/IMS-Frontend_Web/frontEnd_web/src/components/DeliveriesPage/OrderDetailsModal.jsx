@@ -57,7 +57,7 @@ const OrderDetailsModal = ({ open, onClose, order }) => {
           {order.siteIDTo.address}, {order.siteIDTo.city}
         </Typography>
         <Typography>
-          <strong>Pickup Time:</strong>{" "}
+          <strong>Pickup:</strong>{" "}
           {new Date(order.shipDate).toLocaleString("en-US", {
             weekday: "long",
             month: "long",

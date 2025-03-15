@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import OrderDetailsModal from "./OrderDetailsModal"; //  Import modal component
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; //  Help Icon
+import { set } from "date-fns";
 
 const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
   const [orders, setOrders] = useState([]);
@@ -45,6 +46,11 @@ const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
       .then((response) => {
         console.log("[DEBUG] Fetched Orders JSON:", response.data);
         // ✅ Filter orders based on txnType
+        if (!response.data) {
+          //setError("No orders found.");
+          setOrders([]);
+          return;
+        }
         const filteredOrders = response.data.filter((order) =>
           ["Store Order", "Emergency Order", "Back Order"].includes(
             order.txnType.txnType
@@ -53,7 +59,7 @@ const OrderHistory = ({ user, siteId, refreshTrigger, fetchAllOrders }) => {
 
         setOrders(filteredOrders);
       })
-      .catch(() => setError(""))
+      .catch(() => setError(" Failed to load orders."))
       .finally(() => setLoading(false));
   }, [siteId, refreshTrigger, fetchAllOrders]);
 

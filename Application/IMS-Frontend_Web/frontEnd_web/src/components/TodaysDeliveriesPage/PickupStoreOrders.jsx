@@ -63,7 +63,7 @@ const PickupStoreOrders = ({ orders, user, onRefresh }) => {
                   <TableBody>
                     {orders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell>{order.barCode}</TableCell>
+                        <TableCell>{order.id}</TableCell>
                         <TableCell>{order.siteIDTo.siteName}</TableCell>
                         <TableCell>
                           <Button
