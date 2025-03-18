@@ -9,7 +9,10 @@ import {
   Grid,
   Button,
   Paper,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 import InventoryList from "./InventoryList";
 import UserCart from "./UserCart";
 import CustomerConfirmOrderModal from "./CustomerConfirmOrderModal.jsx"; // ✅ Import modal
@@ -215,6 +218,11 @@ const OnlineOrderManagerPanel = ({ user }) => {
     <Box>
       <Typography variant="h6" gutterBottom>
         Create an Online Order
+        <Tooltip title="Select a store and create an online order." arrow>
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
       </Typography>
 
       {/* Site Selection */}

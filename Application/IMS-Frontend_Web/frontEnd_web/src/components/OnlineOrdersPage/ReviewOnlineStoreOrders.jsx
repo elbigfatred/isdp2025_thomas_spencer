@@ -14,7 +14,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Dialog,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 import AssembleOrderModal from "./AssembleOrderModal";
 import OrderDetailsModal from "./OrderDetailsModal";
 
@@ -248,7 +252,17 @@ const ReviewStoreOnlineOrders = ({ user }) => {
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
-        Online Orders for {user.site.siteName}
+        {user.mainrole === "Administrator"
+          ? "Online Orders"
+          : `Online Orders for ${user.site.siteName}`}
+        <Tooltip
+          title="Review online orders, assemble them, and confirm receipt."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
       </Typography>
 
       {/* ✅ Admins can select a site */}

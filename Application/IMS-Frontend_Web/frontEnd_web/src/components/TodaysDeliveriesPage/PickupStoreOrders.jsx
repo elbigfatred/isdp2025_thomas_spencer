@@ -9,7 +9,11 @@ import {
   TableBody,
   Button,
   Paper,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
+
 import OrderDetailsModal from "./OrderDetailsModal";
 import BeginPickupModal from "./BeginPickupModal"; // ✅ Import modal
 
@@ -43,6 +47,14 @@ const PickupStoreOrders = ({ orders, user, onRefresh }) => {
     <Box>
       <Typography variant="h5" gutterBottom>
         Pickup Store Orders - {today}
+        <Tooltip
+          title="Confirm today's pickup(s) and update order status."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>{" "}
       </Typography>
       <Paper sx={{ padding: 2 }}>
         {Object.keys(groupedOrders).length === 0 ? (

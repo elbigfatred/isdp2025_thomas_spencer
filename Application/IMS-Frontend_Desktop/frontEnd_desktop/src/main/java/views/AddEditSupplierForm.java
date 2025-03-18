@@ -2,6 +2,7 @@ package views;
 
 import models.Province;
 import models.Supplier;
+import utils.HelpBlurbs;
 import utils.ProvinceRequests;
 import utils.SessionManager;
 import utils.SupplierUtil;
@@ -108,7 +109,7 @@ public class AddEditSupplierForm {
         btnExit.addActionListener(e -> frame.dispose());
 
         btnHelp.addActionListener(e -> {
-            JOptionPane.showMessageDialog(frame, "Fill in supplier details and save.", "Supplier Help", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.ADD_EDIT_SUPPLIER_VIEW, "Supplier Help", JOptionPane.INFORMATION_MESSAGE);
         });
 
         // Allow Cancel/Exit to be accessed via 'ESC' key

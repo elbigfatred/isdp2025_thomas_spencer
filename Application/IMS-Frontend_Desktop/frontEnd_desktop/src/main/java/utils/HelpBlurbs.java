@@ -111,4 +111,12 @@ public class HelpBlurbs {
                     + "• 📋 Backorders are created automatically for unfulfilled items.<br>"
                     + "• 🚀 Click <b>'Confirm Received'</b> to process an order once it arrives.<br><br>"
                     + "<i>📧 For further assistance, reach out to <b>admin@bullseye.ca</b>.</i></html>";
+
+    public static final String SUPPLIER_TABLE_VIEW = "This table provides an overview of all registered suppliers, including their contact details and address.\nWarehouse Managers can add and edit suppliers to ensure accurate and up-to-date supplier information.";
+
+    public static final String TXN_TABLE_VIEW = "The Transaction Table provides a complete view of all transaction records in the system.\nAdministrators can edit records as long as the transaction has not yet left the warehouse.\nOnce a transaction is in transit or is Complete/Cancelled, it becomes read-only to maintain data integrity.";
+
+    public static final String EDIT_TXN_VIEW = "The Edit Transactions view enables administrators to update details of an order before it leaves the warehouse.\nAdmins can change the order status, modify the ship date, assign a delivery ID, etc.\nOnce a transaction is in transit, editing is disabled to maintain reliable tracking.";
+
+    public static final String ADD_EDIT_SUPPLIER_VIEW = "The Add/Edit Supplier view enables Warehouse Managers to create and update supplier records.\nThey can modify supplier names, addresses, and set supplier status as active or inactive to maintain accurate supplier management.";
 }

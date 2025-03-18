@@ -700,6 +700,14 @@ public class DashboardForm {
             editTransaction();
         });
 
+        btnTxnsHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.TXN_TABLE_VIEW,"Transaction Records Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnSuppliersHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.SUPPLIER_TABLE_VIEW,"Suppliers Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
 
 
         return ContentPane;
@@ -736,6 +744,7 @@ public class DashboardForm {
 
         // Populate table rows
         for (Txn txn : filteredTxns) {
+            System.out.println(txn);
             String shipDateFormatted = txn.getShipDate() != null ? formatDate(txn.getShipDate()) : "N/A";
 
             Object[] rowData = {

@@ -77,7 +77,8 @@ public class TxnsModsRequests {
         try {
             txn.setId(jsonTxn.getInt("id"));
             txn.setBarCode(jsonTxn.optString("barCode", ""));
-            txn.setEmergencyDelivery(jsonTxn.optBoolean("emergencyDelivery", false));
+            //txn.setEmergencyDelivery(jsonTxn.optBoolean("emergencyDelivery", false));
+            txn.setEmergencyDelivery(jsonTxn.optInt("emergencyDelivery", 0) == 1);
             txn.setCreatedDate(parseDateTime(jsonTxn.optString("createdDate", null)));
             txn.setShipDate(parseDateTime(jsonTxn.optString("shipDate", null)));
 

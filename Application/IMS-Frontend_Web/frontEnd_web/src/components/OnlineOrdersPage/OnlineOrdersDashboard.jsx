@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Box, Typography, Button, Paper } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
+
 import ReviewStoreOnlineOrders from "./ReviewOnlineStoreOrders";
 import SearchForOnlineOrders from "./SearchForOnlineOrders";
 import OnlineOrderManagerPanel from "./OnlineOrderManagerPanel.jsx";
@@ -23,6 +32,14 @@ const OnlineOrdersDashboard = ({ user }) => {
     <Box>
       <Typography variant="h4" gutterBottom>
         Online Orders Dashboard
+        <Tooltip
+          title="The online orders tab can be used to create new orders, and review orders."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
       </Typography>
 
       <Box sx={{ display: "flex", gap: 2, marginBottom: 2 }}>

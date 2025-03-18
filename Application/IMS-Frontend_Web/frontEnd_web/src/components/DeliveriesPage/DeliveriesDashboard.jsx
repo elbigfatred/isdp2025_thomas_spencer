@@ -9,7 +9,10 @@ import {
   Paper,
   TextField,
   Button,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { parseISO, format, addDays } from "date-fns";
 import AssignDeliveryModal from "./AssignDeliveryModal";
@@ -23,6 +26,8 @@ const DeliveriesDashboard = ({ user }) => {
   const [assignDeliveryModal, setAssignDeliveryModal] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [estimatedDistanceCost, setEstimatedDistanceCost] = useState(0);
+  const [estimatedTimeCost, setEstimatedTimeCost] = useState(0);
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [loadingAssignment, setLoadingAssignment] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -93,10 +98,16 @@ const DeliveriesDashboard = ({ user }) => {
       0
     );
 
+    const totalHourlyCost = bestVehicle.HourlyTruckCost * 2;
+    const totalCost = totalDistanceCost + totalHourlyCost;
+
+    setEstimatedDistanceCost(totalDistanceCost);
+    setEstimatedTimeCost(totalHourlyCost);
+
     //  Set State for Modal
     setSelectedOrders(orders);
     setSelectedVehicle(bestVehicle);
-    setEstimatedCost(totalDistanceCost);
+    setEstimatedCost(totalDistanceCost + totalHourlyCost);
     setAssignDeliveryModal(true);
   };
 
@@ -161,11 +172,44 @@ const DeliveriesDashboard = ({ user }) => {
     return Object.values(deliveriesByDay);
   })();
 
+  const fetchDeliveries = async () => {
+    setLoading(true);
+    fetch("http://localhost:8080/api/delivery/upcoming")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Upcoming TXNs:", data);
+        setDeliveries(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching deliveries:", err);
+        setLoading(false);
+      });
+  };
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
         Deliveries Dashboard
+        <Tooltip
+          title="Review daily orders and assign a delivery truck to accommodate the order(s)."
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
       </Typography>
+
+      <Button
+        variant="contained"
+        color="secondary"
+        sx={{ marginBottom: 2 }}
+        onClick={fetchDeliveries}
+        disabled={loading}
+      >
+        {loading ? "Refreshing..." : "Refresh Orders"}
+      </Button>
 
       {/* Start Date Selector */}
       <Box sx={{ display: "flex", gap: 2, marginBottom: 2 }}>
@@ -239,8 +283,8 @@ const DeliveriesDashboard = ({ user }) => {
                     sx={{ marginRight: 2, fontStyle: "italic", color: "gray" }}
                   >
                     Assigned Vehicle:{" "}
-                    {day.orders[0].txn.deliveryID.vehicle.vehicleType} | Estim.
-                    Distance Cost: $
+                    {day.orders[0].txn.deliveryID.vehicle.vehicleType} |
+                    Estimated Total Delivery Cost: $
                     {day.orders[0].txn.deliveryID.distanceCost.toFixed(2)}
                   </Typography>
                 )}
@@ -296,6 +340,8 @@ const DeliveriesDashboard = ({ user }) => {
         orders={selectedOrders}
         vehicle={selectedVehicle}
         estimatedCost={estimatedCost}
+        estimatedTimeCost={estimatedTimeCost}
+        estimatedDistanceCost={estimatedDistanceCost}
         loading={loadingAssignment}
       />
       <OrderDetailsModal

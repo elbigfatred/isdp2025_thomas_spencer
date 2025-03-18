@@ -16,6 +16,8 @@ const AssignDeliveryModal = ({
   vehicle,
   estimatedCost,
   loading,
+  estimatedTimeCost,
+  estimatedDistanceCost,
 }) => {
   return (
     <Dialog open={open} onClose={onClose}>
@@ -36,7 +38,15 @@ const AssignDeliveryModal = ({
             </Typography>
             {vehicle ? (
               <Typography>
-                <strong>Estimated Distance Cost:</strong> $
+                <Typography>
+                  <strong>Estimated Distance Cost:</strong> $
+                  {estimatedDistanceCost.toFixed(2)}
+                </Typography>
+                <Typography>
+                  <strong>Estimated Time Cost (2HR Minumum):</strong> $
+                  {estimatedTimeCost.toFixed(2)}
+                </Typography>
+                <strong>Estimated Total Cost:</strong> $
                 {estimatedCost.toFixed(2)}
               </Typography>
             ) : null}

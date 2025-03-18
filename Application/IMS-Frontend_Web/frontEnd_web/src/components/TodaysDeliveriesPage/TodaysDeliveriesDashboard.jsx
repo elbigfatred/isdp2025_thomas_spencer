@@ -5,7 +5,10 @@ import {
   CircularProgress,
   Paper,
   Button,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 import PickupStoreOrders from "./PickupStoreOrders";
 import DeliverStoreOrders from "./DeliverStoreOrders";
 
@@ -52,6 +55,11 @@ const TodaysDeliveriesDashboard = ({ user }) => {
     <Box>
       <Typography variant="h4" gutterBottom>
         Today's Deliveries
+        <Tooltip title="Confirm pickup and delivery of today's orders" arrow>
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>{" "}
       </Typography>
 
       {loading ? (

@@ -9,7 +9,11 @@ import {
   TableBody,
   Button,
   Paper,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
+
 import DeliverOrderModal from "./DeliverOrderModal"; // ✅ Import modal
 
 const DeliverStoreOrders = ({ orders, user, onRefresh }) => {
@@ -29,6 +33,11 @@ const DeliverStoreOrders = ({ orders, user, onRefresh }) => {
     <Box>
       <Typography variant="h5" gutterBottom>
         Deliver Store Orders
+        <Tooltip title="Confirm delivery of today's order(s)" arrow>
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>{" "}
       </Typography>
       <Paper sx={{ padding: 2 }}>
         {filteredOrders.length === 0 ? (

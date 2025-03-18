@@ -4,8 +4,7 @@ import models.Txn;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
-import utils.InventoryRequests;
-import utils.SessionManager;
+import utils.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,8 +15,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Properties;
 import models.*;
-import utils.TxnRequests;
-import utils.TxnsModsRequests;
 
 import java.util.List;
 
@@ -35,7 +32,7 @@ public class EditTxnForm {
     private JCheckBox chkEmergencyOrder;
     private JButton btnSave;
     private JButton btnExit;
-    private JButton button1;
+    private JButton btnHelp;
     private JPanel pnlCalenderHolder;
     private JLabel SPACER1;
     private JLabel SPACER2;
@@ -80,6 +77,10 @@ public class EditTxnForm {
 
         btnExit.addActionListener(e -> frame.dispose());
         btnSave.addActionListener(e -> handleSave());
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_TXN_VIEW,"Transactions Help",JOptionPane.INFORMATION_MESSAGE);
+        });
 
         return ContentPane;
     }

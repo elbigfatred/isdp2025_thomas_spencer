@@ -115,6 +115,8 @@ public class DeliveryController {
                 .map(txn -> BigDecimal.valueOf(txn.getSiteIDTo().getDistanceFromWH())
                         .multiply(bestVehicle.getCostPerKm()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        //add 2 hours of time cost
+        distanceCost = distanceCost.add(bestVehicle.getHourlyTruckCost().multiply(BigDecimal.valueOf(2)));
 
         System.out.println("💰 Total distance cost calculated: $" + distanceCost);
 

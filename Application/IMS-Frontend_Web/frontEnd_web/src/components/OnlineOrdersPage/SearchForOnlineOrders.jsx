@@ -12,8 +12,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import OrderDetailsModal from "./OrderDetailsModal"; // Import the modal
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline"; // ✅ Help Icon
 
 const SearchForOnlineOrders = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -53,7 +56,17 @@ const SearchForOnlineOrders = () => {
 
   return (
     <Box>
-      <Typography variant="h6">Search for an Online Order</Typography>
+      <Typography variant="h6">
+        Search for an Online Order
+        <Tooltip
+          title="Input a transaction ID or email to search for an order"
+          arrow
+        >
+          <IconButton>
+            <HelpOutlineIcon />
+          </IconButton>
+        </Tooltip>
+      </Typography>
       <TextField
         label="Txn ID or Email"
         value={searchValue}
