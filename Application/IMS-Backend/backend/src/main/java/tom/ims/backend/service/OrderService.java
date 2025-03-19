@@ -36,6 +36,8 @@ public class OrderService {
     @Autowired private EmployeeRepository employeeRepository;
     @Autowired private SiteRepository siteRepository;
 
+    private final int warehouseID = 2;
+
     // === ORDER CREATION ===
 
     public Txn createOrderTransaction(OrderRequest orderRequest) {
@@ -45,7 +47,8 @@ public class OrderService {
 
         Employee employee = employeeService.getEmployeeById(orderRequest.getEmployeeID());
         Site siteTo = siteService.getSiteById(orderRequest.getSiteIDTo());
-        Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        //Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        Site siteFrom = siteService.getSiteById(warehouseID); // Default: Warehouse
         Txnstatus status = txnStatusService.findByName("NEW");
         Txntype type = txnTypeService.getbyTxnType("Store Order");
 
@@ -140,7 +143,8 @@ public class OrderService {
 
         Employee employee = employeeService.getEmployeeById(orderRequest.getEmployeeID());
         Site siteTo = siteService.getSiteById(orderRequest.getSiteIDTo());
-        Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        //Site siteFrom = siteService.getSiteById(orderRequest.getSiteIDFrom()); // Default: Warehouse
+        Site siteFrom = siteService.getSiteById(warehouseID); // Default: Warehouse
         Txnstatus status = txnStatusService.findByName("NEW");
         Txntype type = txnTypeService.getbyTxnType("Emergency Order");
 

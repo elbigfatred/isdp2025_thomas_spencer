@@ -439,4 +439,42 @@ public class TxnRequests {
 
         return txnStatusList;
     }
+
+    public static List<TxnType> fetchTxnTypes() {
+        List<TxnType> txnTypeList = new ArrayList<>();
+
+        try {
+            String urlString = BASE_URL + "/allordertypes"; // ✅ URL
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Content-Type", "application/json");
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                String jsonResponse = readResponse(conn.getInputStream());
+                JSONArray responseArray = new JSONArray(jsonResponse);
+
+                for (int i = 0; i < responseArray.length(); i++) {
+                    JSONObject obj = responseArray.getJSONObject(i);
+
+                    // ✅ Extract TxnStatus fields
+                    String txnType = obj.optString("txnType", "UNKNOWN");
+                    boolean active = obj.optInt("active", 0) == 1; // Convert int to boolean
+
+                    // ✅ Create TxnStatus object and add to list
+                    txnTypeList.add(new TxnType(txnType,active));
+                }
+            } else {
+                System.out.println("[ERROR] Failed to fetch transaction statuses. Response Code: " + responseCode);
+            }
+
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return txnTypeList;
+    }
+
 }

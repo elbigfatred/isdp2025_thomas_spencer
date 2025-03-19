@@ -74,7 +74,11 @@ const SearchForOnlineOrders = () => {
         fullWidth
         sx={{ marginBottom: 2 }}
       />
-      <Button variant="contained" onClick={handleSearch}>
+      <Button
+        variant="contained"
+        onClick={handleSearch}
+        sx={{ marginBottom: 1 }}
+      >
         Search
       </Button>
 

@@ -473,4 +473,17 @@ public class OrdersController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alltypes);
         }
     }
+
+    @GetMapping("allordertypes")
+    public ResponseEntity<List<Txntype>> getAllOrderTypes() {
+        List<Txntype> alltypes = new ArrayList<>();
+        try{
+            alltypes = txnTypeService.getAll();
+            System.out.println("[DEBUG] Found " + alltypes.size() + " transaction types");
+            return ResponseEntity.ok(alltypes);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(alltypes);
+        }
+    }
 }

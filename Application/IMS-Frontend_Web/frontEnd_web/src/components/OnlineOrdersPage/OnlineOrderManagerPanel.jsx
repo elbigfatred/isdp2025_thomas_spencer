@@ -55,9 +55,10 @@ const OnlineOrderManagerPanel = ({ user }) => {
       !window.confirm("Switching sites will clear your cart. Continue?")
     )
       return;
-    setActiveSite(selectedSite);
-    setCart([]);
     setInventory([]);
+    setActiveSite(selectedSite);
+    setInventory([]);
+    setCart([]);
   };
 
   const addToCart = (item) => {

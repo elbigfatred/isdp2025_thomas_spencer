@@ -15,3 +15,7 @@ GENERAL
 Sprint 2.
 
     The web portion covers CREATE STORE ORDER, and CREATE EMERGENCY ORDER.
+
+Sprint 3.
+
+    To access the customer portal, visit http://localhost:5173/customerPortal.

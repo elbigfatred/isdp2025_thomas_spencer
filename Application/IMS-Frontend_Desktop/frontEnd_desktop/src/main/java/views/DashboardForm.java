@@ -121,6 +121,8 @@ public class DashboardForm {
     private JButton btnEditTxn;
     private JTextField txtTxnsSearch;
     private JButton btnTxnsHelp;
+    private JComboBox cmbTxnStatus;
+    private JComboBox cmbTxnType;
 
     // =================== FRAME VARIABLES ===================
 
@@ -372,6 +374,7 @@ public class DashboardForm {
 
             loadInventoryBySite(inventorySite.getId());
             loadStatusComboBox();
+            loadTypeComboBox();
             loadOrdersLocationComboBox();
             cmbOrdersLocation.setSelectedItem("ALL");
         }
@@ -789,18 +792,40 @@ public class DashboardForm {
      * Updates the transaction table based on search input.
      */
     private void updateTxnTableBySearch() {
+        System.out.println("HELLLLLO");
         // If search field is empty, display all transactions
-        if (txtTxnsSearch.getText().trim().isEmpty()) {
-            populateTxnTable(allModTxns);
-            return;
-        }
 
         String search = txtTxnsSearch.getText().trim().toLowerCase();
         List<Txn> filteredTxns = new ArrayList<>();
 
+        // ✅ Ensure selectedStatus is never null (default to "ALL")
+        Object selectedStatusObj = cmbTxnStatus.getSelectedItem();
+        String selectedStatus = (selectedStatusObj != null) ? selectedStatusObj.toString() : "ALL";
+        System.out.println(selectedStatus);
+
+        // ✅ Ensure selected type is never null (default to "ALL")
+        Object selectedTypeObj = cmbTxnType.getSelectedItem();
+        String selectedType = (selectedTypeObj != null) ? selectedTypeObj.toString() : "ALL";
+        System.out.println(selectedType);
+
+
         // Filter transactions based on search term
         for (Txn txn : allModTxns) {
-            if (txn.getTxnStatus().getStatusName().toLowerCase().contains(search) ||
+            String orderStatus = txn.getTxnStatus().getStatusName();
+            String orderType = txn.getTxnType().getTxnType();
+
+            // ✅ Apply Status Filter (Skip if "ALL" is selected)
+            if (!"ALL".equalsIgnoreCase(selectedStatus) && !orderStatus.equalsIgnoreCase(selectedStatus)) {
+                continue;
+            }
+
+            // ✅ Apply Status Filter (Skip if "ALL" is selected)
+            if (!"ALL".equalsIgnoreCase(selectedType) && !orderType.equalsIgnoreCase(selectedType)) {
+                continue;
+            }
+
+            if (search.isEmpty() ||
+                    txn.getTxnStatus().getStatusName().toLowerCase().contains(search) ||
                     txn.getTxnType().getTxnType().toLowerCase().contains(search) ||
                     txn.getSiteTo().getSiteName().toLowerCase().contains(search) ||
                     (txn.getSiteFrom() != null && txn.getSiteFrom().getSiteName().toLowerCase().contains(search)) ||
@@ -1508,24 +1533,50 @@ public class DashboardForm {
     private void loadStatusComboBox(){
         //  Clear existing items first
         cmbOrdersStatus.removeAllItems();
+        cmbTxnStatus.removeAllItems();
 
         //  Add "ALL" option at the top
         cmbOrdersStatus.addItem("ALL");
+        cmbTxnStatus.addItem("ALL");
 
         //  Fetch statuses and populate the combo box
         List<TxnStatus> statuses = TxnRequests.fetchTxnStatuses();
         for (TxnStatus status : statuses) {
             cmbOrdersStatus.addItem(status.getStatusName());
+            cmbTxnStatus.addItem(status.getStatusName());
         }
 
         //  Set "ALL" as the default selection
         cmbOrdersStatus.setSelectedItem("ALL");
-
+        cmbTxnStatus.setSelectedItem("ALL");
 
         //  Add listener to fire updateOrdersTableBySearch() on selection change
         cmbOrdersStatus.addActionListener(e -> updateOrdersTableBySearch());
+        cmbTxnStatus.addActionListener(e -> updateTxnTableBySearch());
 
         System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
+    }
+
+    private void loadTypeComboBox(){
+        //  Clear existing items first
+        cmbTxnType.removeAllItems();
+
+        //  Add "ALL" option at the top
+        cmbTxnType.addItem("ALL");
+
+        //  Fetch statuses and populate the combo box
+        List<TxnType> types = TxnRequests.fetchTxnTypes();
+        for (TxnType type : types) {
+            cmbTxnType.addItem(type.getTxnType());
+        }
+
+        //  Set "ALL" as the default selection
+        cmbTxnType.setSelectedItem("ALL");
+
+        //  Add listener to fire updateOrdersTableBySearch() on selection change
+        cmbTxnType.addActionListener(e -> updateTxnTableBySearch());
+
+        System.out.println("[INFO] Loaded order status combo box with " + types.size() + " statuses.");
     }
 
     private void loadOrdersLocationComboBox() {
@@ -2197,7 +2248,7 @@ public class DashboardForm {
             String orderSite = order.getSiteTo().getSiteName();
 
             // ✅ Ignore CANCELLED orders when "Show Active Only" is checked
-            if (showActiveOnly && "CANCELLED".equalsIgnoreCase(orderStatus)) {
+            if (showActiveOnly && ("CANCELLED".equalsIgnoreCase(orderStatus) || "COMPLETE".equalsIgnoreCase(orderStatus))) {
                 continue;
             }
 

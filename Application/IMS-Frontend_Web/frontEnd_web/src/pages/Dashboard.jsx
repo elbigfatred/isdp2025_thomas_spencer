@@ -63,8 +63,12 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
   if (hasOrdersAccess) availableTabs.push("orders");
   if (hasDeliveryAccess) availableTabs.push("deliveries");
 
-  const [activePage, setActivePage] = useState(availableTabs[0] || null);
+  //const [activePage, setActivePage] = useState(availableTabs[0] || null);
 
+  // ✅ Set activePage based on user role
+  const [activePage, setActivePage] = useState(
+    user.username === "online" ? "online-orders" : availableTabs[0] || null
+  );
   const theme = useMemo(
     () =>
       createTheme({
@@ -215,11 +219,16 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
           }}
         >
           <Typography variant="h4" gutterBottom>
-            Welcome, {user.username}!
+            {user.username === "online"
+              ? "Welcome to Bullseye Sporting Goods!"
+              : `Welcome, ${user.username}!`}
           </Typography>
-          <Typography variant="h6" gutterBottom>
-            Location: {user.site.siteName}
-          </Typography>
+
+          {user.username !== "online" && (
+            <Typography variant="h6" gutterBottom>
+              Location: {user.site.siteName}
+            </Typography>
+          )}
 
           <Box
             sx={{
@@ -265,7 +274,7 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
                 variant="h6"
                 sx={{ textAlign: "center", marginTop: 4 }}
               >
-                Select a tab on the left to get started.
+                Welcome, select a tab on the left to get started!
               </Typography>
             )}
           </Box>
