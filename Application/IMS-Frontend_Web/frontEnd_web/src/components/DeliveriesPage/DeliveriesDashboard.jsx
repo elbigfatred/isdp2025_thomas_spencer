@@ -98,7 +98,7 @@ const DeliveriesDashboard = ({ user }) => {
       0
     );
 
-    const totalHourlyCost = bestVehicle.HourlyTruckCost * 2;
+    const totalHourlyCost = bestVehicle ? bestVehicle.HourlyTruckCost * 2 : 0;
     const totalCost = totalDistanceCost + totalHourlyCost;
 
     setEstimatedDistanceCost(totalDistanceCost);
@@ -221,6 +221,87 @@ const DeliveriesDashboard = ({ user }) => {
           InputLabelProps={{ shrink: true }}
         />
       </Box>
+
+      {/* Transactions Needing Delivery */}
+      {!loading &&
+        deliveries.length > 0 &&
+        (() => {
+          // Group transactions by ship date
+          const groupedByDate = deliveries
+            .filter(
+              (delivery) =>
+                (delivery.txn.txnStatus.statusName === "ASSEMBLED" ||
+                  delivery.txn.txnStatus.statusName === "ASSEMBLING" ||
+                  delivery.txn.txnStatus.statusName === "RECEIVED") &&
+                !delivery.txn.deliveryID // Exclude assigned transactions
+            )
+            .reduce((acc, delivery) => {
+              const shipDate = delivery.txn.shipDate.split("T")[0];
+              if (!acc[shipDate]) acc[shipDate] = [];
+              acc[shipDate].push(delivery.txn.id);
+              return acc;
+            }, {});
+
+          const unassignedDaysCount = Object.keys(groupedByDate).length;
+
+          return unassignedDaysCount > 0 ? (
+            <Box
+              sx={{
+                padding: 2,
+                marginBottom: 2,
+                borderRadius: "4px",
+                backgroundColor: "#222", // Subtle background for visibility
+                color: "#fff",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", marginBottom: 1 }}
+              >
+                {unassignedDaysCount} Day(s) with Unassigned Orders:
+              </Typography>
+
+              {Object.entries(groupedByDate).map(([date, txnIds]) => (
+                <Box
+                  key={date}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 12px",
+                    borderBottom: "1px solid #555",
+                  }}
+                >
+                  <Typography variant="body2">
+                    {date} | Order ID(s): {txnIds.join(", ")}
+                  </Typography>
+
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      color: "#fff",
+                      borderColor: "#888",
+                      fontSize: "0.75rem",
+                    }}
+                    onClick={() => setStartDate(date)}
+                  >
+                    Jump to Date
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography
+              sx={{
+                marginTop: 1,
+                fontStyle: "italic",
+                color: "#bbb",
+                fontSize: "0.85rem",
+              }}
+            ></Typography>
+          );
+        })()}
 
       {loading ? (
         <CircularProgress />

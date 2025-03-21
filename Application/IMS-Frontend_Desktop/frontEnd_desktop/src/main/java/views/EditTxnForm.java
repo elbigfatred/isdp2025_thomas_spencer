@@ -158,6 +158,7 @@ public class EditTxnForm {
         if (Objects.equals(selectedTxn.getTxnStatus().getStatusName(), "ASSEMBLED") && (
                 (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "ASSEMBLING")) ||
                         (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "RECEIVED")) ||
+                        (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "CANCELLED")) ||
                         (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "SUBMITTED")) ||
                         (Objects.equals(((TxnStatus) cmbTxnStatus.getSelectedItem()).getStatusName(), "NEW")))) {
 

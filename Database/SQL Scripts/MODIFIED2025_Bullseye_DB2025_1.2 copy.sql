@@ -1508,3 +1508,10 @@ update bullseyedb2025.inventory set reorderThreshold = 0 where siteID IN (1,3,99
 -- Commit changes
 --
 COMMIT;
+
+
+#### SPRINT 3 TESTING BIZ ####
+# set item with sku 60001 to have a weight of 1000
+update bullseyedb2025.item set weight = 1000 where sku = 60001;
+#update all quantitiy to 500 where siteID = 2
+update bullseyedb2025.inventory set quantity = 500 where siteID = 2;

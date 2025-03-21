@@ -305,6 +305,9 @@ public class DashboardForm {
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
             allModTxns = TxnsModsRequests.fetchAllTransactions();
             cmbInventoryAdminSiteSelect.removeAllItems();
+            loadTypeComboBox();
+            loadStatusTXNSComboBox();
+            loadOrdersLocationComboBox();
             for(Site site : allSites) {
                 if(site.isActive()){
                     cmbInventoryAdminSiteSelect.addItem(site);
@@ -340,7 +343,7 @@ public class DashboardForm {
                     .collect(Collectors.toList());
             System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
-            loadStatusComboBox();
+            loadStatusOrdersComboBox();
             loadOrdersLocationComboBox();
             cmbOrdersLocation.setSelectedItem("ALL");
             cmbOrdersStatus.setVisible(false);
@@ -373,9 +376,7 @@ public class DashboardForm {
             }
 
             loadInventoryBySite(inventorySite.getId());
-            loadStatusComboBox();
-            loadTypeComboBox();
-            loadOrdersLocationComboBox();
+            loadStatusOrdersComboBox();
             cmbOrdersLocation.setSelectedItem("ALL");
         }
 
@@ -1530,29 +1531,46 @@ public class DashboardForm {
 
     }
 
-    private void loadStatusComboBox(){
+    private void loadStatusTXNSComboBox(){
         //  Clear existing items first
-        cmbOrdersStatus.removeAllItems();
         cmbTxnStatus.removeAllItems();
 
         //  Add "ALL" option at the top
-        cmbOrdersStatus.addItem("ALL");
         cmbTxnStatus.addItem("ALL");
 
         //  Fetch statuses and populate the combo box
         List<TxnStatus> statuses = TxnRequests.fetchTxnStatuses();
         for (TxnStatus status : statuses) {
-            cmbOrdersStatus.addItem(status.getStatusName());
             cmbTxnStatus.addItem(status.getStatusName());
         }
 
         //  Set "ALL" as the default selection
-        cmbOrdersStatus.setSelectedItem("ALL");
         cmbTxnStatus.setSelectedItem("ALL");
 
         //  Add listener to fire updateOrdersTableBySearch() on selection change
-        cmbOrdersStatus.addActionListener(e -> updateOrdersTableBySearch());
         cmbTxnStatus.addActionListener(e -> updateTxnTableBySearch());
+
+        System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
+    }
+
+    private void loadStatusOrdersComboBox(){
+        //  Clear existing items first
+        cmbOrdersStatus.removeAllItems();
+
+        //  Add "ALL" option at the top
+        cmbOrdersStatus.addItem("ALL");
+
+        //  Fetch statuses and populate the combo box
+        List<TxnStatus> statuses = TxnRequests.fetchTxnStatuses();
+        for (TxnStatus status : statuses) {
+            cmbOrdersStatus.addItem(status.getStatusName());
+        }
+
+        //  Set "ALL" as the default selection
+        cmbOrdersStatus.setSelectedItem("ALL");
+
+        //  Add listener to fire updateOrdersTableBySearch() on selection change
+        cmbOrdersStatus.addActionListener(e -> updateOrdersTableBySearch());
 
         System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
     }
