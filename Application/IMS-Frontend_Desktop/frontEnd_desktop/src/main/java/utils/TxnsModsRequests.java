@@ -81,6 +81,7 @@ public class TxnsModsRequests {
             txn.setEmergencyDelivery(jsonTxn.optInt("emergencyDelivery", 0) == 1);
             txn.setCreatedDate(parseDateTime(jsonTxn.optString("createdDate", null)));
             txn.setShipDate(parseDateTime(jsonTxn.optString("shipDate", null)));
+            txn.setNotes(jsonTxn.optString("notes", ""));
 
             // ✅ Set Transaction Status
             if (jsonTxn.has("txnStatus")) {

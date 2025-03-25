@@ -123,6 +123,13 @@ public class DashboardForm {
     private JButton btnTxnsHelp;
     private JComboBox cmbTxnStatus;
     private JComboBox cmbTxnType;
+    private JPanel LossReturnTab;
+    private JPanel LossReturnCRUDPane;
+    private JPanel LossReturnHeaderPane;
+    private JTable tblLossReturn;
+    private JButton btnCreateLossReturn;
+    private JComboBox cmbLossReturnSite;
+    private JTextField txtLossReturnSearch;
 
     // =================== FRAME VARIABLES ===================
 
@@ -149,6 +156,9 @@ public class DashboardForm {
     private int supplierTableSelectedId = -1;
     private List<Txn> allModTxns;
     private int modTxnTableSelectedId = -1;
+    private Site lossReturnSite = null;
+    private Site ordersSite = null;
+    private List<Txn> allLossReturns;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -197,6 +207,7 @@ public class DashboardForm {
         siteAdminCRUDPane.setVisible(false);
         chkInactiveEmployees.setVisible(false);
         pnlInventoryAdminSelectSite.setVisible(false);
+        //cmbInventoryAdminSiteSelect.setVisible(false);
 
         // Check roles and configure tabs accordingly
         if (Arrays.asList(roles).contains("Administrator")) {
@@ -209,6 +220,7 @@ public class DashboardForm {
             DashboardTabPane.add("Orders", OrdersTab);
             DashboardTabPane.add("Suppliers", SuppliersTab);
             DashboardTabPane.add("Transaction Records", TxnsTab);
+            DashboardTabPane.add("Losses/Returns", LossReturnTab);
 
             loadInitialData();
             populateEditPermissionsEmployeesTable(allEmployees);
@@ -219,6 +231,8 @@ public class DashboardForm {
             updateSuppliersTableBySearch();
             populateTxnTable(allTxns);
             updateTxnTableBySearch();
+            cmbInventoryAdminSiteSelect.setVisible(true);
+            updateLossReturnTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
@@ -226,6 +240,8 @@ public class DashboardForm {
             DashboardTabPane.add("Inventory", InventoryTab);
             DashboardTabPane.add("Orders", OrdersTab);
             DashboardTabPane.add("Suppliers", SuppliersTab);
+            DashboardTabPane.add("Losses/Returns", LossReturnTab);
+
 
             loadInitialData();
             populateItemsTable(allItems);
@@ -233,6 +249,7 @@ public class DashboardForm {
             updateOrdersTableBySearch();
             populateSuppliersTable(allSuppliers);
             updateSuppliersTableBySearch();
+            updateLossReturnTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Worker")) {
@@ -246,12 +263,14 @@ public class DashboardForm {
         if (Arrays.asList(roles).contains("Store Manager")) {
             DashboardTabPane.add("Inventory", InventoryTab);
             DashboardTabPane.add("Orders", OrdersTab);
+            DashboardTabPane.add("Losses/Returns", LossReturnTab);
 
             loadInitialData();
             pnlInventoryAdminSelectSite.setVisible(true);
             //populateEmployeeTable(allEmployees);
             populateOrdersTable(allTxns);
             updateOrdersTableBySearch();
+            updateLossReturnTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Financial Manager")) {
@@ -299,25 +318,44 @@ public class DashboardForm {
         allSites = SiteRequests.fetchSites();
 
         lblEditPermissionsEmployeeDetails.setText("Please select an employee.");
+        cmbLossReturnSite.setVisible(false);
+
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
             allPosns = PositionRequests.fetchPositions();
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
             allModTxns = TxnsModsRequests.fetchAllTransactions();
+            allLossReturns = fetchAllLossReturns();
             cmbInventoryAdminSiteSelect.removeAllItems();
             loadTypeComboBox();
             loadStatusTXNSComboBox();
             loadOrdersLocationComboBox();
+            cmbLossReturnSite.addItem("ALL");
             for(Site site : allSites) {
                 if(site.isActive()){
                     cmbInventoryAdminSiteSelect.addItem(site);
+                    cmbLossReturnSite.addItem(site);
                 }
             }
-            System.out.println("Fetching txns");
+            lossReturnSite = null;
+            cmbLossReturnSite.setVisible(true);
+            cmbLossReturnSite.addActionListener(e -> {
+                int selectedIndex = cmbLossReturnSite.getSelectedIndex();
+                if (selectedIndex >= 0) {
+                    Object selected = cmbLossReturnSite.getSelectedItem();
+                    if (selected instanceof Site) {
+                        lossReturnSite = (Site) selected;
+                    } else {
+                        lossReturnSite = null; // "ALL" selected
+                    }
+                    updateLossReturnTableBySearch();
+                }
+            });
+            ////System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
                     .collect(Collectors.toList());
-            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
+            ////System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             pnlWarehouseMgrNotifications.setVisible(true);
             updateWHMgrNotifications();
@@ -326,22 +364,26 @@ public class DashboardForm {
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
-            System.out.println("Fetching txns");
+            ////System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
                     .collect(Collectors.toList());
-            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
+            ////System.out.println(allTxns);
+            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             pnlWarehouseMgrNotifications.setVisible(true);
             updateWHMgrNotifications();
+            loadOrdersLocationComboBox();
+            allLossReturns = fetchAllLossReturns();
+            lossReturnSite = SessionManager.getInstance().getSite();
         }
 
         if (Arrays.asList(accessPosition).contains("Warehouse Worker") && Arrays.asList(accessPosition).size() == 1) {
-            System.out.println("Fetching txns");
+            ////System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
                     .collect(Collectors.toList());
-            System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
+            ////System.out.println(allTxns);            btnOrdersViewReceive.setText("View/Modify Order");
             orderViewReceiveMode = "RECEIVE";
             loadStatusOrdersComboBox();
             loadOrdersLocationComboBox();
@@ -362,7 +404,6 @@ public class DashboardForm {
             }
             pnlInventoryAdminSelectSite.setVisible(true);
             inventorySite = SessionManager.getInstance().getSite();
-
             //  Ensure site is not null and exists in ComboBox before setting it
             if (inventorySite != null) {
                 for (int i = 0; i < cmbInventoryAdminSiteSelect.getItemCount(); i++) {
@@ -378,22 +419,29 @@ public class DashboardForm {
             loadInventoryBySite(inventorySite.getId());
             loadStatusOrdersComboBox();
             cmbOrdersLocation.setSelectedItem("ALL");
+            updateLossReturnTableBySearch();
         }
 
         if (Arrays.asList(accessPosition).contains("Store Manager") && !Arrays.asList(accessPosition).contains("Warehouse Manager") && !Arrays.asList(accessPosition).contains("Administrator")) {
             inventorySite = SessionManager.getInstance().getSite();
             loadInventoryBySite(inventorySite.getId());
+            updateInventoryTableBySearch();
+            ordersSite = SessionManager.getInstance().getSite();
+            cmbOrdersLocation.setVisible(false);
+            lblOrderSite.setVisible(false);
 
             //  Fetch only orders for this site
             //allTxns = TxnRequests.fetchOrdersBySite(inventorySite.getId());
-            System.out.println("Fetching txns");
+            //System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
                     .collect(Collectors.toList());
-            System.out.println(allTxns);
+            //System.out.println(allTxns);
             btnOrdersViewReceive.setText("View Order");
             orderViewReceiveMode = "VIEW";
             cmbOrdersLocation.setSelectedItem(inventorySite.getSiteName());
+            allLossReturns = fetchAllLossReturns();
+            lossReturnSite = SessionManager.getInstance().getSite();
         }
     }
 
@@ -712,10 +760,145 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.SUPPLIER_TABLE_VIEW,"Suppliers Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
+        btnCreateLossReturn.addActionListener(e -> CreateLossReturn());
+
+        txtInventorySearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateInventoryTableBySearch();
+            }
+        });
+
+        txtLossReturnSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateLossReturnTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateLossReturnTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateLossReturnTableBySearch();
+            }
+        });
+
+
 
 
         return ContentPane;
     }
+
+    // =================== LOSS/RETURN MANAGEMENT ===================
+
+    private List<Txn> fetchAllLossReturns() {
+        List<Txn> allTxns = TxnsModsRequests.fetchAllTransactions();
+        List<Txn> filteredTxns = new ArrayList<>();
+
+        for (Txn txn : allTxns) {
+            if(Objects.equals(txn.getTxnType().getTxnType(), "Loss") ||
+                    Objects.equals(txn.getTxnType().getTxnType(), "Return") ||
+                    Objects.equals(txn.getTxnType().getTxnType(), "Damage")) {
+                filteredTxns.add(txn);
+            }
+        }
+        //System.out.println(filteredTxns);
+        return filteredTxns;
+    }
+
+    private void CreateLossReturn() {
+        System.out.println(lossReturnSite);
+        if(lossReturnSite == null) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Please select a specific site before creating a Loss/Return transaction.",
+                    "Site Required",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+        SwingUtilities.invokeLater(() ->
+                new ReturnLossForm().showReturnLossForm(
+                        frame,
+                        frame.getLocation(),
+                        lossReturnSite,
+                        () -> {
+                            // Optional: Refresh loss/return table if you’re showing it in the dashboard
+                            loadInitialData();
+                            updateLossReturnTableBySearch();
+                        }
+                )
+        );
+    }
+
+    private void updateLossReturnTableBySearch() {
+        if (allLossReturns == null) return;
+
+        String search = txtLossReturnSearch.getText().trim().toLowerCase();
+
+        List<Txn> filtered = allLossReturns.stream()
+                .filter(txn -> {
+                    // 🔹 Only filter by site if not viewing ALL
+                    if (lossReturnSite != null && txn.getSiteFrom().getId() != lossReturnSite.getId()) {
+                        return false;
+                    }
+
+                    // 🔹 If no search text, we're done
+                    if (search.isEmpty()) {
+                        return true;
+                    }
+
+                    // 🔹 Otherwise apply search logic
+                    String siteName = txn.getSiteFrom().getSiteName().toLowerCase();
+                    String txnType = txn.getTxnType().getTxnType().toLowerCase();
+                    String notes = txn.getNotes() != null ? txn.getNotes().toLowerCase() : "";
+
+                    return siteName.contains(search)
+                            || txnType.contains(search)
+                            || notes.contains(search)
+                            || String.valueOf(txn.getId()).contains(search);
+                })
+                .toList();
+
+        populateLossReturnTable(filtered);
+    }
+
+    private void populateLossReturnTable(List<Txn> txns) {
+        String[] columnNames = {"Txn ID", "Site", "Type", "Created Date", "Notes"};
+        Object[][] rowData = new Object[txns.size()][columnNames.length];
+
+        for (int i = 0; i < txns.size(); i++) {
+            Txn txn = txns.get(i);
+            rowData[i][0] = txn.getId();
+            rowData[i][1] = txn.getSiteFrom().getSiteName();
+            rowData[i][2] = txn.getTxnType().getTxnType();
+            rowData[i][3] = txn.getCreatedDate() != null ? txn.getCreatedDate().toString() : "N/A";
+            rowData[i][4] = txn.getNotes() != null ? txn.getNotes() : "";
+        }
+
+        tblLossReturn.setModel(new DefaultTableModel(rowData, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+
+        tblLossReturn.getTableHeader().setReorderingAllowed(false);
+    }
+
 
     // =================== TXN RECORD MANAGEMENT ===================
 
@@ -748,7 +931,7 @@ public class DashboardForm {
 
         // Populate table rows
         for (Txn txn : filteredTxns) {
-            System.out.println(txn);
+            //System.out.println(txn);
             String shipDateFormatted = txn.getShipDate() != null ? formatDate(txn.getShipDate()) : "N/A";
 
             Object[] rowData = {
@@ -793,7 +976,7 @@ public class DashboardForm {
      * Updates the transaction table based on search input.
      */
     private void updateTxnTableBySearch() {
-        System.out.println("HELLLLLO");
+        //System.out.println("HELLLLLO");
         // If search field is empty, display all transactions
 
         String search = txtTxnsSearch.getText().trim().toLowerCase();
@@ -802,12 +985,12 @@ public class DashboardForm {
         // ✅ Ensure selectedStatus is never null (default to "ALL")
         Object selectedStatusObj = cmbTxnStatus.getSelectedItem();
         String selectedStatus = (selectedStatusObj != null) ? selectedStatusObj.toString() : "ALL";
-        System.out.println(selectedStatus);
+        //System.out.println(selectedStatus);
 
         // ✅ Ensure selected type is never null (default to "ALL")
         Object selectedTypeObj = cmbTxnType.getSelectedItem();
         String selectedType = (selectedTypeObj != null) ? selectedTypeObj.toString() : "ALL";
-        System.out.println(selectedType);
+        //System.out.println(selectedType);
 
 
         // Filter transactions based on search term
@@ -1064,16 +1247,18 @@ public class DashboardForm {
     // =================== INVENTORY MANAGEMENT ===================
 
     private void loadInventoryBySite(int siteID) {
-        new Thread(() -> {
+        //new Thread(() -> {
             // Fetch inventory data from backend
             List<Inventory> fetchedInventory = InventoryRequests.fetchInventoryBySite(siteID);
 
             // Store in class-level variable
             allInventory = fetchedInventory;
 
+            ////System.out.println(fetchedInventory.size());
+
             // Populate the table on the Swing UI thread
             SwingUtilities.invokeLater(() -> populateInventoryTable(allInventory));
-        }).start();
+        //}).start();
     }
 
     /**
@@ -1550,7 +1735,7 @@ public class DashboardForm {
         //  Add listener to fire updateOrdersTableBySearch() on selection change
         cmbTxnStatus.addActionListener(e -> updateTxnTableBySearch());
 
-        System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
+        //System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
     }
 
     private void loadStatusOrdersComboBox(){
@@ -1572,7 +1757,7 @@ public class DashboardForm {
         //  Add listener to fire updateOrdersTableBySearch() on selection change
         cmbOrdersStatus.addActionListener(e -> updateOrdersTableBySearch());
 
-        System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
+        //System.out.println("[INFO] Loaded order status combo box with " + statuses.size() + " statuses.");
     }
 
     private void loadTypeComboBox(){
@@ -1594,7 +1779,7 @@ public class DashboardForm {
         //  Add listener to fire updateOrdersTableBySearch() on selection change
         cmbTxnType.addActionListener(e -> updateTxnTableBySearch());
 
-        System.out.println("[INFO] Loaded order status combo box with " + types.size() + " statuses.");
+        //System.out.println("[INFO] Loaded order status combo box with " + types.size() + " statuses.");
     }
 
     private void loadOrdersLocationComboBox() {
@@ -1607,13 +1792,25 @@ public class DashboardForm {
         // ✅ Fetch sites and populate combo box
         List<Site> sites = SiteRequests.fetchSites();
         for (Site site : sites) {
-            cmbOrdersLocation.addItem(site.getSiteName());
+            cmbOrdersLocation.addItem(site);
         }
 
         // ✅ Add listener to update orders table when selection changes
-        cmbOrdersLocation.addActionListener(e -> updateOrdersTableBySearch());
+        cmbOrdersLocation.addActionListener(e -> {
+            //System.out.println("[INFO] Changing selection");
+            Object selected = cmbOrdersLocation.getSelectedItem();
+            if (selected instanceof Site) {
+                ordersSite = (Site) selected;
+            } else {
+                ordersSite = null; // Fallback or handle separately if needed
+            }
+            //System.out.println(ordersSite);
+            updateOrdersTableBySearch();
+        });
 
-        System.out.println("[INFO] Loaded orders location combo box with " + sites.size() + " sites.");
+        //System.out.println(ordersSite);
+
+        //System.out.println("[INFO] Loaded orders location combo box with " + sites.size() + " sites.");
     }
 
     private void updateWHMgrNotifications() {
@@ -2249,9 +2446,10 @@ public class DashboardForm {
         Object selectedStatusObj = cmbOrdersStatus.getSelectedItem();
         String selectedStatus = (selectedStatusObj != null) ? selectedStatusObj.toString() : "ALL";
 
-        // ✅ Ensure selectedLocation is never null (default to "ALL")
-        Object selectedLocationObj = cmbOrdersLocation.getSelectedItem();
-        String selectedLocation = (selectedLocationObj != null) ? selectedLocationObj.toString() : "ALL";
+//        // ✅ Ensure selectedLocation is never null (default to "ALL")
+//        Object selectedLocationObj = cmbOrdersLocation.getSelectedItem();
+//        String selectedLocation = (selectedLocationObj != null) ? selectedLocationObj.toString() : "ALL";
+
 
         // ✅ Determine if user is a Warehouse Worker
         SessionManager session = SessionManager.getInstance();
@@ -2275,9 +2473,17 @@ public class DashboardForm {
                 continue;
             }
 
-            // ✅ Apply Location Filter (Skip if "ALL" is selected)
-            if (!"ALL".equalsIgnoreCase(selectedLocation) && !orderSite.equalsIgnoreCase(selectedLocation)) {
-                continue;
+//            // ✅ Apply Location Filter (Skip if "ALL" is selected)
+//            if (!"ALL".equalsIgnoreCase(selectedLocation) && !orderSite.equalsIgnoreCase(selectedLocation)) {
+//                continue;
+//            }
+
+            // ✅ Apply Location Filter using global ordersSite (null = All)
+            if (ordersSite != null) {
+                Site orderSiteObj = order.getSiteTo();
+                if (orderSiteObj == null || orderSiteObj.getId() != ordersSite.getId()) {
+                    continue;
+                }
             }
 
             // ✅ Warehouse Worker filter (Only see RECEIVED and ASSEMBLING orders)

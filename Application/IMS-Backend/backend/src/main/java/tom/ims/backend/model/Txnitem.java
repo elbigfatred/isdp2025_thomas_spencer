@@ -61,6 +61,13 @@ public class Txnitem {
         return id;
     }
 
+    public String getNotes(){
+        return notes;
+    }
+    public void setNotes(String notes){
+        this.notes = notes;
+    }
+
     // ✅ Explicitly set the composite key
     public void setTxnAndItem(Txn txn, Item item) {
         this.txnID = txn;

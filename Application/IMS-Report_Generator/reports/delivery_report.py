@@ -1,3 +1,8 @@
+
+# 1. Delivery Report - by day (selectable day of week), for each individual delivery, used as
+# a record by Acadia and driver to see where they are going each day. INCLUDE
+# routes/locations, mileage, weight, and vehicle size
+
 import mysql.connector
 import pandas as pd
 import os
@@ -15,6 +20,7 @@ DB_CONFIG = {
 # Directory to save reports
 REPORTS_DIR = "reports/generated_reports"
 os.makedirs(REPORTS_DIR, exist_ok=True)  # Ensure directory exists
+
 
 def generate_delivery_report(data):
     start_date = data["dateRange"]["startDate"]
@@ -35,30 +41,34 @@ def generate_delivery_report(data):
     """
     cursor.execute(query, (start_date, end_date))
     results = cursor.fetchall()
-    
+
     cursor.close()
     conn.close()
 
     # Convert results into DataFrame
-    columns = ["Delivery ID", "Delivery Date", "Distance Cost", "Vehicle Type", "Txn ID", "Destination", "Mileage"]
+    columns = ["Delivery ID", "Delivery Date", "Distance Cost",
+               "Vehicle Type", "Txn ID", "Destination", "Mileage"]
     df = pd.DataFrame(results, columns=columns)
 
     # File path for the generated report
-    file_path = os.path.join(REPORTS_DIR, f"delivery_report_{start_date}_to_{end_date}.pdf")
+    file_path = os.path.join(
+        REPORTS_DIR, f"delivery_report_{start_date}_to_{end_date}.pdf")
 
     # Generate PDF
     c = canvas.Canvas(file_path, pagesize=letter)
     width, height = letter
 
-    c.drawString(100, height - 50, f"Delivery Report ({start_date} to {end_date})")
+    c.drawString(100, height - 50,
+                 f"Delivery Report ({start_date} to {end_date})")
     y_position = height - 80
 
-    headers = ["Delivery ID", "Date", "Txn ID", "Destination", "Mileage (km)", "Vehicle", "Cost ($)"]
+    headers = ["Delivery ID", "Date", "Txn ID",
+               "Destination", "Mileage (km)", "Vehicle", "Cost ($)"]
     col_positions = [50, 120, 200, 280, 400, 480, 550]
 
     for i, header in enumerate(headers):
         c.drawString(col_positions[i], y_position, header)
-    
+
     y_position -= 20
 
     for _, row in df.iterrows():
