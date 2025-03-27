@@ -149,16 +149,8 @@ public class ItemRequests {
         return false;
     }
 
-    /**
-     * Updates an item's details via a multipart HTTP POST request.
-     * Includes item ID, notes, and an optional image file.
-     *
-     * @param itemId    The ID of the item to update.
-     * @param notes     Notes or additional details about the item.
-     * @param imagePath The local file path of the image to upload (optional).
-     * @return true if the update was successful, false otherwise.
-     */
-    public static boolean updateItem(int itemId, String notes, String desc, String imagePath) {
+
+    public static boolean updateItem(Item item) {
         String endpoint = "http://localhost:8080/api/items/update"; // Adjust as needed
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
@@ -166,16 +158,24 @@ public class ItemRequests {
 
             // Build the multipart entity
             MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-            builder.addTextBody("id", String.valueOf(itemId)); // Add item ID as text
-            builder.addTextBody("notes", notes);              // Add notes as text
-            builder.addTextBody("desc", desc);
+            builder.addTextBody("id", String.valueOf(item.getId()));           // Add item ID as text
+            builder.addTextBody("name", item.getName());                       // Add item name
+            builder.addTextBody("notes", item.getNotes());                     // Add notes as text
+            builder.addTextBody("desc", item.getDescription());                // Add description
+            builder.addTextBody("category", item.getCategory().getCategoryName()); // Add category name
+            builder.addTextBody("supplier", String.valueOf(item.getSupplier().getId())); // Add supplier id
+            builder.addTextBody("caseSize", String.valueOf(item.getCaseSize())); // Add case size
+            builder.addTextBody("weight", item.getWeight().toString());        // Add weight
+            builder.addTextBody("active", item.getActive() ? "1" : "0");      // Add active status
 
-            if (imagePath != null && !imagePath.isEmpty()) {
-                File imageFile = new File(imagePath);
+            // Handle image using the imageLocation field
+            String imageLocation = item.getImageLocation();
+            if (imageLocation != null && !imageLocation.isEmpty()) {
+                File imageFile = new File(imageLocation);
                 if (imageFile.exists()) {
                     builder.addBinaryBody("file", imageFile); // Add image file
                 } else {
-                    System.err.println("Image file does not exist: " + imagePath);
+                    System.err.println("Image file does not exist: " + imageLocation);
                     return false;
                 }
             }
@@ -203,6 +203,60 @@ public class ItemRequests {
         }
     }
 
+    public static boolean createItem(Item item) {
+        String endpoint = "http://localhost:8080/api/items/create"; // Adjusted for the create endpoint
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(endpoint);
+
+            // Build the multipart entity
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+
+            builder.addTextBody("name", item.getName());                       // Add item name
+            builder.addTextBody("notes", item.getNotes());                     // Add notes as text
+            builder.addTextBody("desc", item.getDescription());                // Add description
+            builder.addTextBody("category", item.getCategory().getCategoryName()); // Add category name
+            builder.addTextBody("supplier", String.valueOf(item.getSupplier().getId())); // Add supplier id
+            builder.addTextBody("caseSize", String.valueOf(item.getCaseSize())); // Add case size
+            builder.addTextBody("weight", item.getWeight().toString());        // Add weight
+            builder.addTextBody("active", item.getActive() ? "1" : "0");      // Add active status
+            builder.addTextBody("costPrice", item.getCostPrice().toString());  // Add cost price
+            builder.addTextBody("retailPrice", item.getRetailPrice().toString()); // Add retail price
+
+            // Handle image using the imageLocation field if there's an image to upload
+            String imageLocation = item.getImageLocation();
+            if (imageLocation != null && !imageLocation.isEmpty()) {
+                File imageFile = new File(imageLocation);
+                if (imageFile.exists()) {
+                    builder.addBinaryBody("file", imageFile); // Add image file
+                } else {
+                    System.err.println("Image file does not exist: " + imageLocation);
+                    return false;
+                }
+            }
+
+            // Attach the multipart entity to the request
+            HttpEntity entity = builder.build();
+            request.setEntity(entity);
+
+            // Execute the request and handle the response
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                int statusCode = response.getCode();
+                String responseBody = EntityUtils.toString(response.getEntity());
+                if (statusCode == 201) {  // 201 for Created
+                    System.out.println("Success: " + responseBody);
+                    return true;
+                } else {
+                    System.err.println("Failed to create item. HTTP Code: " + statusCode);
+                    System.err.println("Response: " + responseBody);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     /**
      * Fetches an item's image from the backend.
@@ -236,7 +290,39 @@ public class ItemRequests {
         }
     }
 
+    public static List<Category> fetchCategories() {
+        String endpoint = "http://localhost:8080/api/category"; // Adjust the URL to match your API endpoint
+        List<Category> categories = new ArrayList<>();
 
+        try {
+            URL url = new URL(endpoint);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
 
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (Scanner scanner = new Scanner(connection.getInputStream(), StandardCharsets.UTF_8)) {
+                    scanner.useDelimiter("\\A");
+                    String jsonResponse = scanner.hasNext() ? scanner.next() : "";
+                    JSONArray jsonArray = new JSONArray(jsonResponse);
 
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        Category category = new Category();
+                        category.setCategoryName(jsonObject.getString("categoryName"));
+                        category.setActive(jsonObject.getInt("active") == 1); // Assuming active is stored as 1 or 0
+
+                        categories.add(category);
+                    }
+                }
+            } else {
+                System.err.println("Failed to fetch categories. HTTP Response Code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return categories;
+    }
 }

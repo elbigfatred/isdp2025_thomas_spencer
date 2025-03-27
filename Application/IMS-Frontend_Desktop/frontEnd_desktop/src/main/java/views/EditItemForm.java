@@ -1,9 +1,12 @@
 package views;
 
+import models.Category;
 import models.Item;
+import models.Supplier;
 import utils.HelpBlurbs;
 import utils.ItemRequests;
 import utils.SessionManager;
+import utils.SupplierUtil;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -13,7 +16,10 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.net.URL;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * EditItemForm provides a UI for modifying an item's notes and image.
@@ -39,17 +45,23 @@ public class EditItemForm {
     private JLabel lblItemImage;
     private JButton btnHelp;
     private JTextField txtName;
-    private JCheckBox chkActiv;
-    private JSpinner spinner1;
-    private JSpinner spinner2;
+    private JCheckBox chkActive;
+    private JSpinner spnCaseSize;
+    private JSpinner spnWeight;
     private JComboBox cmbCategory;
     private JComboBox cmbSupplier;
+    private JSpinner spnCostPrice;
+    private JSpinner spnRetailPrice;
+    private JLabel lblCostPrice;
+    private JLabel lblRetailPrice;
 
     // =================== FRAME VARIABLES ===================
 
     JDialog frame;
     private Item selectedItem;
     private String selectedImagePath = null;
+    List<Supplier> allSuppliers = SupplierUtil.fetchAllSuppliers(true);
+    List<Category> allCategories = ItemRequests.fetchCategories();
 
     // =================== FORM INITIALIZATION ===================
 
@@ -129,14 +141,24 @@ public class EditItemForm {
     public void showItemEditForm(Frame parentFrame, Point currentLocation, Item itemToModify, Runnable onCloseCallback) {
         frame = new JDialog(parentFrame, true);
 
-        frame.setTitle("Bullseye Inventory Management System - Modify Item"); // Create the frame
+        if (itemToModify != null) {
+            frame.setTitle("Bullseye Inventory Management System - Modify Item"); // Create the frame
+            lblCostPrice.setVisible(false);
+            lblRetailPrice.setVisible(false);
+            spnCostPrice.setVisible(false);
+            spnRetailPrice.setVisible(false);
+            frame.setSize(600, 750);                   // Set frame size
+        }
+        else{
+            frame.setTitle("Bullseye Inventory Management System - Create Item");
+            frame.setSize(600, 890);                   // Set frame size
+        }
 
         if (itemToModify != null) {
             selectedItem = itemToModify;
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(600, 750);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }
@@ -183,12 +205,43 @@ public class EditItemForm {
      * If the item has an image, updates the button text accordingly.
      */
     private void setupFields() {
+        spnWeight.setModel(new SpinnerNumberModel(1, 0.01, 9999, 0.01));
+        spnCaseSize.setModel(new SpinnerNumberModel(1, 1, 9999, 1));
         if (selectedItem != null) {
             //clear item text
             lblItemImage.setText("");
 
             //Title
             lblSKUlabel.setText("Editing Details of SKU: " + selectedItem.getSku());
+
+            txtName.setText(selectedItem.getName());
+            chkActive.setSelected(selectedItem.getActive());
+            spnWeight.setValue(selectedItem.getWeight());
+            spnCaseSize.setValue(selectedItem.getCaseSize());
+
+            for(Supplier supplier : allSuppliers) {
+                cmbSupplier.addItem(supplier);
+            }
+            Supplier itemSupplier = selectedItem.getSupplier();
+            for(int i = 0; i < cmbSupplier.getItemCount(); i++) {
+                Supplier supplier = (Supplier) cmbSupplier.getItemAt(i);
+                if (Objects.equals(supplier.getId(), itemSupplier.getId())) {
+                    cmbSupplier.setSelectedIndex(i);
+                    break;
+                }
+            }
+
+            for(Category category : allCategories) {
+                cmbCategory.addItem(category);
+            }
+            Category itemCategory = selectedItem.getCategory();
+            for(int i = 0; i < cmbCategory.getItemCount(); i++) {
+                Category category = (Category) cmbCategory.getItemAt(i);
+                if(Objects.equals(category.getCategoryName(), itemCategory.getCategoryName())) {
+                    cmbCategory.setSelectedIndex(i);
+                    break;
+                }
+            }
 
             // Populate the notes field
             String existingNotes = selectedItem.getNotes();
@@ -219,6 +272,21 @@ public class EditItemForm {
                 btnAddImage.setText("Add Image");
             }
         }
+        else{
+            spnCostPrice.setModel(new SpinnerNumberModel(0.00, 0, 9999, 0.01));
+            spnRetailPrice.setModel(new SpinnerNumberModel(0.00, 0, 9999, 0.01));
+            lblItemImage.setText("");
+            lblSKUlabel.setText("");
+            allSuppliers.clear();
+            allSuppliers = SupplierUtil.fetchAllSuppliers(false);
+            chkActive.setSelected(true);
+            for(Supplier supplier : allSuppliers) {
+                cmbSupplier.addItem(supplier);
+            }
+            for(Category category : allCategories) {
+                cmbCategory.addItem(category);
+            }
+        }
     }
 
     // =================== EVENT HANDLING SECTION ===================
@@ -240,14 +308,42 @@ public class EditItemForm {
             return;
         }
 
-        // Send the PUT request
-        boolean success = ItemRequests.updateItem(selectedItem.getId(), updatedNotes, updatedDesc, selectedImagePath);
+        Double castedWeight = Double.parseDouble(spnWeight.getValue().toString());
+        // Create a new Item object and set its fields based on user input
+        Item updatedItem = new Item();
+        updatedItem.setName(txtName.getText().trim()); // Set name from text field
+        updatedItem.setDescription(updatedDesc);   // Set description
+        updatedItem.setNotes(updatedNotes);         // Set notes
+        updatedItem.setWeight(BigDecimal.valueOf(castedWeight));  // Convert Integer to BigDecimal
+        updatedItem.setCaseSize((int) spnCaseSize.getValue());  // Get case size from spinner
+        updatedItem.setActive(chkActive.isSelected());  // Active checkbox status
+        updatedItem.setCategory((Category) cmbCategory.getSelectedItem()); // Get selected category from combo box
+        updatedItem.setSupplier((Supplier) cmbSupplier.getSelectedItem()); // Get selected supplier from combo box
+        updatedItem.setImageLocation(selectedImagePath);  // Image location from the selected image path
 
-        if (success) {
-            JOptionPane.showMessageDialog(frame, "Item updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-            frame.dispose(); // Close the form
-        } else {
-            JOptionPane.showMessageDialog(frame, "Failed to update item.", "Error", JOptionPane.ERROR_MESSAGE);
+        // Send the PUT request
+        if(selectedItem != null) {
+            updatedItem.setId(selectedItem.getId());
+            boolean success = ItemRequests.updateItem(updatedItem);
+
+            if (success) {
+                JOptionPane.showMessageDialog(frame, "Item updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                frame.dispose(); // Close the form
+            } else {
+                JOptionPane.showMessageDialog(frame, "Failed to update item.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        else{
+            updatedItem.setCostPrice(BigDecimal.valueOf((Double) spnCostPrice.getValue()));
+            updatedItem.setRetailPrice(BigDecimal.valueOf((Double) spnRetailPrice.getValue()));
+            updatedItem.setId(null);
+            boolean success = ItemRequests.createItem(updatedItem);
+            if (success) {
+                JOptionPane.showMessageDialog(frame, "Item created successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                frame.dispose(); // Close the form
+            } else {
+                JOptionPane.showMessageDialog(frame, "Failed to create item.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 

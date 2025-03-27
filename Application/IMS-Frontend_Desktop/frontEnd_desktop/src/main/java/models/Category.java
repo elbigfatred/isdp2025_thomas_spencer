@@ -23,9 +23,6 @@ public class Category {
 
     @Override
     public String toString() {
-        return "Category {" +
-                "categoryName='" + categoryName + '\'' +
-                ", active=" + (active != null && active ? "Yes" : "No") +
-                '}';
+        return getCategoryName();
     }
 }

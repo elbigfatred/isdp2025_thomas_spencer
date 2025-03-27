@@ -11,17 +11,23 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import tom.ims.backend.model.Item;
+import tom.ims.backend.model.*;
+import tom.ims.backend.repository.InventoryRepository;
+import tom.ims.backend.service.CategoryService;
 import tom.ims.backend.service.ItemService;
+import tom.ims.backend.service.SiteService;
+import tom.ims.backend.service.SupplierService;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/items")
@@ -32,6 +38,14 @@ public class ItemController {
 
     @Autowired
     private ItemService itemService;
+    @Autowired
+    private CategoryService categoryService;
+    @Autowired
+    private SupplierService supplierService;
+    @Autowired
+    SiteService siteService;
+    @Autowired
+    InventoryRepository inventoryRepository;
 
     @GetMapping
     public ResponseEntity<List<Item>> getAllItems() {
@@ -82,14 +96,24 @@ public class ItemController {
     @PostMapping("/update")
     public ResponseEntity<String> updateItem(
             @RequestParam("id") int id,
+            @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "notes", required = false) String notes,
             @RequestParam(value = "desc", required = false) String desc,
+            @RequestParam(value = "category", required = false) String categoryName,
+            @RequestParam(value = "supplier", required = false) int supplierId,
+            @RequestParam(value = "caseSize", required = false) int caseSize,
+            @RequestParam(value = "weight", required = false) BigDecimal weight,
+            @RequestParam(value = "active", required = false) Byte active,
             @RequestParam(value = "file", required = false) MultipartFile file) {
+
         try {
             // Retrieve the item from the database
             Item item = itemService.getItemById(id);
             if (item == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found");
+            }
+            if (name != null) {
+                item.setName(name);
             }
 
             // Update notes if provided
@@ -100,6 +124,29 @@ public class ItemController {
             if (desc != null) {
                 item.setDescription(desc);
             }
+
+            if (categoryName != null) {
+                Category category = categoryService.getCategoryByName(categoryName);
+                if (category != null) {
+                    item.setCategory(category);
+                }
+            }
+
+            if(supplierId > 0){
+                Optional<Supplier> supplier = supplierService.getSupplierById(supplierId);
+                if (supplier.isPresent()) {
+                    item.setSupplier(supplier.get());
+                }
+            }
+
+            // Update case size if provided
+            if (caseSize > 0) item.setCaseSize(caseSize);
+
+            // Update weight if provided
+            if (weight != null) item.setWeight(weight);
+
+            // Update active status if provided
+            if (active != null) item.setActive(active);
 
             // Handle file upload
             if (file != null && !file.isEmpty()) {
@@ -113,6 +160,106 @@ public class ItemController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating item");
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<String> createItem(
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "notes", required = false) String notes,
+            @RequestParam(value = "desc", required = false) String desc,
+            @RequestParam(value = "category", required = false) String categoryName,
+            @RequestParam(value = "supplier", required = false) int supplierId,
+            @RequestParam(value = "caseSize", required = false) int caseSize,
+            @RequestParam(value = "weight", required = false) BigDecimal weight,
+            @RequestParam(value = "active", required = false) Byte active,
+            @RequestParam(value = "costPrice") BigDecimal costPrice,
+            @RequestParam(value = "retailPrice") BigDecimal retailPrice,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+
+        try {
+            // Create a new item
+            Item newItem = new Item();
+
+            // Set name
+            newItem.setName(name);
+
+            // Set notes if provided
+            if (notes != null) {
+                newItem.setNotes(notes);
+            }
+
+            // Set description if provided
+            if (desc != null) {
+                newItem.setDescription(desc);
+            }
+
+            // Set category if provided
+            if (categoryName != null) {
+                Category category = categoryService.getCategoryByName(categoryName);
+                if (category != null) {
+                    newItem.setCategory(category);
+                }
+            }
+
+            // Set supplier if provided
+            if (supplierId > 0) {
+                Optional<Supplier> supplier = supplierService.getSupplierById(supplierId);
+                if (supplier.isPresent()) {
+                    newItem.setSupplier(supplier.get());
+                }
+            }
+
+            // Set case size if provided
+            if (caseSize > 0) newItem.setCaseSize(caseSize);
+
+            // Set weight if provided
+            if (weight != null) newItem.setWeight(weight);
+
+            // Set active status if provided
+            if (active != null) newItem.setActive(active);
+
+            // Set cost and retail prices
+            newItem.setCostPrice(costPrice);
+            newItem.setRetailPrice(retailPrice);
+
+            // Generate SKU (example: prefix + timestamp)
+            String generatedSKU = "SKU-" + System.currentTimeMillis();
+            newItem.setSku(generatedSKU);  // Set the generated SKU
+
+            // Save the new item
+            itemService.saveItem(newItem);
+
+            // Handle file upload if provided
+            if (file != null && !file.isEmpty()) {
+                String filePath = saveFile(file, newItem.getId()); // Save the file and get the path
+                newItem.setImageLocation(filePath); // Update item's image location
+            }
+
+            itemService.saveItem(newItem);
+
+            List<Site> allSites = siteService.getAllSites();
+            for (Site site : allSites) {
+                Inventory inventory = new Inventory();
+                InventoryId inventoryId = new InventoryId();
+                inventoryId.setItemID(newItem.getId());
+                inventoryId.setSiteID(site.getId());
+                inventoryId.setItemLocation("");
+
+                inventory.setId(inventoryId);
+                inventory.setQuantity(0);  // Set quantity to 0
+                inventory.setReorderThreshold(0);  // Set reorderThreshold to 0
+                inventory.setOptimumThreshold(0);  // Set optimumReorderThreshold to 0
+
+                // Save inventory for the site
+                inventoryRepository.save(inventory);
+            }
+
+
+            return ResponseEntity.status(HttpStatus.CREATED).body("Item created successfully with SKU: " + generatedSKU);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating item");
         }
     }
 

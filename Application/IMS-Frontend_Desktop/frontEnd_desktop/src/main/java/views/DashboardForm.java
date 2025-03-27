@@ -137,6 +137,7 @@ public class DashboardForm {
     private JButton btnCreateSupplierOrder;
     private JTextField txtSupplierOrdersSearch;
     private JButton btnSupplierOrdersHelp;
+    private JButton btnAddItem;
 
     // =================== FRAME VARIABLES ===================
 
@@ -547,6 +548,9 @@ public class DashboardForm {
 
         btnEditItem.addActionListener(e -> {
             editItem();
+        });
+        btnAddItem.addActionListener(e -> {
+            createItem();
         });
 
         // Allow Cancel/Exit to be accessed via 'ESC' key

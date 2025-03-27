@@ -113,19 +113,7 @@ public class Supplier {
 
     @Override
     public String toString() {
-        return "Supplier {" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", address1='" + address1 + '\'' +
-                ", address2='" + (address2 != null ? address2 : "N/A") + '\'' +
-                ", city='" + city + '\'' +
-                ", country='" + country + '\'' +
-                ", provinceId='" + provinceId + '\'' +
-                ", postalcode='" + postalcode + '\'' +
-                ", phone='" + phone + '\'' +
-                ", contact='" + (contact != null ? contact : "N/A") + '\'' +
-                ", notes='" + (notes != null ? notes : "N/A") + '\'' +
-                ", active=" + (active != null && active ? "Yes" : "No") +
-                '}';
+        return getName();
+
     }
 }
