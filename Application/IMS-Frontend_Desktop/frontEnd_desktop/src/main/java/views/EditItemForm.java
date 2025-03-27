@@ -38,6 +38,12 @@ public class EditItemForm {
     private JLabel lblDesc;
     private JLabel lblItemImage;
     private JButton btnHelp;
+    private JTextField txtName;
+    private JCheckBox chkActiv;
+    private JSpinner spinner1;
+    private JSpinner spinner2;
+    private JComboBox cmbCategory;
+    private JComboBox cmbSupplier;
 
     // =================== FRAME VARIABLES ===================
 
@@ -130,7 +136,7 @@ public class EditItemForm {
         }
         frame.setContentPane(getMainPanel());       // Set the content pane
         frame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // Set close operation
-        frame.setSize(600, 570);                   // Set frame size
+        frame.setSize(600, 750);                   // Set frame size
         if(currentLocation != null) {
             frame.setLocation(currentLocation);
         }

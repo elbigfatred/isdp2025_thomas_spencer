@@ -2,6 +2,7 @@ package utils;
 
 import models.Inventory;
 import models.Item;
+import models.Supplier;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -57,6 +58,18 @@ public class InventoryRequests {
                         item.setName(itemJson.optString("name", "Unknown Item"));
                         item.setSku(itemJson.optString("sku", ""));
                         item.setActive(itemJson.optInt("active", 1) == 1);
+                        item.setCaseSize(itemJson.optInt("caseSize", 1));
+
+                        if (itemJson.has("supplier")){
+                            JSONObject supplierJson = itemJson.getJSONObject("supplier");
+                            Supplier supplier = new Supplier();
+
+                            supplier.setId(supplierJson.getInt("supplierid"));
+                            supplier.setName(supplierJson.getString("name"));
+                            supplier.setActive(supplierJson.getInt("active") == 1);
+
+                            item.setSupplier(supplier);
+                        }
 
                         inventory.setItem(item);
                     }
@@ -213,6 +226,18 @@ public class InventoryRequests {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static List<Inventory> getViableSupplierInventory(){
+        List<Inventory> inventoryList = fetchInventoryBySite(2);
+        List<Inventory> finalList = new ArrayList<>();
+        for (Inventory inventory : inventoryList) {
+            Item item = inventory.getItem();
+            if (item.getSupplier().getActive()){
+                finalList.add(inventory);
+            }
+        }
+        return finalList;
     }
 
 }

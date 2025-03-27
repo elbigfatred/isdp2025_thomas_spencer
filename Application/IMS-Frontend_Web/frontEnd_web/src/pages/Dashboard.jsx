@@ -5,6 +5,7 @@ import OrdersPage from "../components/OrdersPage/OrdersDashboard";
 import DeliveriesDashboard from "../components/DeliveriesPage/DeliveriesDashboard";
 import OnlineOrdersDashboard from "../components/OnlineOrdersPage/OnlineOrdersDashboard";
 import TodaysDeliveriesDashboard from "../components/TodaysDeliveriesPage/TodaysDeliveriesDashboard";
+import ReportsDashboard from "../components/ReportsPage/reportsDashboard";
 
 import {
   Button,
@@ -54,6 +55,13 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
     userRoles.includes("Store Manager") ||
     userRoles.includes("Store Worker");
 
+  const hasReportsAccess =
+    userRoles.includes("Administrator") ||
+    userRoles.includes("Warehouse Manager") ||
+    userRoles.includes("Regional Manager") ||
+    userRoles.includes("Store Manager") ||
+    userRoles.includes("Financial Manager");
+
   const hasSitesAccess = hasUsersAccess; // Same roles as user access
 
   // ✅ Auto-Pick the First Available Tab
@@ -62,6 +70,7 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
   if (hasUsersAccess) availableTabs.push("users");
   if (hasOrdersAccess) availableTabs.push("orders");
   if (hasDeliveryAccess) availableTabs.push("deliveries");
+  if (hasReportsAccess) availableTabs.push("reports");
 
   //const [activePage, setActivePage] = useState(availableTabs[0] || null);
 
@@ -196,6 +205,16 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
             </Button>
           )}
 
+          {hasReportsAccess && (
+            <Button
+              variant={activePage === "reports" ? "contained" : "outlined"}
+              onClick={() => setActivePage("reports")}
+              sx={{ width: "100%", marginBottom: 1 }}
+            >
+              Reports
+            </Button>
+          )}
+
           <Box sx={{ flexGrow: 1 }} />
 
           <Button
@@ -266,6 +285,11 @@ const Dashboard = ({ user, onLogout, darkMode, setDarkMode }) => {
               activePage === "online-orders" && (
                 <Typography>Access Denied</Typography>
               )
+            )}
+            {activePage === "reports" && hasReportsAccess ? (
+              <ReportsDashboard user={user} />
+            ) : (
+              activePage === "reports" && <Typography>Access Denied</Typography>
             )}
 
             {/* ✅ If no page is selected, show this message */}

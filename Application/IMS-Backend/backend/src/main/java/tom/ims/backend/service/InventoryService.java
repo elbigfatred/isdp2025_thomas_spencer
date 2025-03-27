@@ -2,18 +2,19 @@ package tom.ims.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tom.ims.backend.model.Inventory;
-import tom.ims.backend.model.InventoryId;
-import tom.ims.backend.model.InventoryUpdateRequest;
-import tom.ims.backend.model.OrderItem;
+import tom.ims.backend.model.*;
 import tom.ims.backend.repository.InventoryRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class InventoryService {
+
+    private final int warehouseID = 2;
+
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -109,5 +110,22 @@ public class InventoryService {
             // ✅ Save the updated or new inventory entry
             inventoryRepository.save(inventory);
         }
+    }
+
+    public List<Inventory> getSupplierItemsBelowThreshold() {
+        List<Inventory> inventoryItems = inventoryRepository.findLowStockItems(warehouseID);
+        List<Inventory> finalList = new ArrayList<>();
+
+        for (Inventory inv : inventoryItems) {
+            Item item = inv.getItem(); // Get the item details
+            Supplier supplier = item.getSupplier();
+            if (supplier.getActive() == (byte) 0) {
+                System.out.printf("[DEBUG] Skipping active item because supplier inactive: %s\n", item.getName());
+                continue;
+            }
+            finalList.add(inv);
+        }
+
+        return finalList;
     }
 }

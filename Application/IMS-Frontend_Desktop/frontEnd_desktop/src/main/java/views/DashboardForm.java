@@ -130,6 +130,13 @@ public class DashboardForm {
     private JButton btnCreateLossReturn;
     private JComboBox cmbLossReturnSite;
     private JTextField txtLossReturnSearch;
+    private JTable tblSupplierOrders;
+    private JPanel SupplierOrdersHeaderPane;
+    private JPanel SupplierOrdersCRUDPane;
+    private JPanel SupplierOrdersTab;
+    private JButton btnCreateSupplierOrder;
+    private JTextField txtSupplierOrdersSearch;
+    private JButton btnSupplierOrdersHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -217,12 +224,15 @@ public class DashboardForm {
             siteAdminCRUDPane.setVisible(true);
             DashboardTabPane.add("Inventory", InventoryTab);
             pnlInventoryAdminSelectSite.setVisible(true);
-            DashboardTabPane.add("Orders", OrdersTab);
+            DashboardTabPane.add("Store Orders", OrdersTab);
             DashboardTabPane.add("Suppliers", SuppliersTab);
             DashboardTabPane.add("Transaction Records", TxnsTab);
             DashboardTabPane.add("Losses/Returns", LossReturnTab);
+            DashboardTabPane.add("Supplier Orders", SupplierOrdersTab);
+            DashboardTabPane.add("Items", ItemsTab);
 
             loadInitialData();
+            populateItemsTable(allItems);
             populateEditPermissionsEmployeesTable(allEmployees);
             populateEditPermissionsPositionList(allPosns, null);
             populateOrdersTable(allTxns);
@@ -241,6 +251,7 @@ public class DashboardForm {
             DashboardTabPane.add("Orders", OrdersTab);
             DashboardTabPane.add("Suppliers", SuppliersTab);
             DashboardTabPane.add("Losses/Returns", LossReturnTab);
+            DashboardTabPane.add("Supplier Orders", SupplierOrdersTab);
 
 
             loadInitialData();
@@ -326,6 +337,7 @@ public class DashboardForm {
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
             allModTxns = TxnsModsRequests.fetchAllTransactions();
             allLossReturns = fetchAllLossReturns();
+            allItems = ItemRequests.fetchItems();
             cmbInventoryAdminSiteSelect.removeAllItems();
             loadTypeComboBox();
             loadStatusTXNSComboBox();
@@ -796,11 +808,34 @@ public class DashboardForm {
             }
         });
 
+        btnCreateSupplierOrder.addActionListener(e -> {
+            CreateSupplierOrder();
+        });
+
 
 
 
         return ContentPane;
     }
+
+    // =================== SUPPLIER ORDER MANAGEMENT ================
+
+    private void CreateSupplierOrder() {
+        SwingUtilities.invokeLater(() ->
+                new SupplierOrderForm().showSupplierOrderForm(
+                        frame,
+                        frame.getLocation(),
+                        () -> {
+                            // Optional: Refresh loss/return table if you’re showing it in the dashboard
+                            loadInitialData();
+                            //updateLossReturnTableBySearch();
+                        }
+                )
+        );
+    }
+
+
+
 
     // =================== LOSS/RETURN MANAGEMENT ===================
 
@@ -1952,6 +1987,25 @@ public class DashboardForm {
 
 
     }
+
+    private void createItem(){
+
+//        sessionActive = false;
+//        idleTimer.stop();
+//        countdownTimer.stop();
+
+        SwingUtilities.invokeLater(()-> new EditItemForm().showItemEditForm(frame, frame.getLocation(), null,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+            loadInitialData();
+            populateItemsTable(allItems);
+        }));
+
+
+    }
+
 
     // =================== TABLE POPULATION AND SEARCH FUNCTIONS ===================
 

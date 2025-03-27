@@ -1,5 +1,25 @@
 # 7. Users - list all, sort by role, site
 
+# =============================================================================
+# USERS REPORT GENERATION
+#
+# Expected Request Format:
+# {
+#     "reportType": "users",         # required by app.py routing logic
+#     "format": "pdf" | "csv",       # optional; default is "pdf"
+#     "role": "Store Manager",       # optional; filters by main_role
+#     "siteId": 4,                   # optional; filters by siteID
+#     "sortBy": "role" | "site",     # optional; default is "role"
+#     "sortOrder": "asc" | "desc"    # optional; default is "asc"
+# }
+#
+# Notes:
+# - If no filters are provided, all active users are included.
+# - PDF output includes a styled table and filter/sort summary (if applicable).
+# - If no matching results are found, a message is shown in the PDF.
+# - CSV always includes headers, even if no data is returned.
+# =============================================================================
+
 import mysql.connector
 import os
 import pandas as pd
@@ -10,6 +30,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from datetime import datetime
+from reportlab.platypus import Image
 
 DB_CONFIG = {
     "host": "localhost",
@@ -27,6 +48,8 @@ def generate_users_report(data):
     role = data.get("role")
     site_id = data.get("siteId")
     format = data.get("format", "pdf").lower()  # default to PDF
+    sort_by = data.get("sortBy", "role").lower()         # Default: role
+    sort_order = data.get("sortOrder", "asc").lower()    # Default: ascending
 
     today = datetime.now().strftime("%Y-%m-%d")
     filename = f"users_report_{today}.{format}"
@@ -50,8 +73,19 @@ def generate_users_report(data):
     if site_id:
         query += " AND s.siteID = %s"
         params.append(site_id)
+    order_clause = " ORDER BY e.main_role, s.siteName"  # default
 
-    query += " ORDER BY e.main_role, s.siteName"
+    if sort_by == "role":
+        order_clause = " ORDER BY e.main_role"
+    elif sort_by == "site":
+        order_clause = " ORDER BY s.siteName"
+
+    if sort_order == "desc":
+        order_clause += " DESC"
+    else:
+        order_clause += " ASC"
+
+    query += order_clause
 
     cursor.execute(query, tuple(params))
     results = cursor.fetchall()
@@ -94,15 +128,25 @@ def generate_users_report(data):
 
         return {"file_path": file_path}
 
+    ### EXPORT CSV if requested ###
     if format == "csv":
         df.to_csv(file_path, index=False)
         return {"file_path": file_path}
+
+    ### EXPORT PDF (default) ####
 
     doc = SimpleDocTemplate(file_path, pagesize=letter)
 
     elements = []
 
     styles = getSampleStyleSheet()
+
+    logo_path = "static/bullseye1.png"
+    # size in points (72 pt = 1 inch)
+    logo = Image(logo_path, width=50, height=50)
+    logo.vAlign = 'TOP'
+    logo.hAlign = 'RIGHT'  # align top-right
+    elements.append(logo)
 
     # Turn DataFrame into list-of-lists (header + rows)
     elements.append(Paragraph("Users Report", styles['Heading1']))
@@ -115,7 +159,11 @@ def generate_users_report(data):
     if filter_parts:
         filter_text = "Filters: " + ", ".join(filter_parts)
         elements.append(Paragraph(filter_text, styles['Normal']))
-        elements.append(Spacer(1, 12))  # Only add space if filters are shown
+        elements.append(Spacer(1, 12))
+
+    # Sorting summary
+    sort_text = f"Sorted by: {sort_by.title()} ({sort_order.upper()})"
+    elements.append(Paragraph(sort_text, styles['Normal']))
     elements.append(Spacer(1, 12))
 
     # Table setup
@@ -132,6 +180,7 @@ def generate_users_report(data):
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
+    # table.hAlign = 'LEFT'
 
     elements.append(table)
     doc.build(elements)

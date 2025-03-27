@@ -18,17 +18,14 @@ public class ReturnLossForm {
     private JLabel SPACER2;
     private JLabel SPACER3;
     private JButton btnHelp;
-    private JPanel RadioButtonPanel;
     private JPanel InvCartPanel;
     private JPanel InvPanel;
     private JPanel DetailsPanel;
-    private JPanel NotesPanel;
     private JPanel CDPanel;
-    private JButton btnSave;
+    private JButton btnSubmit;
     private JButton btnExit;
     private JTable tblInventory;
     private JTextField txtTxnNotes;
-    private JLabel lblNotes;
     private JButton btnDecrement;
     private JButton btnAdd;
     private JLabel lblItemDetails;
@@ -40,6 +37,12 @@ public class ReturnLossForm {
     private JLabel lblWelcome;
     private JLabel lblLocation;
     private JCheckBox chkResellable;
+    private JPanel RadioButtonPane;
+    private JPanel NotesPanel;
+    private JLabel lblNotes;
+    private JPanel CartPanel;
+    private JTable tblCart;
+    private JButton btnSave;
 
     private JDialog frame;
     private Site selectedSite;
@@ -84,7 +87,7 @@ public class ReturnLossForm {
         lblLocation.setText("Location: " + session.getSiteName());
 
         btnExit.addActionListener(e -> frame.dispose());
-        btnSave.addActionListener(e -> handleSave());
+        btnSubmit.addActionListener(e -> handleSave());
 
         btnHelp.addActionListener(e -> {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_TXN_VIEW,"Transactions Help",JOptionPane.INFORMATION_MESSAGE);
@@ -239,13 +242,13 @@ public class ReturnLossForm {
                 }
                 default -> btnAdd.setEnabled(false);
             }
-            btnSave.setEnabled(itemQuantity > 0);
+            btnSubmit.setEnabled(itemQuantity > 0);
         } else {
             // No item selected — disable both buttons and clear label
             lblItemDetails.setText("Please select an item...");
             btnAdd.setEnabled(false);
             btnDecrement.setEnabled(false);
-            btnSave.setEnabled(false);
+            btnSubmit.setEnabled(false);
         }
     }
 

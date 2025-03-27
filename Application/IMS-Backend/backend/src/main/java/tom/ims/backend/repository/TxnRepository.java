@@ -57,4 +57,8 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
             "AND t.deliveryID IS NOT NULL " +
             "AND DATE(t.shipDate) = :today")
     List<Txn> findByTxnTypeAndDeliveryAssignedToday(@Param("today") LocalDate today);
+
+    //  Fetch active supplier order
+    @Query("SELECT t FROM Txn t WHERE t.txnType.txnType = 'Supplier Order' AND t.txnStatus.statusName IN ('NEW')")
+    List<Txn> findActiveSupplierOrders();
 }

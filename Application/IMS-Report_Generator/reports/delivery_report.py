@@ -1,13 +1,23 @@
-
-# 1. Delivery Report - by day (selectable day of week), for each individual delivery, used as
-# a record by Acadia and driver to see where they are going each day. INCLUDE
-# routes/locations, mileage, weight, and vehicle size
+# =============================================================================
+# DELIVERY REPORT
+#
+# Expected Request:
+# {
+#     "reportType": "delivery_report",
+#     "deliveryDate": "2025-03-26",   # required: delivery date (YYYY-MM-DD)
+#     "format": "pdf" | "csv"         # optional: default is "pdf"
+# }
+# =============================================================================
 
 import mysql.connector
-import pandas as pd
 import os
+import pandas as pd
+from datetime import datetime
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Image
 
 DB_CONFIG = {
     "host": "localhost",
@@ -17,79 +27,134 @@ DB_CONFIG = {
     "database": "bullseyedb2025",
 }
 
-# Directory to save reports
 REPORTS_DIR = "reports/generated_reports"
-os.makedirs(REPORTS_DIR, exist_ok=True)  # Ensure directory exists
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
 
 def generate_delivery_report(data):
-    start_date = data["dateRange"]["startDate"]
-    end_date = data["dateRange"]["endDate"]
+    delivery_date = data.get("deliveryDate")
+    format = data.get("format", "pdf").lower()
+
+    if not delivery_date:
+        raise ValueError("Missing 'deliveryDate' in request.")
+
+    filename = f"delivery_report_{delivery_date}.{format}"
+    file_path = os.path.join(REPORTS_DIR, filename)
 
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
     query = """
-        SELECT 
-            d.deliveryID, d.deliveryDate, d.distanceCost, d.vehicleType, 
-            t.txnID AS txnID, s.siteName AS destination, s.distanceFromWH AS mileage 
-        FROM delivery d 
-        JOIN txn t ON d.deliveryID = t.deliveryID 
-        JOIN site s ON t.siteIDTo = s.siteID 
-        WHERE d.deliveryDate BETWEEN %s AND %s
-        ORDER BY d.deliveryDate, d.vehicleType;
+        SELECT
+            d.deliveryID,
+            d.deliveryDate,
+            s.siteName,
+            s.address,
+            s.city,
+            s.provinceID,
+            s.distanceFromWH,
+            d.vehicleType,
+            v.costPerKm,
+            SUM(i.weight * ti.quantity) AS totalWeight
+        FROM delivery d
+        JOIN txn t ON t.deliveryID = d.deliveryID
+        JOIN site s ON t.siteIDTo = s.siteID
+        JOIN txnitems ti ON ti.txnID = t.txnID
+        JOIN item i ON ti.itemID = i.itemID
+        JOIN vehicle v ON d.vehicleType = v.vehicleType
+        WHERE d.deliveryDate = %s
+        GROUP BY d.deliveryID, t.txnID
+        ORDER BY d.deliveryID;
     """
-    cursor.execute(query, (start_date, end_date))
-    results = cursor.fetchall()
 
+    cursor.execute(query, (delivery_date,))
+    results = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    # Convert results into DataFrame
-    columns = ["Delivery ID", "Delivery Date", "Distance Cost",
-               "Vehicle Type", "Txn ID", "Destination", "Mileage"]
+    columns = [
+        "Delivery ID", "Delivery Date", "Store", "Address", "City", "Province",
+        "Distance (km)", "Vehicle", "Cost/km", "Total Weight (kg)"
+    ]
     df = pd.DataFrame(results, columns=columns)
 
-    # File path for the generated report
-    file_path = os.path.join(
-        REPORTS_DIR, f"delivery_report_{start_date}_to_{end_date}.pdf")
-
-    # Generate PDF
-    c = canvas.Canvas(file_path, pagesize=letter)
-    width, height = letter
-
-    c.drawString(100, height - 50,
-                 f"Delivery Report ({start_date} to {end_date})")
-    y_position = height - 80
-
-    headers = ["Delivery ID", "Date", "Txn ID",
-               "Destination", "Mileage (km)", "Vehicle", "Cost ($)"]
-    col_positions = [50, 120, 200, 280, 400, 480, 550]
-
-    for i, header in enumerate(headers):
-        c.drawString(col_positions[i], y_position, header)
-
-    y_position -= 20
-
-    for _, row in df.iterrows():
-        row_data = [
-            row["Delivery ID"],
-            row["Delivery Date"].strftime("%Y-%m-%d"),
-            row["Txn ID"],
-            row["Destination"],
-            f"{row['Mileage']} km",
-            row["Vehicle Type"],
-            f"${row['Distance Cost']:.2f}"
+    if df.empty:
+        doc = SimpleDocTemplate(file_path, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = [
+            Paragraph("Delivery Report", styles["Heading1"]),
+            Spacer(1, 12),
+            Paragraph(f"Date: {delivery_date}", styles["Normal"]),
+            Spacer(1, 24),
+            Paragraph("No deliveries found for the selected date.",
+                      styles["Normal"])
         ]
-        for i, item in enumerate(row_data):
-            c.drawString(col_positions[i], y_position, str(item))
-        y_position -= 20
+        doc.build(elements)
+        return {"file_path": file_path}
 
-        if y_position < 50:
-            c.showPage()
-            y_position = height - 50
+    # Calculate totals
+    df["Distance (km)"] = df["Distance (km)"].astype(float)
+    df["Cost/km"] = df["Cost/km"].astype(float)
+    df["Subtotal"] = df["Distance (km)"] * df["Cost/km"]
 
-    c.save()
+    total_km = df["Distance (km)"].sum()
+    total_cost = df["Subtotal"].sum()
 
-    # ✅ Return file path instead of sending the file
+    # Group by delivery ID
+    doc = SimpleDocTemplate(file_path, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    grouped = df.groupby("Delivery ID")
+
+    for delivery_id, group in grouped:
+        logo_path = "static/bullseye1.png"
+        logo = Image(logo_path, width=50, height=50)
+        logo.vAlign = 'TOP'
+        logo.hAlign = 'RIGHT'
+        elements.append(logo)
+
+        elements.append(
+            Paragraph(f"Delivery ID: {delivery_id}", styles["Heading1"]))
+        elements.append(
+            Paragraph(f"Date: {group.iloc[0]['Delivery Date']}", styles["Normal"]))
+        elements.append(
+            Paragraph(f"Vehicle Type: {group.iloc[0]['Vehicle']}", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        table_data = [["Store", "Address", "City", "Province", "Distance (km)", "Cost/km", "Weight (kg)", "Subtotal"]] + [
+            [
+                row["Store"],
+                row["Address"],
+                row["City"],
+                row["Province"],
+                f"{row['Distance (km)']:.2f}",
+                f"${row['Cost/km']:.2f}",
+                f"{row['Total Weight (kg)']:.2f}",
+                f"${row['Subtotal']:.2f}"
+            ]
+            for idx, row in group.iterrows()
+        ]
+
+        table = Table(table_data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
+        ]))
+        elements.append(table)
+        # elements.append(PageBreak())
+        elements.append(Spacer(1, 12))
+
+    # Summary page
+    elements.append(Paragraph("Delivery Summary", styles["Heading1"]))
+    elements.append(
+        Paragraph(f"Total Kilometers: {total_km:.2f} km", styles["Normal"]))
+    elements.append(
+        Paragraph(f"Total Distance Cost: ${total_cost:.2f}", styles["Normal"]))
+    doc.build(elements)
+
     return {"file_path": file_path}
