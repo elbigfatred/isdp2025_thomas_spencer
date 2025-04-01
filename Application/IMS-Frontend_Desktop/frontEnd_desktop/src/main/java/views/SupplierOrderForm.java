@@ -42,6 +42,8 @@ public class SupplierOrderForm {
     private JButton btnSubmit;
     private JPanel CartPanel;
     private JTable tblCart;
+    private JButton btnViewDetails;
+    private JComboBox cmbSuppliers;
 
 
     private JDialog frame;
@@ -75,8 +77,18 @@ public class SupplierOrderForm {
 
         btnAdd.setEnabled(false);
         btnDecrement.setEnabled(false);
+        btnViewDetails.setEnabled(false);
 
         frame.setVisible(true);
+
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                if (onCloseCallback != null) {
+                    onCloseCallback.run(); // Execute the callback when dialog is closed
+                }
+            }
+        });
     }
 
     private JPanel getMainPanel() {
@@ -119,8 +131,18 @@ public class SupplierOrderForm {
 
         btnAdd.addActionListener(e -> handleIncrement());
         btnDecrement.addActionListener(e -> handleDecrement());
+        btnViewDetails.addActionListener(e -> viewDetails());
+
+        cmbSuppliers.addActionListener(e ->{
+            updateInventoryTablebySearch();
+        });
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.SUPPLIER_ORDER_CREATE_SCREEN,"Supplier Orders Help",JOptionPane.INFORMATION_MESSAGE);
+        });
 
         loadInventoryandOrderforSite();
+        loadSuppliers();
         updateItemDisplay();
 
         return ContentPane;
@@ -198,6 +220,15 @@ public class SupplierOrderForm {
         updateInventoryTablebySearch();
     }
 
+    private void loadSuppliers() {
+        List<Supplier> allActiveSuppliers = SupplierUtil.fetchAllSuppliers(false);
+        cmbSuppliers.removeAllItems();
+        cmbSuppliers.addItem("All");
+        for (Supplier supplier : allActiveSuppliers) {
+            cmbSuppliers.addItem(supplier);
+        }
+    }
+
     private void populateCartTable(List<TxnItem> txnItems) {
         String[] columnNames = {"ID", "Item Name", "SKU", "Qty", "Supplier"};
         Object[][] rowData = new Object[txnItems.size()][columnNames.length];
@@ -239,29 +270,52 @@ public class SupplierOrderForm {
     private void updateInventoryTablebySearch() {
         String search = txtInventorySearch.getText().trim().toLowerCase();
 
-        if (search.isEmpty()) {
+        // Get selected supplier from the combo box
+        Supplier selectedSupplier = null;
+        int selectedSupplierId; // Default value indicating no supplier selected
+        if (cmbSuppliers.getSelectedItem() instanceof Supplier) {
+            selectedSupplier = (Supplier) cmbSuppliers.getSelectedItem();
+            selectedSupplierId = selectedSupplier.getId();
+        } else {
+            selectedSupplierId = -1;
+        }
+
+        // If search is empty and no supplier is selected, show all items
+        if (search.isEmpty() && selectedSupplierId == -1) {
             populateInventoryTable(warehouseInventoryList);
             return;
         }
 
+        // Filter inventory based on search and selected supplier
         List<Inventory> filtered = warehouseInventoryList.stream()
                 .filter(inv -> {
                     Item item = inv.getItem();
                     Supplier supplier = item.getSupplier();
 
+                    // Prepare category and case size for search
                     String category = item.getCategory() != null ? item.getCategory().getCategoryName().toLowerCase() : "";
                     String supplierName = supplier != null ? supplier.getName().toLowerCase() : "";
                     String caseSize = String.valueOf(item.getCaseSize());
 
-                    return item.getName().toLowerCase().contains(search)
+                    // Check if item matches search term
+                    boolean matchesSearch = item.getName().toLowerCase().contains(search)
                             || item.getSku().toLowerCase().contains(search)
                             || inv.getItemLocation().toLowerCase().contains(search)
                             || category.contains(search)
                             || supplierName.contains(search)
                             || caseSize.contains(search);
+
+                    // Filter by selected supplier if applicable
+                    if (selectedSupplierId != -1) {
+                        return matchesSearch && supplier != null && supplier.getId() == selectedSupplierId;
+                    }
+
+                    // If no supplier is selected, return items based only on search
+                    return matchesSearch;
                 })
                 .toList();
 
+        // Populate table with filtered data
         populateInventoryTable(filtered);
     }
 
@@ -323,19 +377,20 @@ public class SupplierOrderForm {
             if(itemQuantity == 0){
                 btnDecrement.setEnabled(false);
                 btnAdd.setEnabled(true);
+                btnViewDetails.setEnabled(true);
             }
             else{
                 btnDecrement.setEnabled(true);
                 btnAdd.setEnabled(true);
+                btnViewDetails.setEnabled(true);
             }
 
         } else {
             lblItemDetails.setText("No item selected.");
+            btnDecrement.setEnabled(false);
+            btnAdd.setEnabled(false);
+            btnViewDetails.setEnabled(false);
         }
-    }
-
-    private void handleSave() {
-
     }
 
     private void handleItemSelection(Item item) {
@@ -459,7 +514,7 @@ public class SupplierOrderForm {
 
     private void handleSubmit() {
         // First, save the order before submitting
-        handleSave();
+        handleUpdate();
 
         // Now, call submitSupplierOrder to finalize the transaction
         boolean success = SupplierOrderRequests.submitSupplierOrder(currTxnId, employeeUsername);
@@ -471,6 +526,21 @@ public class SupplierOrderForm {
         } else {
             JOptionPane.showMessageDialog(frame, "Failed to submit the supplier order.", "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void viewDetails(){
+        if (selectedItem == null) {
+            JOptionPane.showMessageDialog(frame, "No item is selected.", "Error", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        SupplierOrderViewItemForm viewItemForm = new SupplierOrderViewItemForm();
+
+        // Assuming you want to center the form on the screen
+        viewItemForm.showItemEditForm(frame, frame.getLocation(), selectedItem, () -> {
+
+        });
+
     }
 
 }

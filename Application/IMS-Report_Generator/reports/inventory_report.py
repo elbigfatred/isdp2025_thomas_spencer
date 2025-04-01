@@ -140,6 +140,12 @@ def generate_inventory_report(data):
                 x) <= MAX_ITEM_NAME_LEN else x[:MAX_ITEM_NAME_LEN - 3] + "..."
         )
 
+    # condense Site name as well
+    df["Site"] = df["Site"].apply(
+        lambda x: x if len(
+            x) <= MAX_ITEM_NAME_LEN else x[:MAX_ITEM_NAME_LEN - 3] + "..."
+    )
+
     table_data = [df.columns.tolist()] + df.values.tolist()
 
     # Table setup with fixed column widths

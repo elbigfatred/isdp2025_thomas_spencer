@@ -1,0 +1,3 @@
+Delivery ID,Delivery Date,Store,Address,City,Province,Distance (km),Vehicle,Cost/km,Total Weight (kg),Subtotal
+1,2025-03-26,Oromocto Retail,273 Restigouche Road,Oromocto,NB,96.0,Medium,2.5,5000.00,240.0
+1,2025-03-26,Fredericton Retail,1381 Regent Street,Fredericton,NB,116.0,Medium,2.5,2500.00,290.0

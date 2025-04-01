@@ -138,6 +138,7 @@ public class DashboardForm {
     private JTextField txtSupplierOrdersSearch;
     private JButton btnSupplierOrdersHelp;
     private JButton btnAddItem;
+    private JButton btnLossReturnHelp;
 
     // =================== FRAME VARIABLES ===================
 
@@ -167,6 +168,7 @@ public class DashboardForm {
     private Site lossReturnSite = null;
     private Site ordersSite = null;
     private List<Txn> allLossReturns;
+    private List<Txn> allSupplierOrders;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -244,6 +246,7 @@ public class DashboardForm {
             updateTxnTableBySearch();
             cmbInventoryAdminSiteSelect.setVisible(true);
             updateLossReturnTableBySearch();
+            updateSupplierOrderTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Manager")) {
@@ -262,6 +265,7 @@ public class DashboardForm {
             populateSuppliersTable(allSuppliers);
             updateSuppliersTableBySearch();
             updateLossReturnTableBySearch();
+            updateSupplierOrderTableBySearch();
         }
 
         if (Arrays.asList(roles).contains("Warehouse Worker")) {
@@ -339,6 +343,7 @@ public class DashboardForm {
             allModTxns = TxnsModsRequests.fetchAllTransactions();
             allLossReturns = fetchAllLossReturns();
             allItems = ItemRequests.fetchItems();
+            allSupplierOrders = SupplierOrderRequests.fetchSupplierOrders();
             cmbInventoryAdminSiteSelect.removeAllItems();
             loadTypeComboBox();
             loadStatusTXNSComboBox();
@@ -377,6 +382,7 @@ public class DashboardForm {
         if (Arrays.asList(accessPosition).contains("Warehouse Manager")) {
             allItems = ItemRequests.fetchItems();
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
+            allSupplierOrders = SupplierOrderRequests.fetchSupplierOrders();
             ////System.out.println("Fetching txns");
             allTxns = TxnRequests.fetchAllOrders().stream()
                     .filter(txn -> txn.getTxnType().getTxnType().matches("Store Order|Emergency Order|Backorder"))
@@ -816,6 +822,31 @@ public class DashboardForm {
             CreateSupplierOrder();
         });
 
+        txtSupplierOrdersSearch.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateSupplierOrderTableBySearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateSupplierOrderTableBySearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateSupplierOrderTableBySearch();
+            }
+        });
+
+        btnSupplierOrdersHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.SUPPLIER_ORDERS_DASHBOARD,"Supplier Orders Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        btnLossReturnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.LOSSES_RETURNS_DASHBOARD,"Loss/Return Help",JOptionPane.INFORMATION_MESSAGE);
+        });
+
 
 
 
@@ -824,21 +855,69 @@ public class DashboardForm {
 
     // =================== SUPPLIER ORDER MANAGEMENT ================
 
+    private void updateSupplierOrderTableBySearch() {
+        if (allSupplierOrders == null) return;
+
+        String search = txtSupplierOrdersSearch.getText().trim().toLowerCase();
+
+        List<Txn> filtered = allSupplierOrders.stream()
+                .filter(txn -> {
+                    // 🔹 If no search text, we're done
+                    if (search.isEmpty()) {
+                        return true;
+                    }
+
+                    // 🔹 Otherwise apply search logic
+                    String status = txn.getTxnStatus() != null ? txn.getTxnStatus().getStatusName().toLowerCase() : "";
+                    String createdDate = txn.getCreatedDate() != null ? txn.getCreatedDate().toString().toLowerCase() : "";
+                    String createdBy = txn.getEmployee() != null ? txn.getEmployee().getUsername().toLowerCase() : "";
+                    String txnId = String.valueOf(txn.getId());
+
+                    // Search through status, created date, created by, and txn ID
+                    return status.contains(search)
+                            || createdDate.contains(search)
+                            || createdBy.contains(search)
+                            || txnId.contains(search);
+                })
+                .toList();
+
+        populateSupplierOrderTable(filtered);
+    }
+
+    private void populateSupplierOrderTable(List<Txn> txns) {
+        String[] columnNames = {"Txn ID", "Status", "Created Date/Time", "Created By" };
+        Object[][] rowData = new Object[txns.size()][columnNames.length];
+
+        for (int i = 0; i < txns.size(); i++) {
+            Txn txn = txns.get(i);
+            rowData[i][0] = txn.getId();
+            rowData[i][1] = txn.getTxnStatus() != null ? txn.getTxnStatus().getStatusName() : "N/A";
+            rowData[i][2] = txn.getCreatedDate() != null ? txn.getCreatedDate().toString() : "N/A";
+            rowData[i][3] = txn.getEmployee() != null ? txn.getEmployee().getUsername() : "N/A";
+        }
+
+        tblSupplierOrders.setModel(new DefaultTableModel(rowData, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+
+        tblSupplierOrders.getTableHeader().setReorderingAllowed(false);
+    }
+
     private void CreateSupplierOrder() {
         SwingUtilities.invokeLater(() ->
                 new SupplierOrderForm().showSupplierOrderForm(
                         frame,
                         frame.getLocation(),
                         () -> {
-                            // Optional: Refresh loss/return table if you’re showing it in the dashboard
                             loadInitialData();
-                            //updateLossReturnTableBySearch();
+                            updateSupplierOrderTableBySearch();
                         }
                 )
         );
     }
-
-
 
 
     // =================== LOSS/RETURN MANAGEMENT ===================

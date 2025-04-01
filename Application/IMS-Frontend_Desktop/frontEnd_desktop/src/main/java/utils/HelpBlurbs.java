@@ -119,4 +119,16 @@ public class HelpBlurbs {
     public static final String EDIT_TXN_VIEW = "The Edit Transactions view enables administrators to update details of an order before it leaves the warehouse.\nAdmins can change the order status, modify the ship date, assign a delivery ID, etc.\nOnce a transaction is in transit, editing is disabled to maintain reliable tracking.";
 
     public static final String ADD_EDIT_SUPPLIER_VIEW = "The Add/Edit Supplier view enables Warehouse Managers to create and update supplier records.\nThey can modify supplier names, addresses, and set supplier status as active or inactive to maintain accurate supplier management.";
+
+    public static final String LOSSES_RETURNS_DASHBOARD = "The Losses/Returns Dashboard provides an overview of all loss, return, and damage transactions in the system.\nWarehouse/Store Managers can track the status of these transactions, filter by various criteria, and manage inventory discrepancies efficiently.";
+
+    public static final String ADD_LOSS_RETURN_SCREEN = "The Add Loss/Return screen allows Warehouse/Store Managers to record losses, returns, or damages.\nUsers must select the appropriate type of transaction (Loss, Return, or Damage) and indicate if the item is resellable in case of a return.\nThis helps maintain accurate inventory records and ensures proper processing of returned items.";
+
+    public static final String SUPPLIER_ORDERS_DASHBOARD = "The Supplier Orders Dashboard provides an overview of all orders placed with suppliers.\nWarehouse Managers can view the status of orders and keep track of pending or completed orders for smooth supply chain management.";
+
+    public static final String SUPPLIER_ORDER_CREATE_SCREEN = "The Supplier Order screen allows Warehouse Managers to create new orders to suppliers.\nUsers can select items, specify quantities, and submit the order for processing.\nThis functionality ensures that the warehouse maintains optimal stock levels and orders are placed in a timely manner.";
+
+    public static final String VIEW_ITEM_DETAILS_SUPPLIER_ORDER = "The Item Details view within the Supplier Order screen provides detailed information about a selected item.\nWarehouse Managers can review key details such as the item name, description, supplier, case size, weight, cost price, and more.\nThis feature allows users to verify item specifications before placing or editing a supplier order.";
+
+
 }

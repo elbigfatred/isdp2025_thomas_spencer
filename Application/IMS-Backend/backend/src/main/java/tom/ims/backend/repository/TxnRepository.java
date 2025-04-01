@@ -61,4 +61,6 @@ public interface TxnRepository extends JpaRepository<Txn, Integer> {
     //  Fetch active supplier order
     @Query("SELECT t FROM Txn t WHERE t.txnType.txnType = 'Supplier Order' AND t.txnStatus.statusName IN ('NEW')")
     List<Txn> findActiveSupplierOrders();
+
+    List<Txn> findByTxnType_TxnType(String txnTypeTxnType);
 }

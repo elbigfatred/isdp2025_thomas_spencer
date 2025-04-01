@@ -90,7 +90,7 @@ public class ReturnLossForm {
         btnSubmit.addActionListener(e -> handleSave());
 
         btnHelp.addActionListener(e -> {
-            JOptionPane.showMessageDialog(frame, HelpBlurbs.EDIT_TXN_VIEW,"Transactions Help",JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(frame, HelpBlurbs.ADD_LOSS_RETURN_SCREEN,"Loss/Return Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
         txtInventorySearch.getDocument().addDocumentListener(new DocumentListener() {
@@ -173,7 +173,7 @@ public class ReturnLossForm {
     }
 
     private void populateInventoryTable(List<Inventory> filteredInventory){
-        String[] columnNames = {"ID", "Name", "SKU", "Qty"};
+        String[] columnNames = {"ID", "Name", "SKU", "Quantity in Stock"};
         Object[][] rowData = new Object[filteredInventory.size()][columnNames.length];
 
         inventoryItems.clear(); // Reset the map

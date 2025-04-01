@@ -73,4 +73,8 @@ public class TxnService {
         int randomSuffix = new Random().nextInt(9000) + 1000; // 4-digit suffix
         return "LR-" + datePart + "-" + randomSuffix;
     }
+
+    public List<Txn> getAllSupplierOrderTransactions() {
+        return txnRepository.findByTxnType_TxnType("Supplier Order");
+    }
 }

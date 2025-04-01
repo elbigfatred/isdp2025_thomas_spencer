@@ -64,8 +64,8 @@ def generate_store_order_report(data):
     cursor.execute(query, (txn_id,))
     results = cursor.fetchall()
 
-    columns = ["Item Name", "SKU", "Unit Weight",
-               "Cost Price", "Retail Price", "Quantity"]
+    columns = ["Item Name", "SKU", "Unit Weight(kg)",
+               "Cost Price($)", "Retail Price($)", "Quantity"]
     df = pd.DataFrame(results, columns=[
         "Barcode", "Destination", *columns
     ])
@@ -78,9 +78,9 @@ def generate_store_order_report(data):
     df = df[columns]
 
     total_items = df["Quantity"].sum()
-    total_weight = (df["Unit Weight"] * df["Quantity"]).sum()
-    total_cost = (df["Cost Price"] * df["Quantity"]).sum()
-    total_retail = (df["Retail Price"] * df["Quantity"]).sum()
+    total_weight = (df["Unit Weight(kg)"] * df["Quantity"]).sum()
+    total_cost = (df["Cost Price($)"] * df["Quantity"]).sum()
+    total_retail = (df["Retail Price($)"] * df["Quantity"]).sum()
 
     if format == "csv":
         df.to_csv(file_path, index=False)

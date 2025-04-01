@@ -31,6 +31,8 @@ public class SupplierOrderController {
     @Autowired private ItemService itemService;
     @Autowired private SiteService siteService;
     private final int warehouseId = 2;
+    @Autowired TxnService txnService;
+
 
     @PutMapping("/{txnId}/update-items")
     public ResponseEntity<?> updateOrderItems(@PathVariable Integer txnId, @RequestBody OrderUpdateRequest updateRequest, @RequestParam String empUsername) {
@@ -131,4 +133,14 @@ public class SupplierOrderController {
                     .body("Error updating order status: " + e.getMessage());
         }
     }
+
+    @GetMapping("/getAll")
+    public ResponseEntity<List<Txn>> getAllSupplierOrders() {
+        List<Txn> supplierOrders = txnService.getAllSupplierOrderTransactions();
+        if (supplierOrders.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(supplierOrders);
+    }
+
 }

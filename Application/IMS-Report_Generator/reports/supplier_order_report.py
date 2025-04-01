@@ -64,7 +64,7 @@ def generate_supplier_order_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["Supplier", "Item", "SKU", "Quantity", "Cost Price"]
+    columns = ["Supplier", "Item", "SKU", "Quantity", "Cost Price($)"]
     df = pd.DataFrame(results, columns=columns)
 
     if df.empty:
@@ -107,14 +107,14 @@ def generate_supplier_order_report(data):
             Paragraph(f"Transaction ID: {txn_id}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
-        table_data = [["Item", "SKU", "Quantity", "Cost Price"]]
+        table_data = [["Item", "SKU", "Quantity", "Cost Price($)"]]
         total_cost = 0
 
         for _, row in group.iterrows():
             item_name = row["Item"]
             sku = row["SKU"]
             quantity = row["Quantity"]
-            cost_price = row["Cost Price"]
+            cost_price = row["Cost Price($)"]
             subtotal = quantity * cost_price
             total_cost += subtotal
             table_data.append([item_name, sku, quantity, f"${cost_price:.2f}"])

@@ -134,7 +134,7 @@ def generate_shipping_receipt_report(data):
     elements.append(Spacer(1, 18))
 
     # Summary
-    elements.append(Paragraph(f"Total Items: {total_items}", styles["Normal"]))
+    elements.append(Paragraph(f"Total SKUs: {total_items}", styles["Normal"]))
     elements.append(
         Paragraph(f"Total Weight: {total_weight:.2f} kg", styles["Normal"]))
 

@@ -83,8 +83,8 @@ def generate_orders_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["Txn ID", "Created Date", "Site",
-               "Txn Type", "Item Count", "Total Weight"]
+    columns = ["ID", "Created Date", "Site",
+               "Transaction Type", "SKU Count", "Total Weight(kg)"]
     df = pd.DataFrame(results, columns=columns)
 
     if df.empty:

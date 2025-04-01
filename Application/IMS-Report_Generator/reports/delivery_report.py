@@ -78,7 +78,15 @@ def generate_delivery_report(data):
     ]
     df = pd.DataFrame(results, columns=columns)
 
+    # If the DataFrame is empty, handle it accordingly
     if df.empty:
+        # If format is CSV, only include the headers
+        if format == "csv":
+            # Write only the column headers to CSV
+            df.head(0).to_csv(file_path, index=False)
+            return {"file_path": file_path}
+
+        # If format is PDF, create the report with a message indicating no data found
         doc = SimpleDocTemplate(file_path, pagesize=letter)
         styles = getSampleStyleSheet()
         elements = [
@@ -92,7 +100,7 @@ def generate_delivery_report(data):
         doc.build(elements)
         return {"file_path": file_path}
 
-    # Calculate totals
+    # If there are results, calculate totals and create the report
     df["Distance (km)"] = df["Distance (km)"].astype(float)
     df["Cost/km"] = df["Cost/km"].astype(float)
     df["Subtotal"] = df["Distance (km)"] * df["Cost/km"]
@@ -100,7 +108,13 @@ def generate_delivery_report(data):
     total_km = df["Distance (km)"].sum()
     total_cost = df["Subtotal"].sum()
 
-    # Group by delivery ID
+    # If the format is CSV, write data including totals
+    if format == "csv":
+        df["Subtotal"] = df["Subtotal"].round(2)  # rounding for readability
+        df.to_csv(file_path, index=False)
+        return {"file_path": file_path}
+
+    # For PDF generation, create the full report with grouped data
     doc = SimpleDocTemplate(file_path, pagesize=letter)
     styles = getSampleStyleSheet()
     elements = []
@@ -146,7 +160,6 @@ def generate_delivery_report(data):
             ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
         ]))
         elements.append(table)
-        # elements.append(PageBreak())
         elements.append(Spacer(1, 12))
 
     # Summary page

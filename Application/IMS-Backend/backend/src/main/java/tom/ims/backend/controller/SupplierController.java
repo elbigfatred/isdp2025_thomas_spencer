@@ -1,13 +1,16 @@
 package tom.ims.backend.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tom.ims.backend.model.Province;
 import tom.ims.backend.model.Supplier;
+import tom.ims.backend.model.Txn;
 import tom.ims.backend.repository.ProvinceRepository;
 import tom.ims.backend.service.ProvinceService;
 import tom.ims.backend.service.SupplierService;
+import tom.ims.backend.service.TxnService;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +20,7 @@ import java.util.Optional;
 public class SupplierController {
     private final SupplierService supplierService;
     private final ProvinceRepository provinceRepository;
+    @Autowired TxnService txnService;
 
     public SupplierController(SupplierService supplierService, ProvinceRepository provinceRepository, ProvinceService provinceService) {
         this.supplierService = supplierService;
@@ -62,4 +66,5 @@ public class SupplierController {
             return ResponseEntity.notFound().build();
         }
     }
+
 }
