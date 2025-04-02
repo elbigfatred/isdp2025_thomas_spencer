@@ -7,6 +7,7 @@ import {
   Select,
   MenuItem,
   Typography,
+  TextField,
 } from "@mui/material";
 import ReportViewer from "./ReportViewer";
 
@@ -15,6 +16,9 @@ const SupplierOrderReport = () => {
   const [txnId, setTxnId] = useState("");
   const [reportUrl, setReportUrl] = useState(null);
   const [txns, setTxns] = useState([]);
+  const [startDate, setStartDate] = useState("2025-01-01");
+  const [endDate, setEndDate] = useState("2025-12-31");
+  const [jumpToDate, setJumpToDate] = useState("");
 
   useEffect(() => {
     const fetchTxns = async () => {
@@ -25,13 +29,29 @@ const SupplierOrderReport = () => {
         const supplierOrderTxns = data.filter(
           (txn) => txn.txnType.txnType === "Supplier Order"
         );
-        setTxns(supplierOrderTxns);
+
+        // Apply date range filter
+        const filteredTxns = supplierOrderTxns.filter((txn) => {
+          const txnDate = new Date(txn.createdDate);
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+
+          // Adjusting end date to be inclusive
+          end.setDate(end.getDate() + 1); // Adding 1 day to include the end date in the filter
+
+          return (
+            (startDate ? txnDate >= start : true) &&
+            (endDate ? txnDate < end : true)
+          );
+        });
+
+        setTxns(filteredTxns);
       } catch (err) {
         console.error("[ERROR] Failed to load transactions:", err);
       }
     };
     fetchTxns();
-  }, []);
+  }, [startDate, endDate]);
 
   const handleGenerate = async () => {
     const payload = {
@@ -75,6 +95,11 @@ const SupplierOrderReport = () => {
     document.body.removeChild(link);
   };
 
+  const handleJumpToDate = (date) => {
+    setStartDate(date);
+    setEndDate(date); // Set both start and end date to the selected Jump-to date
+  };
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -101,6 +126,41 @@ const SupplierOrderReport = () => {
             ))}
           </Select>
         </FormControl>
+
+        {/* Date Range Pickers */}
+        <TextField
+          label="Start Date"
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
+        <TextField
+          label="End Date"
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
+
+        {/* Jump to Date Picker */}
+        <TextField
+          label="Jump to Date"
+          type="date"
+          value={jumpToDate}
+          onChange={(e) => {
+            const date = e.target.value;
+            setJumpToDate(date);
+            handleJumpToDate(date); // Set both start and end dates to the selected date
+          }}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
       </Box>
 
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
