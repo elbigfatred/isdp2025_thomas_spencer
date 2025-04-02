@@ -139,6 +139,8 @@ public class DashboardForm {
     private JButton btnSupplierOrdersHelp;
     private JButton btnAddItem;
     private JButton btnLossReturnHelp;
+    private JButton btnViewLossReturn;
+    private JButton btnSupplierOrderViewOrder;
 
     // =================== FRAME VARIABLES ===================
 
@@ -169,6 +171,8 @@ public class DashboardForm {
     private Site ordersSite = null;
     private List<Txn> allLossReturns;
     private List<Txn> allSupplierOrders;
+    private int selectedLossReturn = -1;
+    private int selectedSupplierOrder = -1;
 
     // =================== DASHBOARD INITIALIZATION & SETUP ===================
 
@@ -847,6 +851,14 @@ public class DashboardForm {
             JOptionPane.showMessageDialog(frame, HelpBlurbs.LOSSES_RETURNS_DASHBOARD,"Loss/Return Help",JOptionPane.INFORMATION_MESSAGE);
         });
 
+        btnViewLossReturn.addActionListener(e -> {
+            viewLossReturn();
+        });
+
+        btnSupplierOrderViewOrder.addActionListener(e -> {
+            viewSupplierOrder();
+        });
+
 
 
 
@@ -904,6 +916,21 @@ public class DashboardForm {
         });
 
         tblSupplierOrders.getTableHeader().setReorderingAllowed(false);
+
+        // Allow single row selection
+        tblSupplierOrders.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Handle row selection
+        tblSupplierOrders.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblSupplierOrders.getSelectedRow();
+                if (selectedRow != -1) {
+                    selectedSupplierOrder = (Integer) tblSupplierOrders.getValueAt(selectedRow, 0); // Get selected Txn ID
+                } else {
+                    selectedSupplierOrder = -1;
+                }
+            }
+        });
     }
 
     private void CreateSupplierOrder() {
@@ -917,6 +944,34 @@ public class DashboardForm {
                         }
                 )
         );
+    }
+
+    private void viewSupplierOrder() {
+        // Ensure a transaction is selected
+        if (selectedSupplierOrder == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a Supplier Order to view.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Find the selected transaction
+        Txn txntoView = null;
+        for (Txn txn : allModTxns) {
+            if (txn.getId() == selectedSupplierOrder) {
+                txntoView = txn;
+                break;
+            }
+        }
+
+        Txn finalTxn = txntoView;
+
+        SwingUtilities.invokeLater(()-> new ViewReceiveOrder().showViewReceveOrderForm(frame, frame.getLocation(), orderViewReceiveMode, finalTxn,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+            loadInitialData();;
+            updateSupplierOrderTableBySearch();
+        }));
     }
 
 
@@ -1015,6 +1070,49 @@ public class DashboardForm {
         });
 
         tblLossReturn.getTableHeader().setReorderingAllowed(false);
+        // Allow single row selection
+        tblLossReturn.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Handle row selection
+        tblLossReturn.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = tblLossReturn.getSelectedRow();
+                if (selectedRow != -1) {
+                    selectedLossReturn = (Integer) tblLossReturn.getValueAt(selectedRow, 0); // Get selected Txn ID
+                } else {
+                    selectedLossReturn = -1;
+                }
+            }
+        });
+    }
+
+    private void viewLossReturn() {
+        // Ensure a transaction is selected
+        if (selectedLossReturn == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a Loss/Return to view.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Find the selected transaction
+        Txn txntoView = null;
+        for (Txn txn : allModTxns) {
+            if (txn.getId() == selectedLossReturn) {
+                txntoView = txn;
+                break;
+            }
+        }
+
+        Txn finalTxn = txntoView;
+
+        SwingUtilities.invokeLater(()-> new ViewReceiveOrder().showViewReceveOrderForm(frame, frame.getLocation(), orderViewReceiveMode, finalTxn,() ->{
+            // Resume session when the dialog is closed
+//            idleTimer.restart();
+//            countdownTimer.restart();
+//            sessionActive = true;
+            loadInitialData();;
+            updateLossReturnTableBySearch();
+        }));
+
     }
 
 

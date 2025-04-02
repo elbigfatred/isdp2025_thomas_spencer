@@ -54,6 +54,7 @@ public class ViewReceiveOrder {
     private JLabel lblTotalQuantity;
     private JLabel lblTotalCost;
     private JButton btnConfirmAcceptOrder;
+    private JLabel lblNotes;
     private JDatePickerImpl datePicker; // ✅ Declare the date picker
 
     // =================== FRAME VARIABLES ===================
@@ -145,6 +146,15 @@ public class ViewReceiveOrder {
             updateTableDisplay();
             checkAndSetupFulfillment();  // ✅ NEW: Check roles + status and adjust UI
             showTxnDetails();
+
+            if(Objects.equals(selectedtxn.getTxnType().getTxnType(),"Supplier Order") ||
+                    Objects.equals(selectedtxn.getTxnType().getTxnType(),"Loss") ||
+                    Objects.equals(selectedtxn.getTxnType().getTxnType(),"Damage") ||
+                    Objects.equals(selectedtxn.getTxnType().getTxnType(),"Return") ) {
+                btnConfirmAcceptOrder.setVisible(false);
+                btnFulfillOrder.setVisible(false);
+                btnConfirmReceived.setVisible(false);
+            }
 
 
             frame.setVisible(true);
@@ -346,7 +356,7 @@ public class ViewReceiveOrder {
      * Populates transaction items table in VIEW mode.
      */
     private void populateTxnItemsTable() {
-        String[] columns = {"Item ID", "Item Name", "Ordered Qty"};
+        String[] columns = {"Item ID", "Item Name", "Quantity"};
 
         // ✅ Dispose of the existing table model first
         DefaultTableModel oldModel = (DefaultTableModel) tblTxnItems.getModel();
@@ -904,6 +914,7 @@ public class ViewReceiveOrder {
 
         String display = "Order ID: " + txnID + " / Status: " + txnStatus + " / Type: " + txnType;
         lblOrderDetails.setText(display);
+        lblNotes.setText("Notes: " + (!selectedtxn.getNotes().isEmpty() ? selectedtxn.getNotes() : "None"));
 
         // ✅ Initialize totals
         BigDecimal totalCost = BigDecimal.ZERO;
@@ -979,6 +990,7 @@ public class ViewReceiveOrder {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     private List<Inventory> txnItemsToInventory(int txnId, int siteId) {
         List<TxnItem> txnItems = TxnRequests.fetchTxnItems(txnId);
         List<Inventory> inventoryList = new ArrayList<>();
