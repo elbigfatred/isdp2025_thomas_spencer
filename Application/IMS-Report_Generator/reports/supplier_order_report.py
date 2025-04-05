@@ -50,7 +50,8 @@ def generate_supplier_order_report(data):
             i.name AS itemName,
             i.sku,
             ti.quantity,
-            i.costPrice
+            i.costPrice,
+            t.createdDate
         FROM txn t
         JOIN txnitems ti ON t.txnID = ti.txnID
         JOIN item i ON ti.itemID = i.itemID
@@ -64,7 +65,8 @@ def generate_supplier_order_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["Supplier", "Item", "SKU", "Quantity", "Cost Price($)"]
+    columns = ["Supplier", "Item", "SKU",
+               "Quantity", "Cost Price($)", "Created Date"]
     df = pd.DataFrame(results, columns=columns)
 
     if df.empty:
@@ -93,6 +95,13 @@ def generate_supplier_order_report(data):
     styles = getSampleStyleSheet()
     elements = []
 
+    elements.append(Paragraph("Supplier Order Report", styles['Heading1']))
+    elements.append(Paragraph(f"Transaction ID: {txn_id}", styles["Normal"]))
+    # created date of the transaction
+    elements.append(
+        Paragraph(f"Created: {df['Created Date'].iloc[0]}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
+
     grouped = df.groupby("Supplier")
 
     for supplier, group in grouped:
@@ -103,8 +112,8 @@ def generate_supplier_order_report(data):
         elements.append(logo)
 
         elements.append(Paragraph(f"Supplier: {supplier}", styles['Heading1']))
-        elements.append(
-            Paragraph(f"Transaction ID: {txn_id}", styles["Normal"]))
+        # elements.append(
+        #     Paragraph(f"Transaction ID: {txn_id}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
         table_data = [["Item", "SKU", "Quantity", "Cost Price($)"]]

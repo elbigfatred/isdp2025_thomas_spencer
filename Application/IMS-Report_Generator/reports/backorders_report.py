@@ -63,6 +63,14 @@ def generate_backorders_report(data):
         query += " AND s.siteID = %s"
         params.append(site_id)
 
+    site_name = None
+    if site_id:
+        cursor.execute(
+            "SELECT siteName FROM site WHERE siteID = %s", (site_id,))
+        site_row = cursor.fetchone()
+        if site_row:
+            site_name = site_row[0]
+
     if start_date and end_date:
         query += " AND t.createdDate BETWEEN %s AND %s"
         params.extend([start_date, end_date + " 23:59:59"])
@@ -87,13 +95,13 @@ def generate_backorders_report(data):
 
             filter_parts = []
             if site_id:
-                filter_parts.append(f"Site ID = {site_id}")
+                filter_parts.append(f"Site: {site_name}")
             if start_date and end_date:
                 filter_parts.append(f"Date Range: {start_date} to {end_date}")
 
             if filter_parts:
                 elements.append(
-                    Paragraph("Filters: " + ", ".join(filter_parts), styles['Normal']))
+                    Paragraph(", ".join(filter_parts), styles['Normal']))
                 elements.append(Spacer(1, 12))
 
             elements.append(Spacer(1, 24))
@@ -119,6 +127,11 @@ def generate_backorders_report(data):
     elements.append(logo)
 
     elements.append(Paragraph("Backorders Report", styles['Heading1']))
+    if site_id:
+        elements.append(Paragraph(f"Site: {site_name}", styles['Normal']))
+    if start_date and end_date:
+        elements.append(
+            Paragraph(f"Date Range: {start_date} to {end_date}", styles['Normal']))
 
     grouped = df.groupby("Txn ID")
 
@@ -141,13 +154,13 @@ def generate_backorders_report(data):
 
         filter_parts = []
         if site_id:
-            filter_parts.append(f"Site ID = {site_id}")
-        if start_date and end_date:
-            filter_parts.append(f"Date Range: {start_date} to {end_date}")
+            filter_parts.append(f"Site: {site_name}")
+        # if start_date and end_date:
+        #     filter_parts.append(f"Date Range: {start_date} to {end_date}")
 
         if filter_parts:
             elements.append(
-                Paragraph("Filters: " + ", ".join(filter_parts), styles['Normal']))
+                Paragraph(", ".join(filter_parts), styles['Normal']))
             elements.append(Spacer(1, 12))
 
         table_data = [["Item", "SKU", "Quantity"]] + \

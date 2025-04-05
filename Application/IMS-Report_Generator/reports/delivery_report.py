@@ -128,10 +128,12 @@ def generate_delivery_report(data):
         logo.hAlign = 'RIGHT'
         elements.append(logo)
 
-        elements.append(
-            Paragraph(f"Delivery ID: {delivery_id}", styles["Heading1"]))
-        elements.append(
-            Paragraph(f"Date: {group.iloc[0]['Delivery Date']}", styles["Normal"]))
+        # elements.append(
+        #     Paragraph(f"Delivery ID: {delivery_id}", styles["Heading1"]))
+        elements.append(Paragraph("Delivery Report", styles["Heading1"]))
+        # elements.append(
+        #     Paragraph(f"Date: {group.iloc[0]['Delivery Date']}", styles["Normal"]))
+        elements.append(Paragraph(f"Date: {delivery_date}", styles["Normal"]))
         elements.append(
             Paragraph(f"Vehicle Type: {group.iloc[0]['Vehicle']}", styles["Normal"]))
         elements.append(Spacer(1, 12))
@@ -163,11 +165,9 @@ def generate_delivery_report(data):
         elements.append(Spacer(1, 12))
 
     # Summary page
-    elements.append(Paragraph("Delivery Summary", styles["Heading1"]))
+    # elements.append(Paragraph("Delivery Summary", styles["Heading1"]))
     elements.append(
-        Paragraph(f"Total Kilometers: {total_km:.2f} km", styles["Normal"]))
-    elements.append(
-        Paragraph(f"Total Distance Cost: ${total_cost:.2f}", styles["Normal"]))
+        Paragraph(f"Total Travel Distance: {total_km:.2f} km", styles["Normal"]))
     doc.build(elements)
 
     return {"file_path": file_path}

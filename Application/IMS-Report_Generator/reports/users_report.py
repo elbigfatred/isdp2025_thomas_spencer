@@ -75,6 +75,14 @@ def generate_users_report(data):
         params.append(site_id)
     order_clause = " ORDER BY e.main_role, s.siteName"  # default
 
+    site_name = None
+    if site_id:
+        cursor.execute(
+            "SELECT siteName FROM site WHERE siteID = %s", (site_id,))
+        site_row = cursor.fetchone()
+        if site_row:
+            site_name = site_row[0]
+
     if sort_by == "role":
         order_clause = " ORDER BY e.main_role"
     elif sort_by == "site":
@@ -113,8 +121,8 @@ def generate_users_report(data):
                 if role:
                     filter_parts.append(f"Role = {role}")
                 if site_id:
-                    filter_parts.append(f"Site ID = {site_id}")
-                filter_text = "Filters: " + ", ".join(filter_parts)
+                    filter_parts.append(f"Site: {site_name}")
+                filter_text = ", ".join(filter_parts)
                 elements.append(Paragraph(filter_text, styles['Normal']))
                 elements.append(Spacer(1, 12))
 
@@ -152,12 +160,12 @@ def generate_users_report(data):
     elements.append(Paragraph("Users Report", styles['Heading1']))
     filter_parts = []
     if role:
-        filter_parts.append(f"Role = {role}")
+        filter_parts.append(f"Role: {role}")
     if site_id:
-        filter_parts.append(f"Site ID = {site_id}")
+        filter_parts.append(f"Site: {site_name}")
 
     if filter_parts:
-        filter_text = "Filters: " + ", ".join(filter_parts)
+        filter_text = ", ".join(filter_parts)
         elements.append(Paragraph(filter_text, styles['Normal']))
         elements.append(Spacer(1, 12))
 

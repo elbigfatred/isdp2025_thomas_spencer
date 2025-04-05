@@ -71,6 +71,14 @@ def generate_orders_report(data):
         query += " AND s.siteID = %s"
         params.append(site_id)
 
+    site_name = None
+    if site_id:
+        cursor.execute(
+            "SELECT siteName FROM site WHERE siteID = %s", (site_id,))
+        site_row = cursor.fetchone()
+        if site_row:
+            site_name = site_row[0]
+
     if txn_type:
         query += " AND t.txnType = %s"
         params.append(txn_type)
@@ -83,7 +91,7 @@ def generate_orders_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["ID", "Created Date", "Site",
+    columns = ["ID", "Created", "Site",
                "Transaction Type", "SKU Count", "Total Weight(kg)"]
     df = pd.DataFrame(results, columns=columns)
 
@@ -97,11 +105,11 @@ def generate_orders_report(data):
 
             filter_parts = [f"Date Range: {start_date} to {end_date}"]
             if site_id:
-                filter_parts.append(f"Site ID = {site_id}")
+                filter_parts.append(f"Site: {site_name}")
             if txn_type:
-                filter_parts.append(f"Txn Type = {txn_type}")
+                filter_parts.append(f"Transaction Type: {txn_type}")
             elements.append(
-                Paragraph("Filters: " + ", ".join(filter_parts), styles["Normal"]))
+                Paragraph(", ".join(filter_parts), styles["Normal"]))
             elements.append(Spacer(1, 24))
             elements.append(
                 Paragraph("No results found for the selected filters.", styles["Normal"]))
@@ -126,11 +134,11 @@ def generate_orders_report(data):
     elements.append(Paragraph("Orders Report", styles["Heading1"]))
     filter_parts = [f"Date Range: {start_date} to {end_date}"]
     if site_id:
-        filter_parts.append(f"Site ID = {site_id}")
+        filter_parts.append(f"Site: {site_name}")
     if txn_type:
-        filter_parts.append(f"Txn Type = {txn_type}")
+        filter_parts.append(f"Transaction Type: {txn_type}")
     elements.append(
-        Paragraph("Filters: " + ", ".join(filter_parts), styles["Normal"]))
+        Paragraph(", ".join(filter_parts), styles["Normal"]))
     elements.append(Spacer(1, 12))
 
     # Table

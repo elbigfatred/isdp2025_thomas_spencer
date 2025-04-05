@@ -69,6 +69,14 @@ def generate_emergency_orders_report(data):
         query += " AND t.siteIDTo = %s"
         params.append(site_id)
 
+    site_name = None
+    if site_id:
+        cursor.execute(
+            "SELECT siteName FROM site WHERE siteID = %s", (site_id,))
+        site_row = cursor.fetchone()
+        if site_row:
+            site_name = site_row[0]
+
     query += """
         GROUP BY t.txnID, t.createdDate, s.siteName
         ORDER BY s.siteName, t.createdDate
@@ -79,7 +87,7 @@ def generate_emergency_orders_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["Txn ID", "Created Date", "Store",
+    columns = ["ID", "Created", "Store",
                "Item Count", "Total Weight (kg)"]
     df = pd.DataFrame(results, columns=columns)
 
@@ -96,12 +104,12 @@ def generate_emergency_orders_report(data):
             # Filters
             filters = []
             if site_id:
-                filters.append(f"Site ID = {site_id}")
+                filters.append(f"Site: {site_name}")
             if start_date or end_date:
-                filters.append(f"Date Range = {start_date} to {end_date}")
+                filters.append(f"Date Range: {start_date} to {end_date}")
             if filters:
                 elements.append(
-                    Paragraph("Filters: " + ", ".join(filters), styles['Normal']))
+                    Paragraph(", ".join(filters), styles['Normal']))
                 elements.append(Spacer(1, 12))
 
             elements.append(Spacer(1, 24))
@@ -133,12 +141,12 @@ def generate_emergency_orders_report(data):
     elements.append(Paragraph("Emergency Orders Report", styles['Heading1']))
     filters = []
     if site_id:
-        filters.append(f"Site ID = {site_id}")
+        filters.append(f"Site: {site_name}")
     if start_date or end_date:
-        filters.append(f"Date Range = {start_date} to {end_date}")
+        filters.append(f"Date Range: {start_date} to {end_date}")
     if filters:
         elements.append(
-            Paragraph("Filters: " + ", ".join(filters), styles['Normal']))
+            Paragraph(", ".join(filters), styles['Normal']))
         elements.append(Spacer(1, 12))
 
     # Group by site to give each one its own page
