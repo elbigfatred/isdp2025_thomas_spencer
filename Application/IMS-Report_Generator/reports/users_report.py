@@ -60,7 +60,7 @@ def generate_users_report(data):
 
     query = """
         SELECT e.employeeID, e.username, e.firstname, e.lastname, e.email,
-               s.siteName, e.main_role
+               s.siteName, e.main_role, e.active, e.locked
         FROM employee e
         JOIN site s ON e.siteID = s.siteID
         WHERE e.active = 1
@@ -100,9 +100,17 @@ def generate_users_report(data):
     cursor.close()
     conn.close()
 
-    columns = ["ID", "Username", "First Name",
-               "Last Name", "Email", "Site", "Role"]
+    columns = ["ID", "Username", "First Name", "Last Name",
+               "Email", "Site", "Role", "Active", "Locked"]
     df = pd.DataFrame(results, columns=columns)
+
+    # Modify DataFrame
+    df["Name"] = df["First Name"] + " " + df["Last Name"]
+    df["Active"] = df["Active"].map({1: "Yes", 0: "No"})
+    df["Locked"] = df["Locked"].map({1: "Yes", 0: "No"})
+    df.drop(columns=["First Name", "Last Name"], inplace=True)
+    df = df[["ID", "Username", "Name", "Email",
+             "Site", "Role", "Active", "Locked"]]
 
     if df.empty:
         if format == "csv":
@@ -151,7 +159,7 @@ def generate_users_report(data):
 
     logo_path = "static/bullseye1.png"
     # size in points (72 pt = 1 inch)
-    logo = Image(logo_path, width=50, height=50)
+    logo = Image(logo_path, width=125, height=125)
     logo.vAlign = 'TOP'
     logo.hAlign = 'RIGHT'  # align top-right
     elements.append(logo)
@@ -179,13 +187,15 @@ def generate_users_report(data):
     table = Table(data_for_table, repeatRows=1)
 
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#E53935")),  # Header red
+        # Header text white
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        # Light blue for rows
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#E3F2FD")),
         ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
     # table.hAlign = 'LEFT'

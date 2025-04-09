@@ -166,13 +166,15 @@ def generate_inventory_report(data):
     table = Table(table_data, repeatRows=1)
 
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#E53935")),  # Header red
+        # Header text white
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        # Light blue for rows
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#E3F2FD")),
         ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
 

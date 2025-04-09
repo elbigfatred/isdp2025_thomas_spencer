@@ -19,3 +19,7 @@ Sprint 2.
 Sprint 3.
 
     To access the customer portal, visit http://localhost:5173/customerPortal.
+
+Sprint 4.
+
+    Python Report Generator flask app must be running to create reports; you can start all 4 apps (Desktop Front, Web Front, Backend, and Report Generator) for the start_all.py app in the top level of applications folder.
