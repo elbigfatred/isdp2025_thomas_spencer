@@ -62,6 +62,14 @@ def generate_inventory_report(data):
         query += " WHERE i.siteID = %s"
         params.append(site_id)
 
+    site_name = None
+    if site_id:
+        cursor.execute(
+            "SELECT siteName FROM site WHERE siteID = %s", (site_id,))
+        site_row = cursor.fetchone()
+        if site_row:
+            site_name = site_row[0]
+
     # Sorting logic
     if sort_by == "quantity":
         query += " ORDER BY i.quantity"
@@ -93,7 +101,7 @@ def generate_inventory_report(data):
 
             if site_id:
                 elements.append(
-                    Paragraph(f"Filters: Site ID = {site_id}", styles['Normal']))
+                    Paragraph(f"Site: {site_name}", styles['Normal']))
                 elements.append(Spacer(1, 12))
 
             elements.append(Spacer(1, 24))
@@ -112,7 +120,7 @@ def generate_inventory_report(data):
     styles = getSampleStyleSheet()
 
     logo_path = "static/bullseye1.png"
-    logo = Image(logo_path, width=50, height=50)
+    logo = Image(logo_path, width=125, height=125)
     logo.vAlign = 'TOP'
     logo.hAlign = 'RIGHT'
 
@@ -121,7 +129,7 @@ def generate_inventory_report(data):
 
     if site_id:
         elements.append(
-            Paragraph(f"Filters: Site ID = {site_id}", styles['Normal']))
+            Paragraph(f"Site: {site_name}", styles['Normal']))
         elements.append(Spacer(1, 12))
 
     sort_label = {
@@ -158,13 +166,13 @@ def generate_inventory_report(data):
     table = Table(table_data, repeatRows=1)
 
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
 

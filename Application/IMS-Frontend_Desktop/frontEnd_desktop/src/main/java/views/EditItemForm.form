@@ -313,7 +313,7 @@
           <focusPainted value="false"/>
           <opaque value="false"/>
           <requestFocusEnabled value="true"/>
-          <text value="Button"/>
+          <text value="❓"/>
           <toolTipText value="Click for help on this section."/>
         </properties>
       </component>

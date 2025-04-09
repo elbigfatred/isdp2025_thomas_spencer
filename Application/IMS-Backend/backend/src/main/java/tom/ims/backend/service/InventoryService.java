@@ -123,6 +123,9 @@ public class InventoryService {
                 System.out.printf("[DEBUG] Skipping active item because supplier inactive: %s\n", item.getName());
                 continue;
             }
+            if (item.getActive() == (byte) 0) {
+                continue;
+            }
             finalList.add(inv);
         }
 

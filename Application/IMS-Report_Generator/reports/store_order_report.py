@@ -93,7 +93,7 @@ def generate_store_order_report(data):
 
     # Add logo
     logo_path = "static/bullseye1.png"
-    logo = Image(logo_path, width=50, height=50)
+    logo = Image(logo_path, width=125, height=125)
     logo.vAlign = 'TOP'
     logo.hAlign = 'RIGHT'
     elements.append(logo)
@@ -108,12 +108,13 @@ def generate_store_order_report(data):
     table_data = [df.columns.tolist()] + df.values.tolist()
     table = Table(table_data, repeatRows=1)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
     elements.append(table)

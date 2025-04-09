@@ -39,9 +39,18 @@ const DeliveryReport = () => {
       setReportUrl(blobUrl);
     } catch (error) {
       console.error("[ERROR] Report generation failed:", error);
-      alert("Failed to generate report. See console for details.");
+      alert("Failed to generate report.");
     }
   };
+
+  const [year, month, day] = deliveryDate.split("-");
+  const localDate = new Date(year, month - 1, day); // month is 0-based
+  const formattedDeliveryDate = localDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   const handleDownload = () => {
     if (!reportUrl) {
@@ -73,13 +82,18 @@ const DeliveryReport = () => {
           </Select>
         </FormControl>
 
-        <TextField
-          label="Delivery Date"
-          type="date"
-          value={deliveryDate}
-          onChange={(e) => setDeliveryDate(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <TextField
+            label="Delivery Date"
+            type="date"
+            value={deliveryDate}
+            onChange={(e) => setDeliveryDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            {formattedDeliveryDate}
+          </Typography>
+        </Box>
       </Box>
 
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>

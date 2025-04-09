@@ -126,7 +126,7 @@ def generate_orders_report(data):
     elements = []
 
     logo_path = "static/bullseye1.png"
-    logo = Image(logo_path, width=50, height=50)
+    logo = Image(logo_path, width=125, height=125)
     logo.vAlign = 'TOP'
     logo.hAlign = 'RIGHT'
     elements.append(logo)

@@ -34,6 +34,8 @@ os.makedirs(REPORTS_DIR, exist_ok=True)
 def generate_delivery_report(data):
     delivery_date = data.get("deliveryDate")
     format = data.get("format", "pdf").lower()
+    formatted_delivery_date = datetime.strptime(
+        delivery_date, "%Y-%m-%d").strftime("%A; %Y-%m-%d")
 
     if not delivery_date:
         raise ValueError("Missing 'deliveryDate' in request.")
@@ -92,7 +94,7 @@ def generate_delivery_report(data):
         elements = [
             Paragraph("Delivery Report", styles["Heading1"]),
             Spacer(1, 12),
-            Paragraph(f"Date: {delivery_date}", styles["Normal"]),
+            Paragraph(f"{formatted_delivery_date}", styles["Normal"]),
             Spacer(1, 24),
             Paragraph("No deliveries found for the selected date.",
                       styles["Normal"])
@@ -123,7 +125,7 @@ def generate_delivery_report(data):
 
     for delivery_id, group in grouped:
         logo_path = "static/bullseye1.png"
-        logo = Image(logo_path, width=50, height=50)
+        logo = Image(logo_path, width=125, height=125)
         logo.vAlign = 'TOP'
         logo.hAlign = 'RIGHT'
         elements.append(logo)
@@ -133,12 +135,13 @@ def generate_delivery_report(data):
         elements.append(Paragraph("Delivery Report", styles["Heading1"]))
         # elements.append(
         #     Paragraph(f"Date: {group.iloc[0]['Delivery Date']}", styles["Normal"]))
-        elements.append(Paragraph(f"Date: {delivery_date}", styles["Normal"]))
+        elements.append(
+            Paragraph(f"{formatted_delivery_date}", styles["Normal"]))
         elements.append(
             Paragraph(f"Vehicle Type: {group.iloc[0]['Vehicle']}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
-        table_data = [["Store", "Address", "City", "Province", "Distance (km)", "Cost/km", "Weight (kg)", "Subtotal"]] + [
+        table_data = [["Store", "Address", "City", "Province", "Distance (km)", "Cost/km", "Weight (kg)", "Distance Cost"]] + [
             [
                 row["Store"],
                 row["Address"],
@@ -154,11 +157,13 @@ def generate_delivery_report(data):
 
         table = Table(table_data, repeatRows=1)
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
             ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
         ]))
         elements.append(table)
@@ -167,7 +172,11 @@ def generate_delivery_report(data):
     # Summary page
     # elements.append(Paragraph("Delivery Summary", styles["Heading1"]))
     elements.append(
-        Paragraph(f"Total Travel Distance: {total_km:.2f} km", styles["Normal"]))
+        Paragraph(f"Total Travel Distance from Warehouse: {total_km:.2f} km", styles["Normal"]))
+    # total count of orders
+    elements.append(
+        Paragraph(f"Total Deliveries: {len(df['Address'].unique())}", styles["Normal"]))
+
     doc.build(elements)
 
     return {"file_path": file_path}

@@ -62,7 +62,7 @@ const EmergencyOrdersReport = () => {
       setReportUrl(blobUrl);
     } catch (error) {
       console.error("[ERROR] Report generation failed:", error);
-      alert("Failed to generate report. See console for details.");
+      alert("Failed to generate report.");
     }
   };
 

@@ -60,6 +60,10 @@ public class InventoryRequests {
                         item.setActive(itemJson.optInt("active", 1) == 1);
                         item.setCaseSize(itemJson.optInt("caseSize", 1));
 
+                        if(!item.getActive()){
+                            continue;
+                        }
+
                         if (itemJson.has("supplier")){
                             JSONObject supplierJson = itemJson.getJSONObject("supplier");
                             Supplier supplier = new Supplier();
@@ -72,6 +76,9 @@ public class InventoryRequests {
                         }
 
                         inventory.setItem(item);
+                    }
+                    else{
+                        continue;
                     }
 
                     inventoryList.add(inventory);

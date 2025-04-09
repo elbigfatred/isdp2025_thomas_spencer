@@ -132,7 +132,7 @@ def generate_emergency_orders_report(data):
     # Insert logo first
     logo_path = "static/bullseye1.png"
     if os.path.exists(logo_path):
-        logo = Image(logo_path, width=50, height=50)
+        logo = Image(logo_path, width=125, height=125)
         logo.hAlign = 'RIGHT'
         elements.append(logo)
         elements.append(Spacer(1, 6))  # Optional: space after logo
@@ -159,8 +159,8 @@ def generate_emergency_orders_report(data):
 
         table = Table(table_data, repeatRows=1)
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
@@ -170,6 +170,9 @@ def generate_emergency_orders_report(data):
         ]))
 
         elements.append(table)
+        elements.append(Spacer(1, 6))
+        elements.append(Paragraph(
+            f"Total emergency orders at {store} from {start_date} to {end_date}: {group['ID'].nunique()}", styles['Normal']))
         elements.append(PageBreak())
 
     doc.build(elements)

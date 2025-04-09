@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -683,6 +684,10 @@ public class OrderService {
             try {
                 Txnitem txnItem = new Txnitem();
                 Item item = itemService.getItemById(inv.getId().getItemID());
+
+                if (Objects.equals(item.getActive(), 0)) {
+                    continue;
+                }
 
                 if (item == null) {
                     System.out.println("[ERROR] Item not found for ID: " + inv.getId().getItemID());

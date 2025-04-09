@@ -141,6 +141,7 @@ public class DashboardForm {
     private JButton btnLossReturnHelp;
     private JButton btnViewLossReturn;
     private JButton btnSupplierOrderViewOrder;
+    private JLabel lblLossReturnSite;
 
     // =================== FRAME VARIABLES ===================
 
@@ -336,15 +337,16 @@ public class DashboardForm {
     private void loadInitialData() {
         allEmployees = EmployeeRequests.fetchEmployees();
         allSites = SiteRequests.fetchSites();
+        allModTxns = TxnsModsRequests.fetchAllTransactions();
 
         lblEditPermissionsEmployeeDetails.setText("Please select an employee.");
         cmbLossReturnSite.setVisible(false);
+        lblLossReturnSite.setVisible(false);
 
 
         if (Arrays.asList(accessPosition).contains("Administrator")) {
             allPosns = PositionRequests.fetchPositions();
             allSuppliers = SupplierUtil.fetchAllSuppliers(true);
-            allModTxns = TxnsModsRequests.fetchAllTransactions();
             allLossReturns = fetchAllLossReturns();
             allItems = ItemRequests.fetchItems();
             allSupplierOrders = SupplierOrderRequests.fetchSupplierOrders();
@@ -361,6 +363,7 @@ public class DashboardForm {
             }
             lossReturnSite = null;
             cmbLossReturnSite.setVisible(true);
+            lblLossReturnSite.setVisible(true);
             cmbLossReturnSite.addActionListener(e -> {
                 int selectedIndex = cmbLossReturnSite.getSelectedIndex();
                 if (selectedIndex >= 0) {
@@ -897,14 +900,14 @@ public class DashboardForm {
     }
 
     private void populateSupplierOrderTable(List<Txn> txns) {
-        String[] columnNames = {"Txn ID", "Status", "Created Date/Time", "Created By" };
+        String[] columnNames = {"Record ID", "Status", "Created", "Created By (Username)" };
         Object[][] rowData = new Object[txns.size()][columnNames.length];
 
         for (int i = 0; i < txns.size(); i++) {
             Txn txn = txns.get(i);
             rowData[i][0] = txn.getId();
             rowData[i][1] = txn.getTxnStatus() != null ? txn.getTxnStatus().getStatusName() : "N/A";
-            rowData[i][2] = txn.getCreatedDate() != null ? txn.getCreatedDate().toString() : "N/A";
+            rowData[i][2] = txn.getCreatedDate() != null ? formatDate(txn.getCreatedDate()) : "N/A";
             rowData[i][3] = txn.getEmployee() != null ? txn.getEmployee().getUsername() : "N/A";
         }
 
@@ -1050,7 +1053,7 @@ public class DashboardForm {
     }
 
     private void populateLossReturnTable(List<Txn> txns) {
-        String[] columnNames = {"Txn ID", "Site", "Type", "Created Date", "Notes"};
+        String[] columnNames = {"Record ID", "Site", "Type", "Created", "Notes"};
         Object[][] rowData = new Object[txns.size()][columnNames.length];
 
         for (int i = 0; i < txns.size(); i++) {
@@ -1058,7 +1061,7 @@ public class DashboardForm {
             rowData[i][0] = txn.getId();
             rowData[i][1] = txn.getSiteFrom().getSiteName();
             rowData[i][2] = txn.getTxnType().getTxnType();
-            rowData[i][3] = txn.getCreatedDate() != null ? txn.getCreatedDate().toString() : "N/A";
+            rowData[i][3] = txn.getCreatedDate() != null ? formatDate(txn.getCreatedDate()) : "N/A";
             rowData[i][4] = txn.getNotes() != null ? txn.getNotes() : "";
         }
 
