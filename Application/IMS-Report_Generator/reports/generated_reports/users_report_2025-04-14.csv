@@ -1,0 +1,18 @@
+ID,Username,Name,Email,Site,Role,Active,Locked
+1000,admin,admin admin,admin@bullseye.com,Bullseye Corporate Headquarters,Administrator,Yes,No
+1001,econcepcion,Eduardo Concepcion,econcepcion@bullseye.ca,Bullseye Corporate Headquarters,Regional Manager,Yes,No
+1002,mmunoz,Monica Munoz,mmunoz@bullseye.ca,Bullseye Corporate Headquarters,Financial Manager,Yes,No
+10000,online,online online,,Bullseye Corporate Headquarters,Online Customer,Yes,No
+1007,tgraupel,Tansy Graupel,tgraupel@bullseye.ca,Dieppe Retail,Store Manager,Yes,No
+1009,ebyron,Emi Byron,ebyron@bullseye.ca,Fredericton Retail,Store Manager,Yes,No
+1010,abean,Arabella Bean,abean@bullseye.ca,Miramichi Retail,Store Manager,Yes,No
+1006,wbray,Willow Bray,wbray@bullseye.ca,Moncton Retail,Store Manager,Yes,No
+1008,syuasa,Shuncho Yuasa,syuasa@bullseye.ca,Oromocto Retail,Store Manager,Yes,No
+1004,jperez,Jose Perez,jperez@bullseye.ca,Saint John Retail,Store Manager,Yes,No
+1005,kblanche,Kevin Blanche,kblanche@bullseye.ca,Sussex Retail,Store Manager,Yes,No
+9999,acadia,acadia acadia,info@acadiatrucking.ca,Truck,Delivery,Yes,No
+1003,cpatstone,Chris Patstone,cpatstone@bullseye.ca,Warehouse,Warehouse Manager,Yes,No
+1011,htrent,Hattie Trent,htrent@bullseye.ca,Warehouse,Warehouse Worker,Yes,No
+1012,bcallan,Berniece Callan,bcallan@bullseye.ca,Warehouse,Warehouse Worker,Yes,No
+1013,eatherton,Erika Atherton,eatherton@bullseye.ca,Warehouse,Warehouse Worker,Yes,No
+1014,jjones,James Earl Jones,jjones@bullseye.ca,Warehouse,Warehouse Worker,Yes,No
